@@ -22,7 +22,7 @@ class DeliveryController extends Controller
 {
     public function show(Shipment $shipment): Response
     {
-        $shipment->load(['order.organization:id,name', 'order.customer', 'order.organizationLocation', 'order.location', 'lines.orderLine.productUnit', 'lines.orderLine.product:id,weight_kg', 'stop.truck']);
+        $shipment->load(['order.organization:id,name', 'order.customer', 'order.organizationLocation', 'order.location', 'lines.orderLine.productUnit', 'lines.orderLine.product:id,weight_kg,track_lots', 'lines.lot', 'stop.truck']);
         $order = $shipment->order;
         $levels = StockLevel::query()->where('location_id', $order->location_id)->get()->keyBy('product_id');
 

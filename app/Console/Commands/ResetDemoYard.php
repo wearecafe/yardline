@@ -25,6 +25,12 @@ class ResetDemoYard extends Command
      * @var list<string>
      */
     private const TABLES = [
+        'cycle_count_lines',
+        'cycle_counts',
+        'stock_transfer_lines',
+        'stock_transfers',
+        'purchase_order_lines',
+        'purchase_orders',
         'pallet_movements',
         'credit_note_lines',
         'credit_notes',
@@ -54,6 +60,7 @@ class ResetDemoYard extends Command
         'contract_prices',
         'customer_organization',
         'stock_levels',
+        'stock_lots',
         'price_list_items',
         'product_units',
         'external_references',
@@ -62,6 +69,7 @@ class ResetDemoYard extends Command
         'organizations',
         'price_lists',
         'products',
+        'suppliers',
         'locations',
         'sequences',
     ];

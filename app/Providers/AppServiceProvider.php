@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\CreditNote;
 use App\Models\Customer;
+use App\Models\CycleCount;
 use App\Models\Invoice;
 use App\Models\Location;
 use App\Models\Order;
@@ -11,9 +12,11 @@ use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
 use App\Models\Rental;
 use App\Models\RentalUnit;
 use App\Models\Shipment;
+use App\Models\StockTransfer;
 use App\Models\User;
 use App\Payments\CheckoutLinks;
 use App\Payments\FakeCheckoutLinks;
@@ -135,6 +138,9 @@ class AppServiceProvider extends ServiceProvider
             'payment' => Payment::class,
             'price_list' => PriceList::class,
             'product' => Product::class,
+            'purchase_order' => PurchaseOrder::class,
+            'stock_transfer' => StockTransfer::class,
+            'cycle_count' => CycleCount::class,
             'rental' => Rental::class,
             'rental_unit' => RentalUnit::class,
             'shipment' => Shipment::class,

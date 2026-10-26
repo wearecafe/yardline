@@ -45,6 +45,8 @@ export type Product = {
     weight_kg?: string | null;
     supplier_name?: string | null;
     pallet_deposit?: boolean;
+    supplier_id?: number | null;
+    track_lots?: boolean;
     per_pallet?: string | null;
     previous_cost_cents?: number | null;
     cost_changed_at?: string | null;

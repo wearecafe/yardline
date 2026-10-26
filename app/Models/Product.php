@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -51,6 +52,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property CarbonImmutable|null $cost_changed_at
  * @property bool $taxable
  * @property bool $pallet_deposit
+ * @property int|null $supplier_id
+ * @property bool $track_lots
+ * @property-read Supplier|null $supplier
  * @property string|null $per_pallet base units on one pallet
  * @property-read Collection<int, ProductUnit> $units
  * @property-read ProductUnit|null $baseUnit
@@ -62,7 +66,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'rate_hour_cents', 'rate_half_day_cents', 'rate_week_cents', 'rate_month_cents',
     'rate_weekend_cents', 'minimum_charge_cents', 'fuel_charge_cents', 'cleaning_fee_cents',
     'service_interval_hours', 'service_interval_days', 'use_case', 'bookable_online',
-    'weight_kg', 'supplier_name', 'taxable', 'pallet_deposit', 'per_pallet',
+    'weight_kg', 'supplier_name', 'supplier_id', 'track_lots', 'taxable', 'pallet_deposit', 'per_pallet',
 ])]
 class Product extends Model
 {
@@ -145,6 +149,7 @@ class Product extends Model
             'cost_changed_at' => 'immutable_datetime',
             'taxable' => 'boolean',
             'pallet_deposit' => 'boolean',
+            'track_lots' => 'boolean',
             'per_pallet' => 'decimal:3',
         ];
     }
@@ -183,6 +188,22 @@ class Product extends Model
     public function baseUnit(): HasOne
     {
         return $this->hasOne(ProductUnit::class)->where('is_base', true);
+    }
+
+    /**
+     * @return BelongsTo<Supplier, $this>
+     */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    /**
+     * @return HasMany<StockLot, $this>
+     */
+    public function lots(): HasMany
+    {
+        return $this->hasMany(StockLot::class);
     }
 
     /**

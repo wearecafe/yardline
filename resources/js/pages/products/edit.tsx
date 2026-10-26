@@ -20,6 +20,7 @@ import type { Option, Product } from '@/types';
 type Props = {
     product: Product;
     units: Option[];
+    suppliers: { id: number; name: string }[];
     sellingUnits: EditorUnit[];
     categories: string[];
     priceLists: { id: number; name: string }[];
@@ -136,6 +137,7 @@ export default function EditProduct(props: Props) {
                             product={product}
                             units={props.units}
                             categories={categories}
+                            suppliers={props.suppliers}
                         />
                     </div>
 

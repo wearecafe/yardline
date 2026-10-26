@@ -31,8 +31,10 @@ use App\Models\Product;
 use App\Models\Rental;
 use App\Models\RentalUnit;
 use App\Models\StockLevel;
+use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\Stop;
+use App\Models\Supplier;
 use App\Models\Tenant;
 use App\Models\Truck;
 use App\Models\User;
@@ -126,6 +128,9 @@ class DemoYardSeeder extends Seeder
     /** @var list<Truck> */
     private array $trucks = [];
 
+    /** @var array<string, Supplier> */
+    private array $suppliers = [];
+
     private Location $waterdown;
 
     private Location $stoneyCreek;
@@ -158,12 +163,15 @@ class DemoYardSeeder extends Seeder
                 $this->sellingUnits();
                 $this->accounts();
                 $this->accountDetails();
+                $this->purchasingSetup();
                 $this->openingStock();
+                $this->openingLots();
                 $this->deliverySetup($tenant);
                 $this->orders();
                 $this->quotes();
                 $this->fulfillmentToday();
                 $this->returnsAndCredits();
+                $this->purchasingActivity();
                 $this->rentals();
             });
         });
@@ -744,7 +752,7 @@ class DemoYardSeeder extends Seeder
         StockMovement::query()->update(['created_at' => $this->at(45, '07:30')]);
 
         // A delivery that came in last week, and a count that found breakage.
-        $receipt = $ledger->record($this->products['PAV-60CH'], $this->waterdown, 1800, StockMovementType::Receipt, user: $this->yardLead(), note: 'PO 4471, Unilock');
+        $receipt = $ledger->record($this->products['PAV-60CH'], $this->waterdown, 1800, StockMovementType::Receipt, user: $this->yardLead(), note: 'PO 4471, Ridgeline Concrete Products', lot: StockLot::query()->firstOrCreate(['product_id' => $this->products['PAV-60CH']->id, 'location_id' => $this->waterdown->id, 'code' => 'Run 2611-B'], ['received_on' => $this->at(5)->toDateString()]));
         $receipt->forceFill(['created_at' => $this->at(5, '08:15')])->saveQuietly();
 
         $count = $ledger->count($this->products['WAL-CAP'], $this->waterdown, 252, $this->yardLead(), 'Monthly count, 8 chipped');

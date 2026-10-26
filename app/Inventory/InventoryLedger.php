@@ -6,6 +6,7 @@ use App\Enums\StockMovementType;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\StockLevel;
+use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Support\Money;
@@ -26,15 +27,21 @@ class InventoryLedger
         ?Model $reference = null,
         ?User $user = null,
         ?string $note = null,
+        ?StockLot $lot = null,
     ): StockMovement {
-        return DB::transaction(function () use ($product, $location, $quantity, $type, $reference, $user, $note) {
+        return DB::transaction(function () use ($product, $location, $quantity, $type, $reference, $user, $note, $lot) {
             $level = $this->lockLevel($product, $location);
 
             $level->newQuery()->whereKey($level->getKey())->increment('on_hand', (float) $quantity);
 
+            if ($lot !== null) {
+                $lot->newQuery()->whereKey($lot->getKey())->increment('on_hand', (float) $quantity);
+            }
+
             return StockMovement::query()->create([
                 'product_id' => $product->id,
                 'location_id' => $location->id,
+                'stock_lot_id' => $lot?->id,
                 'quantity' => $quantity,
                 'type' => $type,
                 'reference_type' => $reference?->getMorphClass(),

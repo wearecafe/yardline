@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $shipment_id
  * @property int $order_line_id
+ * @property int|null $stock_lot_id
  * @property string $quantity to pick, in the order line's unit
  * @property string|null $picked_quantity actually loaded
  * @property bool $short
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read Shipment $shipment
  * @property-read OrderLine $orderLine
  */
-#[Fillable(['shipment_id', 'order_line_id', 'quantity', 'picked_quantity', 'short', 'note', 'picked_at'])]
+#[Fillable(['shipment_id', 'order_line_id', 'stock_lot_id', 'quantity', 'picked_quantity', 'short', 'note', 'picked_at'])]
 class ShipmentLine extends Model
 {
     use BelongsToTenant;
@@ -41,6 +42,14 @@ class ShipmentLine extends Model
     public function shipment(): BelongsTo
     {
         return $this->belongsTo(Shipment::class);
+    }
+
+    /**
+     * @return BelongsTo<StockLot, $this>
+     */
+    public function lot(): BelongsTo
+    {
+        return $this->belongsTo(StockLot::class, 'stock_lot_id');
     }
 
     /**

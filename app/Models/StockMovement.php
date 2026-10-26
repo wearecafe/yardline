@@ -25,7 +25,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string|null $note
  * @property CarbonImmutable $created_at
  */
-#[Fillable(['product_id', 'location_id', 'quantity', 'type', 'reference_type', 'reference_id', 'user_id', 'note'])]
+#[Fillable(['product_id', 'location_id', 'stock_lot_id', 'quantity', 'type', 'reference_type', 'reference_id', 'user_id', 'note'])]
 class StockMovement extends Model
 {
     use BelongsToTenant;
