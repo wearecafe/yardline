@@ -27,7 +27,8 @@ class Aging
             ->get();
         $credits = CreditNote::query()->where('status', 'open')->whereNotNull('organization_id')->get()->groupBy('organization_id');
 
-        return $invoices->groupBy('organization_id')->map(function (Collection $rows, $orgId) use ($on, $credits) {
+        /** @var Collection<int, array<string, mixed>> $rows */
+        $rows = $invoices->groupBy('organization_id')->map(function (Collection $rows, $orgId) use ($on, $credits) {
             /** @var Organization $org */
             $org = $rows->first()->organization;
             $buckets = array_fill_keys(array_keys(self::BUCKETS), 0);
@@ -53,6 +54,8 @@ class Aging
                 'invoices' => $rows->count(),
             ];
         })->filter(fn ($row) => $row['owing_cents'] > 0)->sortByDesc('net_cents')->values();
+
+        return $rows;
     }
 
     public static function bucket(int $daysOverdue): string

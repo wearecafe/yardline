@@ -129,7 +129,7 @@ return new class extends Migration
                 'customer_id' => $order->customer_id,
                 'terms' => $terms,
                 'issued_on' => $issued,
-                'due_on' => date('Y-m-d', strtotime($issued." +{$days} days")),
+                'due_on' => date('Y-m-d', (int) strtotime($issued." +{$days} days")),
                 'status' => $order->payment_status === 'paid' ? 'paid' : 'open',
                 'created_at' => now(),
                 'updated_at' => now(),

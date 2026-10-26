@@ -29,7 +29,7 @@ class InvoiceController extends Controller
                 'po_number' => $order->po_number,
                 'bill_to' => $order->organization
                     ? array_filter([$order->organization->name, $order->organization->address_line1, trim(implode(' ', array_filter([$order->organization->city, $order->organization->region, $order->organization->postal_code])))])
-                    : array_filter([$order->customer?->full_name ?? 'Walk-in']),
+                    : array_filter([$order->customer->full_name ?? 'Walk-in']),
                 'ship_to' => $order->delivery_address,
                 'fulfillment' => $order->fulfillment->value,
                 'yard' => $order->location->name,

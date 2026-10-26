@@ -173,7 +173,7 @@ class CounterController extends Controller
                 'number' => $order->number,
                 'invoice_number' => $order->invoice?->number,
                 'created_at' => $order->created_at->toIso8601String(),
-                'who' => $order->organization ? "{$order->organization->name} · {$order->organization->account_number}" : ($order->customer?->full_name ?? 'Walk-in'),
+                'who' => $order->organization ? "{$order->organization->name} · {$order->organization->account_number}" : ($order->customer->full_name ?? 'Walk-in'),
                 'po_number' => $order->po_number,
                 'settlement' => $order->settlement?->value,
                 'yard' => ['name' => $order->location->name, 'address' => trim(implode(', ', array_filter([$order->location->address_line1, $order->location->city])))],

@@ -121,8 +121,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
 
     Route::get('returns', [ReturnController::class, 'index'])->name('returns.index');
-    Route::get('orders/{order}/return', [ReturnController::class, 'create'])->name('orders.returns.create');
-    Route::post('orders/{order}/return', [ReturnController::class, 'store'])->name('orders.returns.store');
+    Route::get('orders/{order}/returns/create', [ReturnController::class, 'create'])->name('orders.returns.create');
+    Route::post('orders/{order}/returns', [ReturnController::class, 'store'])->name('orders.returns.store');
     Route::get('credit-notes/{creditNote}', [ReturnController::class, 'show'])->name('credit-notes.show');
     Route::post('credit-notes/{creditNote}/apply', [ReturnController::class, 'apply'])->name('credit-notes.apply');
     Route::post('credit-notes/{creditNote}/refund', [ReturnController::class, 'refund'])->name('credit-notes.refund');
