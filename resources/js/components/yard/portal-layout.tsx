@@ -39,7 +39,6 @@ export function PortalLayout({
             key: 'rent',
             label: 'Rent equipment',
             href: bookingUrl ?? `/book/${portal.yard.slug}`,
-            external: true,
         },
         {
             key: 'statements',
