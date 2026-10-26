@@ -142,7 +142,7 @@ class DispatchController extends Controller
         $isShipment = $s instanceof Shipment;
         $order = $isShipment ? $s->order : ($s instanceof Order ? $s : null);
         $title = $order !== null
-            ? $order->number.' '.($order->organization->name ?? $order->customer?->full_name ?? 'Walk-in')
+            ? $order->number.' '.($order->organization->name ?? $order->customer->full_name ?? 'Walk-in')
             : ($s instanceof Rental ? "Rental {$s->number} ".($stop->kind === 'rental_pickup' ? 'pickup' : 'drop') : 'Stop');
 
         $status = match ($stop->status) {

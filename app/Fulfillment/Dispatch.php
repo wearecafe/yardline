@@ -5,7 +5,6 @@ namespace App\Fulfillment;
 use App\Enums\ShipmentStatus;
 use App\Enums\StopStatus;
 use App\Models\Order;
-use App\Models\Rental;
 use App\Models\Shipment;
 use App\Models\Stop;
 use App\Models\Truck;
@@ -84,8 +83,7 @@ class Dispatch
             $customer = match (true) {
                 $stop->stoppable instanceof Order => $stop->stoppable->customer,
                 $stop->stoppable instanceof Shipment => $stop->stoppable->order->customer,
-                $stop->stoppable instanceof Rental => $stop->stoppable->customer,
-                default => null,
+                default => $stop->stoppable->customer,
             };
 
             if ($customer === null || blank($customer->phone)) {

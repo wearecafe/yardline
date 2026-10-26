@@ -35,7 +35,7 @@ class DeliveryController extends Controller
                 'delivery' => $shipment->isDelivery(),
                 'order_number' => $order->number,
                 'order_id' => $order->id,
-                'customer' => $order->organization->name ?? $order->customer?->full_name ?? 'Walk-in',
+                'customer' => $order->organization->name ?? $order->customer->full_name ?? 'Walk-in',
                 'contact' => $order->customer ? ['name' => $order->customer->full_name, 'phone' => $order->customer->phone] : null,
                 'address' => $order->delivery_address,
                 'site_notes' => $order->organizationLocation?->delivery_notes,

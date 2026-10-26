@@ -31,7 +31,7 @@ final class FulfillmentPresenter
             'shipment_number' => $shipment?->number,
             'number' => $order->number,
             'source' => $order->source,
-            'time' => ($shipment?->created_at ?? $order->confirmed_at ?? $order->created_at)->toIso8601String(),
+            'time' => ($shipment->created_at ?? $order->confirmed_at ?? $order->created_at)->toIso8601String(),
             'customer' => $order->organization->name ?? ($order->customer ? 'Walk-in · '.$order->customer->full_name : 'Walk-in'),
             'summary' => $lines->map(fn ($pair) => self::qty($pair[1]).' '.self::unit($pair[0]).' '.mb_strtolower($pair[0]->description))->take(3)->implode(', ')
                 .($lines->count() > 3 ? ', …' : ''),
