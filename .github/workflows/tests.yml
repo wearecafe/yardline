@@ -13,6 +13,12 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    # Plain bash (no -e/pipefail): each step captures its own exit code so
+    # it can save the log for the failure report.
+    defaults:
+      run:
+        shell: bash --noprofile --norc {0}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -32,7 +38,39 @@ jobs:
           node-version: '22'
 
       - name: Setup Application
-        run: composer setup
+        id: setup
+        run: composer setup 2>&1 | tee "$RUNNER_TEMP/setup.log"; s=${PIPESTATUS[0]}; [ "$s" -eq 0 ] || touch "$RUNNER_TEMP/setup.failed"; exit $s
 
-      - name: Run CI Checks
-        run: composer ci:check
+      # Each check runs on its own (so one failure doesn't hide the others)
+      # and posts its output as annotations when it fails.
+
+      - name: Lint and format (JS)
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: npm run check 2>&1 | tee "$RUNNER_TEMP/js-lint.log"; s=${PIPESTATUS[0]}; [ "$s" -eq 0 ] || touch "$RUNNER_TEMP/js-lint.failed"; exit $s
+
+      - name: Types (TS)
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: npm run types:check 2>&1 | tee "$RUNNER_TEMP/ts.log"; s=${PIPESTATUS[0]}; [ "$s" -eq 0 ] || touch "$RUNNER_TEMP/ts.failed"; exit $s
+
+      - name: Pint
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: vendor/bin/pint --test 2>&1 | tee "$RUNNER_TEMP/pint.log"; s=${PIPESTATUS[0]}; [ "$s" -eq 0 ] || touch "$RUNNER_TEMP/pint.failed"; exit $s
+
+      - name: PHPStan
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G 2>&1 | tee "$RUNNER_TEMP/phpstan.log"; s=${PIPESTATUS[0]}; [ "$s" -eq 0 ] || touch "$RUNNER_TEMP/phpstan.failed"; exit $s
+
+      - name: PHPUnit
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: |
+          php artisan config:clear --ansi || exit 1
+          php artisan test 2>&1 | tee "$RUNNER_TEMP/phpunit.log"; s=${PIPESTATUS[0]}; [ "$s" -eq 0 ] || touch "$RUNNER_TEMP/phpunit.failed"; exit $s
+
+      - name: Report failures
+        if: ${{ failure() }}
+        run: |
+          for check in setup js-lint ts pint phpstan phpunit; do
+            if [ -f "$RUNNER_TEMP/$check.failed" ]; then
+              .github/scripts/annotate.sh "$check" "$RUNNER_TEMP/$check.log" || true
+            fi
+          done

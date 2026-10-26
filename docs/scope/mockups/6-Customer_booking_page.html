@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Rent equipment online</title>
+<script src="7fa08ec4-c322-4aac-b652-d516a0f03e47"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#C2410C}a:hover{color:#9A3412}
+</style>
+</helmet>
+<div style="min-height: 960px; background: #F5F3EF; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #1C1917; font-size: 15px">
+<header style="background: #FFFFFF; border-bottom: 1px solid #E7E5E4">
+<div style="max-width: 1200px; margin: 0 auto; padding: 14px 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between">
+<div style="font-weight: 700; font-size: 18px">[YARD NAME] <span style="font-weight: 400; color: #57534E">· Equipment rental</span></div>
+<div style="display: flex; gap: 12px; align-items: center"><a href="Portal.dc.html">Contractor sign-in for account rates</a></div>
+</div>
+</header>
+<main style="max-width: 1200px; margin: 0 auto; padding: 28px 24px; display: flex; flex-direction: column; gap: 20px">
+<div>
+<h1 style="margin: 0; font-size: 30px">Rent the tools for the job</h1>
+<p style="margin: 6px 0 0; color: #57534E">Live availability. Pick up at the yard or we'll deliver with your stone.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{cats}}" as="c" hint-placeholder-count="5">
+<sc-if value="{{c.on}}" hint-placeholder-val="{{false}}"><button type="button" aria-pressed="true" style="height: 44px; padding: 0 16px; border-radius: 999px; border: none; background: #1C1917; color: #FAFAF9; font: inherit; font-weight: 600">{{c.name}}</button></sc-if>
+<sc-if value="{{c.off}}" hint-placeholder-val="{{true}}"><button type="button" aria-pressed="false" style="height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #D6D3D1; background: #FFFFFF; font: inherit">{{c.name}}</button></sc-if>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="flex: 999 1 560px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px">
+<sc-for list="{{items}}" as="i" hint-placeholder-count="6">
+<article style="background: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column">
+<div style="aspect-ratio: 4 / 3; background: #E7E5E4; display: flex; align-items: center; justify-content: center; color: #57534E; font-size: 13px">[PHOTO]</div>
+<div style="padding: 14px; display: flex; flex-direction: column; gap: 6px; flex: 1">
+<h2 style="margin: 0; font-size: 16px">{{i.name}}</h2>
+<div style="color: #57534E; font-size: 13px">{{i.use}}</div>
+<div style="display: flex; gap: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 14px"><span>{{i.day}} / day</span><span style="color: #57534E">{{i.week}} / wk</span></div>
+<div style="font-size: 13px; font-weight: 600; color: {{i.availColor}}">{{i.avail}}</div>
+</div>
+</article>
+</sc-for>
+</div>
+<aside style="flex: 1 1 320px; min-width: 0; background: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #9A3412; font-weight: 600">Your booking</div>
+<h2 style="margin: 0; font-size: 20px">Block splitter, hydraulic</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<label style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #57534E">Pick up</span><input type="text" value="Sat Oct 31" style="height: 44px; padding: 0 10px; border: 1px solid #D6D3D1; border-radius: 8px; font: inherit"></label>
+<label style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #57534E">Return</span><input type="text" value="Mon Nov 2" style="height: 44px; padding: 0 10px; border: 1px solid #D6D3D1; border-radius: 8px; font: inherit"></label>
+</div>
+<div style="padding: 10px 12px; border-radius: 8px; background: #F0FDF4; color: #166534; font-size: 14px">Available. Sunday is free when you rent Saturday.</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between"><span>2 billable days × $110</span><span style="font-family: 'IBM Plex Mono', monospace">$220.00</span></div>
+<div style="display: flex; justify-content: space-between"><span>Damage waiver 12%</span><span style="font-family: 'IBM Plex Mono', monospace">$26.40</span></div>
+<div style="display: flex; justify-content: space-between"><span>HST 13%</span><span style="font-family: 'IBM Plex Mono', monospace">$32.03</span></div>
+<div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 18px; border-top: 1px solid #E7E5E4; padding-top: 8px"><span>Total</span><span style="font-family: 'IBM Plex Mono', monospace">$278.43</span></div>
+</div>
+<div style="color: #57534E; font-size: 13px">A $250 refundable hold goes on your card at pickup. You'll sign the agreement online and show your licence at the counter.</div>
+<button type="button" style="height: 52px; border-radius: 10px; border: none; background: #C2410C; color: #FFFFFF; font: inherit; font-size: 16px; font-weight: 700">Book and pay</button>
+<a href="#" style="text-align: center">Add delivery with a material order</a>
+</aside>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:960}}">
+class Component extends DCLogic {
+renderVals() {
+const cats = ['All', 'Compaction', 'Cutting', 'Masonry', 'Earthmoving', 'Landscape'].map((name, i) => ({ name, on: i === 0, off: i !== 0 }));
+const green = '#166534', amber = '#92400E';
+const items = [
+{ name: 'Block splitter, hydraulic', use: 'Splits wall block and stone cleanly', day: '$110', week: '$330', avail: 'Available now', availColor: green },
+{ name: 'Plate compactor, 200 lb', use: 'Patio and walkway bases', day: '$85', week: '$255', avail: 'Available Oct 30', availColor: amber },
+{ name: 'Reversible plate, 1,000 lb', use: 'Deep bases and driveways', day: '$165', week: '$495', avail: 'Available Nov 5', availColor: amber },
+{ name: 'Wet cut-off saw, 14 in', use: 'Paver and block cuts', day: '$75', week: '$225', avail: 'Available Oct 30', availColor: amber },
+{ name: 'Skid steer, 74 hp', use: 'Digging, grading, moving material', day: '$395', week: '$1,185', avail: 'Available Nov 6', availColor: amber },
+{ name: 'Sod cutter, 18 in', use: 'Removing turf before a patio', day: '$120', week: '$360', avail: 'Available now', availColor: green }
+];
+return { cats, items };
+}
+}
+</script>
+
+
+</body></html>

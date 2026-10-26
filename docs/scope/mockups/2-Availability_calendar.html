@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Rental availability calendar</title>
+<script src="6ee9ee2d-e1d4-438e-9c23-2dd9741127d5"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#C2410C}a:hover{color:#9A3412}
+</style>
+</helmet>
+<div style="min-height: 900px; display: flex; flex-wrap: wrap; background: #F5F3EF; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #1C1917; font-size: 14px">
+<nav aria-label="Main" style="flex: 0 1 232px; background: #1C1917; color: #D6D3D1; padding: 20px 14px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 4px 10px 20px">
+<div style="width: 28px; height: 28px; border-radius: 6px; background: #C2410C"></div>
+<div style="font-weight: 700; font-size: 17px; color: #FAFAF9">Yardline</div>
+</div>
+<div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #A8A29E; padding: 8px 10px 4px">Supply yard</div>
+<a href="Main.dc.html" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Products</a>
+<a href="Orders.dc.html" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Orders and picking</a>
+<a href="Dispatch.dc.html" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Dispatch</a>
+<div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #A8A29E; padding: 16px 10px 4px">Rental</div>
+<a href="Fleet.dc.html" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Fleet</a>
+<a href="Calendar.dc.html" style="display: block; padding: 10px; border-radius: 6px; background: #292524; color: #FAFAF9; text-decoration: none; font-weight: 600">Calendar</a>
+<a href="NewRental.dc.html" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Rentals and contracts</a>
+<a href="#" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Maintenance</a>
+<a href="#" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Rental payments</a>
+</nav>
+<main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div>
+<h1 style="margin: 0; font-size: 28px; font-weight: 700">Availability</h1>
+<p style="margin: 4px 0 0; color: #57534E">Oct 26 – Nov 8 · drag a booking to move it, drag an empty row to book</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 13px">
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #1D4ED8"></span>On rent</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #93C5FD"></span>Reserved</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #B91C1C"></span>Overdue</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #D97706"></span>Service</span>
+</div>
+</div>
+<div style="padding: 12px 14px; border-radius: 8px; background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA">Conflict: Mini excavator MX-01 is overdue and reserved for Lakeview Homes on Oct 28. <a href="#" style="color: #991B1B; font-weight: 600">Swap to another unit</a></div>
+<section style="background: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 10px; overflow-x: auto">
+<div style="min-width: 1000px">
+<div style="display: grid; grid-template-columns: 200px repeat(14, minmax(0, 1fr)); border-bottom: 1px solid #E7E5E4; font-size: 12px; color: #57534E">
+<div style="padding: 10px 14px">Unit</div>
+<sc-for list="{{days}}" as="d" hint-placeholder-count="14"><div style="padding: 8px 4px; text-align: center; border-left: 1px solid #F5F5F4"><div>{{d.dow}}</div><div style="font-family: 'IBM Plex Mono', monospace; color: #1C1917">{{d.n}}</div></div></sc-for>
+</div>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<div style="display: grid; grid-template-columns: 200px repeat(14, minmax(0, 1fr)); border-bottom: 1px solid #F5F5F4; min-height: 52px; align-items: center">
+<div style="grid-row: 1; grid-column: 1; padding: 8px 14px"><div style="font-weight: 600; font-size: 13px">{{r.name}}</div><div style="font-size: 12px; color: #57534E; font-family: 'IBM Plex Mono', monospace">{{r.serial}}</div></div>
+<sc-for list="{{r.bars}}" as="b" hint-placeholder-count="1">
+<div style="grid-row: 1; grid-column: {{b.col}}; margin: 0 2px; height: 32px; border-radius: 6px; background: {{b.bg}}; color: {{b.fg}}; font-size: 12px; font-weight: 600; padding: 0 8px; display: flex; align-items: center; overflow: hidden; white-space: nowrap">{{b.label}}</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+renderVals() {
+const dows = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const nums = ['26','27','28','29','30','31','1','2','3','4','5','6','7','8'];
+const days = nums.map((n, i) => ({ n, dow: dows[i % 7] }));
+const t = {
+rent: ['#1D4ED8', '#FFFFFF'], res: ['#93C5FD', '#1E3A8A'], late: ['#B91C1C', '#FFFFFF'], svc: ['#D97706', '#1C1917']
+};
+const bar = (col, kind, label) => ({ col, label, bg: t[kind][0], fg: t[kind][1] });
+const rows = [
+{ name: 'Skid steer, 74 hp', serial: 'SS-02', bars: [bar('2 / span 5', 'rent', 'Brick & Stone'), bar('8 / span 2', 'svc', '250-hr service'), bar('10 / span 4', 'res', 'Greenway')] },
+{ name: 'Mini excavator, 3.5 t', serial: 'MX-01', bars: [bar('2 / span 2', 'late', 'R. Singh · overdue'), bar('4 / span 3', 'res', 'Lakeview Homes')] },
+{ name: 'Plate compactor, 200 lb', serial: 'PC-04', bars: [bar('2 / span 1', 'rent', 'Greenway'), bar('4 / span 2', 'res', 'Walk-in')] },
+{ name: 'Reversible plate, 1,000 lb', serial: 'RP-01', bars: [bar('5 / span 7', 'res', 'Hamilton Hardscape · weekly')] },
+{ name: 'Wet cut-off saw, 14 in', serial: 'CS-03', bars: [bar('3 / span 3', 'res', 'Northshore')] },
+{ name: 'Block splitter', serial: 'BS-01', bars: [bar('9 / span 2', 'res', 'Brick & Stone')] },
+{ name: 'Mortar mixer, 9 cu ft', serial: 'MM-02', bars: [bar('2 / span 3', 'svc', 'Belt replacement')] },
+{ name: 'Sod cutter, 18 in', serial: 'SC-01', bars: [bar('7 / span 1', 'res', 'Walk-in')] }
+];
+return { days, rows };
+}
+}
+</script>
+
+
+</body></html>
