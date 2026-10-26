@@ -114,7 +114,7 @@ class PortalAndAuditTest extends TestCase
         $this->get(route('portal.statement'))->assertOk();
         $this->get(route('portal.statement.pdf'))->assertOk();
 
-        $this->post(route('portal.pallet-pickup'), ['count' => 8])->assertSessionHasNoErrors();
+        $this->post(route('portal.pallet-pickup'), ['count' => 8])->assertSessionHasNoErrors()->assertRedirect();
         $this->assertSame('pallet_pickup', Stop::query()->latest('id')->value('kind'));
 
         // What a contractor does is theirs in the audit log.
@@ -148,7 +148,8 @@ class PortalAndAuditTest extends TestCase
     private function product(): void
     {
         $this->put(route('products.update', $this->mortar), [
-            ...$this->mortar->only('sku', 'name', 'kind', 'track_inventory', 'is_active'),
+            ...$this->mortar->only('sku', 'name', 'track_inventory', 'is_active'),
+            'kind' => 'sale',
             'unit' => 'bag',
             'price' => '11.50',
         ])->assertSessionHasNoErrors()->assertRedirect();

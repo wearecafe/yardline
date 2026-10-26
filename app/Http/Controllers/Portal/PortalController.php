@@ -220,7 +220,7 @@ class PortalController extends Controller
             'status' => StopStatus::Unscheduled,
             'date' => now()->addDay()->toDateString(),
             'address' => $site?->address() ?? ['line1' => $org->address_line1, 'city' => $org->city, 'postal_code' => $org->postal_code],
-            'needs' => "Pick up {$data['count']} pallets".($data['notes'] ? " · {$data['notes']}" : '')." · asked by {$customer->full_name}",
+            'needs' => "Pick up {$data['count']} pallets".(filled($data['notes'] ?? null) ? " · {$data['notes']}" : '')." · asked by {$customer->full_name}",
             'duration_minutes' => 30,
         ]);
 
