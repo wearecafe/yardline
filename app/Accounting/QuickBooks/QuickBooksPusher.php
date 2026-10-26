@@ -118,7 +118,8 @@ class QuickBooksPusher
         $lineTax = 0;
 
         foreach ($order->lines->sortBy('position') as $line) {
-            $code = $line->tax_cents > 0 || ($line->product?->taxable ?? true) && ! $exempt ? $taxCode : $exemptCode;
+            $taxable = $line->product === null || $line->product->taxable;
+            $code = $line->tax_cents > 0 || ($taxable && ! $exempt) ? $taxCode : $exemptCode;
             $lines[] = $this->line($this->productItem($line->product, $line->description), $this->describe($line), $line->line_total_cents, (float) $line->quantity, $code);
             $this->addTax($groups, $code, $line->line_total_cents, $line->tax_cents);
             $lineTax += $line->tax_cents;
@@ -280,7 +281,7 @@ class QuickBooksPusher
 
         $credit->loadMissing(['lines.product', 'order', 'organization', 'customer', 'location']);
         $order = $credit->order;
-        $location = $credit->location ?? $order?->location ?? Location::query()->orderByDesc('is_default')->firstOrFail();
+        $location = $credit->location ?? ($order !== null ? $order->location : null) ?? Location::query()->orderByDesc('is_default')->firstOrFail();
         $region = $this->region($order !== null && $order->fulfillment === FulfillmentMethod::Delivery ? $order->delivery_address : null, $location);
         $exempt = (bool) $credit->organization?->tax_exempt;
         $code = $this->taxCode($region, $exempt || $credit->tax_cents === 0);
@@ -372,7 +373,7 @@ class QuickBooksPusher
 
         foreach ($rental->charges as $charge) {
             if ($charge->billableCents() > 0) {
-                $kind = $charge->kind instanceof \BackedEnum ? (string) $charge->kind->value : (string) $charge->kind;
+                $kind = (string) $charge->kind->value;
                 $key = array_key_exists($kind, self::SERVICE_ITEMS) ? $kind : 'other';
                 $lines[] = $this->line($this->serviceItem($key), $charge->description, $charge->billableCents(), 1, $code);
             }
@@ -585,7 +586,7 @@ class QuickBooksPusher
             return $this->upsertNamed($model, $entity, [...$payload, $nameField => $fallbackName], $fallbackName);
         }
 
-        return (string) $this->remember($model, $entity, $created, null, ['hash' => $hash]);
+        return $this->remember($model, $entity, $created, null, ['hash' => $hash]);
     }
 
     /**
@@ -884,7 +885,7 @@ class QuickBooksPusher
      * @param  array<string, mixed>  $record  what QuickBooks returned
      * @param  array<string, mixed>  $meta
      */
-    private function remember(Model $model, string $type, array $record, ?int $expectedCents = null, array $meta = []): ?string
+    private function remember(Model $model, string $type, array $record, ?int $expectedCents = null, array $meta = []): string
     {
         $id = isset($record['Id']) ? (string) $record['Id'] : null;
 

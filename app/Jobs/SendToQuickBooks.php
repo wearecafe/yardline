@@ -74,6 +74,14 @@ class SendToQuickBooks implements ShouldBeUniqueUntilProcessing, ShouldQueue
             );
             QuickBooksSync::query()->where('syncable_type', $this->syncableType)->where('syncable_id', $this->syncableId)->increment('attempts');
 
+            // On the sync queue this would fail the person's own request;
+            // the nightly check sends it again instead.
+            if ($this->job === null || $this->job->getConnectionName() === 'sync') {
+                report($e);
+
+                return;
+            }
+
             throw $e;
         }
     }

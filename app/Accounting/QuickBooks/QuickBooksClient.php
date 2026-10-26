@@ -65,9 +65,10 @@ class QuickBooksClient
      */
     public function post(string $entity, array $payload, ?string $operation = null): array
     {
-        $path = strtolower($entity).($operation ? "?operation={$operation}" : '');
-
-        return $this->send(fn (PendingRequest $http) => $http->post($this->url($path), $payload));
+        // Query string goes through the client: a "?" in the URL would be
+        // replaced by the minorversion parameter.
+        return $this->send(fn (PendingRequest $http) => ($operation ? $http->withQueryParameters(['operation' => $operation]) : $http)
+            ->post($this->url(strtolower($entity)), $payload));
     }
 
     /**

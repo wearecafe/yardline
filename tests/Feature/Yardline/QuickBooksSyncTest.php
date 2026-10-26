@@ -123,7 +123,7 @@ class QuickBooksSyncTest extends TestCase
         $lines = collect($invoice['Line']);
         $this->assertSame([1150.0, 100.0], $lines->take(2)->pluck('Amount')->all());
         $this->assertSame('20', $lines[0]['SalesItemLineDetail']['TaxCodeRef']['value']);
-        $deposit = $lines->firstWhere('Description', fn ($d) => str_contains((string) $d, 'pallets'));
+        $deposit = $lines->first(fn ($l) => str_contains((string) $l['Description'], 'pallets'));
         $this->assertNotNull($deposit);
         $this->assertSame('23', $deposit['SalesItemLineDetail']['TaxCodeRef']['value']);
         $this->assertSame('7', $this->qbo->records['Item'][$deposit['SalesItemLineDetail']['ItemRef']['value']]['IncomeAccountRef']['value']);
@@ -173,6 +173,7 @@ class QuickBooksSyncTest extends TestCase
         $order = $this->order(['mortar' => 1]);
         $this->post(route('orders.cancel', $order))->assertSessionHasNoErrors();
 
+        $this->assertNull(QuickBooksSync::for($order)?->message);
         $this->assertTrue($this->qbo->last('Invoice')['voided'] ?? false);
         $this->assertTrue(QuickBooksSync::for($order->invoice)?->meta['voided'] ?? false);
     }
