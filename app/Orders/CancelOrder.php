@@ -2,6 +2,7 @@
 
 namespace App\Orders;
 
+use App\Accounting\QuickBooks\QuickBooks;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 
@@ -24,6 +25,7 @@ class CancelOrder
 
         $order->stops()->whereNotIn('status', ['done', 'cancelled'])->update(['status' => 'cancelled']);
         $order->invoice()->update(['status' => 'void']);
+        QuickBooks::queue($order);
 
         return $order;
     }

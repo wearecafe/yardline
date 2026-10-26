@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Accounting\QuickBooks\SendsToQuickBooks;
 use App\Enums\PaymentState;
 use App\Enums\PaymentTender;
 use App\Tenancy\BelongsToTenant;
@@ -32,7 +33,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class Payment extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTenant, SendsToQuickBooks;
 
     protected function casts(): array
     {

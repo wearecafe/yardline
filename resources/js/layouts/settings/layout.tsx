@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import BusinessController from '@/actions/App/Http/Controllers/Settings/BusinessController';
 import AuditController from '@/actions/App/Http/Controllers/Settings/AuditController';
 import DeliverySettingsController from '@/actions/App/Http/Controllers/Settings/DeliverySettingsController';
+import QuickBooksController from '@/actions/App/Http/Controllers/Settings/QuickBooksController';
 import RentalSettingsController from '@/actions/App/Http/Controllers/Settings/RentalSettingsController';
 import ShopifyController from '@/actions/App/Http/Controllers/Settings/ShopifyController';
 import type { PropsWithChildren } from 'react';
@@ -57,6 +58,11 @@ const businessNavItems: NavItem[] = [
     {
         title: 'Shopify',
         href: ShopifyController.edit(),
+        icon: null,
+    },
+    {
+        title: 'QuickBooks',
+        href: QuickBooksController.edit(),
         icon: null,
     },
 ];

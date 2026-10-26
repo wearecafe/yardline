@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Tenancy\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property int $id
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $line_total_cents
  * @property int $tax_cents
  * @property bool $restock
+ * @property-read Product|null $product
  */
 #[Fillable(['credit_note_id', 'order_line_id', 'product_id', 'description', 'quantity', 'unit', 'base_quantity', 'unit_price_cents', 'line_total_cents', 'tax_cents', 'restock'])]
 class CreditNoteLine extends Model
@@ -35,5 +37,13 @@ class CreditNoteLine extends Model
             'tax_cents' => 'integer',
             'restock' => 'boolean',
         ];
+    }
+
+    /**
+     * @return BelongsTo<Product, $this>
+     */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Accounting\QuickBooks\SendsToQuickBooks;
 use App\Enums\DepositStatus;
 use App\Enums\FulfillmentMethod;
 use App\Enums\RentalPaymentMethod;
@@ -78,7 +79,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Rental extends Model
 {
     /** @use HasFactory<RentalFactory> */
-    use BelongsToTenant, HasFactory;
+    use BelongsToTenant, HasFactory, SendsToQuickBooks;
 
     /**
      * @var array<string, mixed>

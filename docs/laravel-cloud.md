@@ -90,6 +90,12 @@ environment can use Stripe test keys with the same drivers.
   webhook with the same events, and set each business's `acct_...` ID in
   Settings, Business.
 
+## QuickBooks Online
+
+See [quickbooks.md](quickbooks.md). Add `QUICKBOOKS_CLIENT_ID`,
+`QUICKBOOKS_CLIENT_SECRET` and `QUICKBOOKS_ENVIRONMENT=production`, and
+register `https://<your-domain>/settings/quickbooks/callback` with Intuit.
+
 ## Shopify
 
 See [shopify.md](shopify.md).

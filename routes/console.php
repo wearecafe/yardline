@@ -13,3 +13,7 @@ Schedule::command('yardline:demo:reset --force')
 
 // Rental pickup, return and overdue reminders, by email and text.
 Schedule::command('yardline:rentals:remind')->everyFifteenMinutes()->withoutOverlapping();
+
+// QuickBooks: bring in payments entered there, and a nightly re-send and check.
+Schedule::command('yardline:quickbooks:pull')->everyFifteenMinutes()->withoutOverlapping();
+Schedule::command('yardline:quickbooks:check')->dailyAt('02:30')->timezone('America/Toronto')->withoutOverlapping();

@@ -89,7 +89,9 @@ order and organization pages show their own history.
   Order import is not built yet. See [shopify.md](shopify.md).
 - **Stripe** for payments and **Stripe Tax** for tax. See
   [laravel-cloud.md](laravel-cloud.md).
-- **QuickBooks Online** is not built yet.
+- **QuickBooks Online** receives invoices, payments, credit memos, refunds
+  and rental invoices, and sends back payments entered there. See
+  [quickbooks.md](quickbooks.md).
 
 ## Demo yard
 

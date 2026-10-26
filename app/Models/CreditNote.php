@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Accounting\QuickBooks\SendsToQuickBooks;
 use App\Audit\Audited;
 use App\Tenancy\BelongsToTenant;
 use Carbon\CarbonImmutable;
@@ -24,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $customer_id
  * @property int|null $order_id
  * @property int|null $location_id
+ * @property-read Location|null $location
  * @property string|null $reason
  * @property int $subtotal_cents
  * @property int $restocking_fee_cents
@@ -50,7 +52,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class CreditNote extends Model
 {
-    use Audited, BelongsToTenant;
+    use Audited, BelongsToTenant, SendsToQuickBooks;
 
     /** Changes to these are written to the audit log. */
     public const AUDITED = ['applied_cents', 'refunded_cents'];
@@ -113,6 +115,14 @@ class CreditNote extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * @return BelongsTo<Location, $this>
+     */
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     /**
