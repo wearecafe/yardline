@@ -36,6 +36,6 @@ jobs:
           if ! git diff --quiet composer.lock; then
             git config user.name "github-actions[bot]"
             git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-            git commit -m "Update composer.lock" composer.lock || { echo "::error::commit failed"; exit 1; }
+            out=$(git commit -m "Update composer.lock" composer.lock 2>&1) || { echo "::error::commit failed: ${out//$'\n'/ | }"; exit 1; }
             out=$(git push 2>&1) || { echo "::error::push failed: ${out//$'\n'/ | }"; exit 1; }
           fi
