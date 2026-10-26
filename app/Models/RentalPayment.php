@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Accounting\QuickBooks\SendsToQuickBooks;
 use App\Enums\PaymentState;
 use App\Enums\RentalPaymentKind;
 use App\Enums\RentalTender;
@@ -38,7 +39,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class RentalPayment extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTenant, SendsToQuickBooks;
 
     protected function casts(): array
     {

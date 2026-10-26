@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Accounting\QuickBooks\QuickBooks;
 use App\Enums\IntegrationProvider;
 use App\Enums\IntegrationStatus;
 use App\Tenancy\BelongsToTenant;
@@ -38,6 +39,12 @@ class Integration extends Model
             'settings' => 'array',
             'last_synced_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(fn () => QuickBooks::forget());
+        static::deleted(fn () => QuickBooks::forget());
     }
 
     public function isActive(): bool

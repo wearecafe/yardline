@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Settings;
 use App\Accounting\QuickBooks\AccountMapping;
 use App\Accounting\QuickBooks\QuickBooksClient;
 use App\Accounting\QuickBooks\QuickBooksOAuth;
+use App\Accounting\QuickBooks\TaxCodes;
 use App\Enums\IntegrationProvider;
 use App\Enums\IntegrationStatus;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendToQuickBooks;
 use App\Models\Integration;
+use App\Models\QuickBooksSync;
 use App\Support\Demo;
 use App\Tenancy\CurrentTenant;
 use Carbon\CarbonImmutable;
@@ -31,11 +34,14 @@ class QuickBooksController extends Controller
     {
         $integration = $this->integration();
         $accounts = [];
+        $taxCodes = [];
         $accountsError = null;
 
         if ($integration !== null) {
             try {
-                $accounts = QuickBooksClient::for($integration)->query('select Id, Name, AccountType, FullyQualifiedName from Account where Active = true maxresults 1000');
+                $client = QuickBooksClient::for($integration);
+                $accounts = $client->query('select Id, Name, AccountType, FullyQualifiedName from Account where Active = true maxresults 1000');
+                $taxCodes = $client->query('select Id, Name from TaxCode where Active = true maxresults 200');
             } catch (Throwable $e) {
                 report($e);
                 $accountsError = 'Couldn’t load your QuickBooks accounts: '.$e->getMessage();
@@ -43,6 +49,8 @@ class QuickBooksController extends Controller
         }
 
         $mapping = $integration !== null ? AccountMapping::guess($accounts, AccountMapping::for($integration)) : [];
+        $taxMapping = $integration !== null ? TaxCodes::guess($taxCodes, TaxCodes::for($integration)) : [];
+        $tz = CurrentTenant::get()->timezone ?? 'America/Toronto';
 
         return Inertia::render('settings/quickbooks', [
             'configured' => QuickBooksOAuth::configured(),
@@ -69,6 +77,30 @@ class QuickBooksController extends Controller
                 'type' => (string) ($a['AccountType'] ?? ''),
             ])->sortBy('name')->values(),
             'accountsError' => $accountsError,
+            'taxMapping' => $taxMapping,
+            'taxSlots' => collect(TaxCodes::KEYS)->map(fn ($def, $key) => ['key' => $key, 'label' => $def[0]])->values(),
+            'taxCodes' => collect($taxCodes)->map(fn (array $c) => ['id' => (string) $c['Id'], 'name' => (string) $c['Name']])->sortBy('name')->values(),
+            'log' => $integration === null ? [] : QuickBooksSync::query()
+                ->when(request('show') === 'problems', fn ($q) => $q->whereIn('status', ['failed', 'waiting']))
+                ->latest('updated_at')
+                ->limit(50)
+                ->get()
+                ->map(fn (QuickBooksSync $s) => [
+                    'id' => $s->id,
+                    'label' => $s->label,
+                    'status' => $s->status,
+                    'qbo_type' => $s->qbo_type,
+                    'qbo_id' => $s->qbo_id,
+                    'message' => $s->message,
+                    'attempts' => $s->attempts,
+                    'at' => $s->updated_at->setTimezone($tz)->format('M j, g:i a'),
+                ]),
+            'counts' => $integration === null ? null : [
+                'synced' => QuickBooksSync::query()->where('status', 'synced')->count(),
+                'waiting' => QuickBooksSync::query()->where('status', 'waiting')->count(),
+                'failed' => QuickBooksSync::query()->where('status', 'failed')->count(),
+            ],
+            'show' => request('show') === 'problems' ? 'problems' : 'all',
         ]);
     }
 
@@ -139,18 +171,35 @@ class QuickBooksController extends Controller
             'start_date' => ['required', 'date'],
             'accounts' => ['array'],
             'accounts.*' => ['nullable', 'string', 'max:40'],
+            'tax_codes' => ['array'],
+            'tax_codes.*' => ['nullable', 'string', 'max:40'],
         ]);
 
         $given = is_array($data['accounts'] ?? null) ? $data['accounts'] : [];
         $accounts = array_filter(Arr::only($given, array_keys(AccountMapping::KEYS)));
+        $givenCodes = is_array($data['tax_codes'] ?? null) ? $data['tax_codes'] : [];
+        $codes = array_filter(Arr::only($givenCodes, array_keys(TaxCodes::KEYS)));
 
         $integration->forceFill(['settings' => [
             ...($integration->settings ?? []),
             'start_date' => CarbonImmutable::parse($data['start_date'])->toDateString(),
             'accounts' => $accounts,
+            'tax_codes' => $codes,
         ]])->save();
 
+        // Anything held for the mapping can go now.
+        QuickBooksSync::query()->where('status', 'waiting')->get()
+            ->each(fn (QuickBooksSync $s) => SendToQuickBooks::dispatch($s->syncable_type, $s->syncable_id));
+
         Inertia::flash('toast', ['type' => 'success', 'message' => 'QuickBooks settings saved.']);
+
+        return back();
+    }
+
+    public function resend(QuickBooksSync $sync): RedirectResponse
+    {
+        $sync->forceFill(['status' => 'waiting', 'message' => 'Queued to send again.'])->save();
+        SendToQuickBooks::dispatch($sync->syncable_type, $sync->syncable_id);
 
         return back();
     }

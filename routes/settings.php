@@ -42,6 +42,7 @@ Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function (
     Route::get('settings/quickbooks/callback', [QuickBooksController::class, 'callback'])->name('quickbooks.callback');
     Route::put('settings/quickbooks', [QuickBooksController::class, 'update'])->name('quickbooks.update');
     Route::delete('settings/quickbooks', [QuickBooksController::class, 'destroy'])->name('quickbooks.destroy');
+    Route::post('settings/quickbooks/log/{sync}/resend', [QuickBooksController::class, 'resend'])->name('quickbooks.resend');
 });
 
 Route::get('.well-known/passkey-endpoints', function () {

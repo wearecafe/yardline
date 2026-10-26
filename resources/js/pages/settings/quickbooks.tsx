@@ -1,10 +1,11 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import QuickBooksController from '@/actions/App/Http/Controllers/Settings/QuickBooksController';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Chip } from '@/components/yard/chip';
+import type { ChipTone } from '@/components/yard/chip';
 import { Field, NativeSelect } from '@/components/yard/field';
 import { formatDate } from '@/lib/format';
 
@@ -27,6 +28,30 @@ type Props = {
     slots: Slot[];
     accounts: Account[];
     accountsError: string | null;
+    taxMapping: Record<string, string | null>;
+    taxSlots: { key: string; label: string }[];
+    taxCodes: { id: string; name: string }[];
+    log: LogRow[];
+    counts: { synced: number; waiting: number; failed: number } | null;
+    show: 'all' | 'problems';
+};
+
+type LogRow = {
+    id: number;
+    label: string | null;
+    status: 'synced' | 'waiting' | 'skipped' | 'failed';
+    qbo_type: string | null;
+    qbo_id: string | null;
+    message: string | null;
+    attempts: number;
+    at: string;
+};
+
+const statusTone: Record<LogRow['status'], ChipTone> = {
+    synced: 'success',
+    waiting: 'warning',
+    skipped: 'neutral',
+    failed: 'danger',
 };
 
 export default function QuickBooks({
@@ -37,10 +62,17 @@ export default function QuickBooks({
     slots,
     accounts,
     accountsError,
+    taxMapping,
+    taxSlots,
+    taxCodes,
+    log,
+    counts,
+    show,
 }: Props) {
     const form = useForm({
         start_date: integration?.start_date ?? '',
         accounts: mapping as Record<string, string | null>,
+        tax_codes: taxMapping as Record<string, string | null>,
     });
 
     function submit(event: FormEvent) {
@@ -232,6 +264,52 @@ export default function QuickBooks({
                                 })}
                             </div>
 
+                            <div className="grid gap-4">
+                                <div>
+                                    <div className="font-medium">Tax codes</div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Yardline sends the tax Stripe Tax
+                                        charged; the code decides where it lands
+                                        on your HST and QST returns.
+                                    </p>
+                                </div>
+                                {taxSlots.map((slot) => (
+                                    <Field
+                                        key={slot.key}
+                                        label={slot.label}
+                                        htmlFor={`tax-${slot.key}`}
+                                    >
+                                        <NativeSelect
+                                            id={`tax-${slot.key}`}
+                                            value={
+                                                form.data.tax_codes[slot.key] ??
+                                                ''
+                                            }
+                                            onChange={(e) =>
+                                                form.setData('tax_codes', {
+                                                    ...form.data.tax_codes,
+                                                    [slot.key]:
+                                                        e.target.value || null,
+                                                })
+                                            }
+                                            className="h-11"
+                                        >
+                                            <option value="">
+                                                Choose a tax code
+                                            </option>
+                                            {taxCodes.map((code) => (
+                                                <option
+                                                    key={code.id}
+                                                    value={code.id}
+                                                >
+                                                    {code.name}
+                                                </option>
+                                            ))}
+                                        </NativeSelect>
+                                    </Field>
+                                ))}
+                            </div>
+
                             <div>
                                 <Button
                                     type="submit"
@@ -241,6 +319,112 @@ export default function QuickBooks({
                                 </Button>
                             </div>
                         </form>
+
+                        <section className="grid gap-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <div className="font-medium">Sync log</div>
+                                    {counts && (
+                                        <p className="text-sm text-muted-foreground">
+                                            {counts.synced} sent ·{' '}
+                                            {counts.waiting} waiting ·{' '}
+                                            {counts.failed} need attention
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex gap-1 text-sm">
+                                    <Link
+                                        href={QuickBooksController.edit.url()}
+                                        className={`rounded-md px-3 py-2 ${show === 'all' ? 'bg-secondary font-medium' : ''}`}
+                                        preserveScroll
+                                    >
+                                        Latest
+                                    </Link>
+                                    <Link
+                                        href={QuickBooksController.edit.url({
+                                            query: { show: 'problems' },
+                                        })}
+                                        className={`rounded-md px-3 py-2 ${show === 'problems' ? 'bg-secondary font-medium' : ''}`}
+                                        preserveScroll
+                                    >
+                                        Needs attention
+                                    </Link>
+                                </div>
+                            </div>
+                            {log.length === 0 ? (
+                                <p className="rounded-md border border-border bg-card p-4 text-sm text-muted-foreground">
+                                    Nothing here yet. Invoices go across when
+                                    orders are confirmed.
+                                </p>
+                            ) : (
+                                <ul className="divide-y divide-border rounded-md border border-border bg-card">
+                                    {log.map((row) => (
+                                        <li
+                                            key={row.id}
+                                            className="grid gap-1 px-4 py-3 text-sm"
+                                        >
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <span className="font-medium">
+                                                    {row.label}
+                                                </span>
+                                                <span className="flex items-center gap-2">
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {row.at}
+                                                    </span>
+                                                    <Chip
+                                                        tone={
+                                                            statusTone[
+                                                                row.status
+                                                            ]
+                                                        }
+                                                    >
+                                                        {row.status}
+                                                    </Chip>
+                                                </span>
+                                            </div>
+                                            {row.qbo_id && (
+                                                <span className="font-mono text-xs text-muted-foreground">
+                                                    {row.qbo_type} {row.qbo_id}
+                                                </span>
+                                            )}
+                                            {row.message && (
+                                                <span
+                                                    className={
+                                                        row.status === 'failed'
+                                                            ? 'text-danger'
+                                                            : 'text-muted-foreground'
+                                                    }
+                                                >
+                                                    {row.message}
+                                                </span>
+                                            )}
+                                            {(row.status === 'failed' ||
+                                                row.status === 'waiting') && (
+                                                <div>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            router.post(
+                                                                QuickBooksController.resend.url(
+                                                                    row.id,
+                                                                ),
+                                                                {},
+                                                                {
+                                                                    preserveScroll: true,
+                                                                },
+                                                            )
+                                                        }
+                                                    >
+                                                        Send again
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </section>
                     </>
                 )}
             </div>

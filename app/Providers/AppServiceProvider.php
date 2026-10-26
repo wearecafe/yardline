@@ -14,6 +14,7 @@ use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Rental;
+use App\Models\RentalPayment;
 use App\Models\RentalUnit;
 use App\Models\Shipment;
 use App\Models\StockTransfer;
@@ -142,6 +143,7 @@ class AppServiceProvider extends ServiceProvider
             'stock_transfer' => StockTransfer::class,
             'cycle_count' => CycleCount::class,
             'rental' => Rental::class,
+            'rental_payment' => RentalPayment::class,
             'rental_unit' => RentalUnit::class,
             'shipment' => Shipment::class,
             'user' => User::class,

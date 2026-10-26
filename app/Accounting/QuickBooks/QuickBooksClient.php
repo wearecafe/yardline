@@ -29,11 +29,12 @@ class QuickBooksClient
     }
 
     /**
+     * @param  array<string, string>  $query
      * @return array<string, mixed>
      */
-    public function get(string $path): array
+    public function get(string $path, array $query = []): array
     {
-        return $this->send(fn (PendingRequest $http) => $http->get($this->url($path)));
+        return $this->send(fn (PendingRequest $http) => $http->get($this->url($path), $query));
     }
 
     /**

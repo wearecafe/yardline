@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Accounting\QuickBooks\SendsToQuickBooks;
 use App\Enums\PaymentTerms;
 use App\Tenancy\BelongsToTenant;
 use Carbon\CarbonImmutable;
@@ -31,7 +32,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['number', 'order_id', 'organization_id', 'customer_id', 'terms', 'issued_on', 'due_on', 'status'])]
 class Invoice extends Model
 {
-    use BelongsToTenant;
+    use BelongsToTenant, SendsToQuickBooks;
 
     protected function casts(): array
     {
