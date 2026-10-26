@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import PortalController from '@/actions/App/Http/Controllers/Portal/PortalController';
+import { OrderLineList } from '@/components/yard/order-line-list';
 import { PortalLayout } from '@/components/yard/portal-layout';
 import { formatDate, formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -43,7 +44,7 @@ export default function PortalOrders({ orders }: { orders: PortalOrder[] }) {
                         {orders.map((o) => (
                             <tr
                                 key={o.id}
-                                className="border-b border-secondary last:border-0"
+                                className="border-b border-secondary align-top last:border-0"
                             >
                                 <td className="px-5 py-3">
                                     <Link
@@ -57,8 +58,11 @@ export default function PortalOrders({ orders }: { orders: PortalOrder[] }) {
                                     </div>
                                 </td>
                                 <td className="px-3 py-3">{o.site}</td>
-                                <td className="px-3 py-3 text-subtle">
-                                    {o.items}
+                                <td className="px-3 py-3">
+                                    <OrderLineList
+                                        lines={o.lines}
+                                        more={o.more_lines}
+                                    />
                                 </td>
                                 <td className="px-3 py-3">
                                     <span
