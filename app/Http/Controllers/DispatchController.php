@@ -6,6 +6,7 @@ use App\Enums\StopStatus;
 use App\Fulfillment\DeliverySettings;
 use App\Fulfillment\Dispatch;
 use App\Models\Order;
+use App\Models\Organization;
 use App\Models\Rental;
 use App\Models\Shipment;
 use App\Models\Stop;
@@ -47,6 +48,7 @@ class DispatchController extends Controller
 
         $stops->loadMorph('stoppable', [
             Order::class => ['organization:id,name', 'customer:id,first_name,last_name,phone'],
+            Organization::class => [],
             Shipment::class => ['order.organization:id,name', 'order.customer:id,first_name,last_name,phone'],
             Rental::class => ['organization:id,name', 'customer:id,first_name,last_name,phone', 'items'],
         ]);
@@ -112,7 +114,7 @@ class DispatchController extends Controller
      */
     public function done(Stop $stop): RedirectResponse
     {
-        if (! $stop->isRental()) {
+        if ($stop->kind === 'delivery') {
             OrderRules::fail('Material deliveries finish with proof of delivery.');
         }
 
@@ -141,9 +143,9 @@ class DispatchController extends Controller
         $s = $stop->stoppable;
         $isShipment = $s instanceof Shipment;
         $order = $isShipment ? $s->order : ($s instanceof Order ? $s : null);
-        $title = $order !== null
+        $title = $s instanceof Organization ? "Pallet pickup · {$s->name}" : ($order !== null
             ? $order->number.' '.($order->organization->name ?? $order->customer->full_name ?? 'Walk-in')
-            : ($s instanceof Rental ? "Rental {$s->number} ".($stop->kind === 'rental_pickup' ? 'pickup' : 'drop') : 'Stop');
+            : ($s instanceof Rental ? "Rental {$s->number} ".($stop->kind === 'rental_pickup' ? 'pickup' : 'drop') : 'Stop'));
 
         $status = match ($stop->status) {
             StopStatus::Done => ($isShipment ? 'Delivered ' : 'Done ').($stop->completed_at?->setTimezone($tz)->format('g:i') ?? ''),

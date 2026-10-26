@@ -12,6 +12,7 @@ use App\Http\Controllers\Rentals\MaintenanceController;
 use App\Http\Controllers\Rentals\RentalController;
 use App\Http\Controllers\Rentals\RentalPaymentController;
 use App\Http\Controllers\ReturnController;
+use App\Http\Controllers\Settings\AuditController;
 use App\Http\Controllers\Settings\DeliverySettingsController;
 use App\Http\Controllers\Settings\RentalSettingsController;
 use Illuminate\Support\Facades\Route;
@@ -69,6 +70,7 @@ Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function (
     Route::delete('settings/delivery-zones/{zone}', [RentalSettingsController::class, 'destroyZone'])->name('delivery-zones.destroy');
 
     Route::get('settings/delivery', [DeliverySettingsController::class, 'edit'])->name('delivery-settings.edit');
+    Route::get('settings/audit', [AuditController::class, 'index'])->name('audit.index');
     Route::put('settings/returns', [ReturnController::class, 'settings'])->name('returns-settings.update');
     Route::put('settings/delivery', [DeliverySettingsController::class, 'update'])->name('delivery-settings.update');
     Route::post('settings/trucks', [DeliverySettingsController::class, 'storeTruck'])->name('trucks.store');

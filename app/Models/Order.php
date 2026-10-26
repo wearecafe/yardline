@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Audit\Audited;
 use App\Enums\FulfillmentMethod;
 use App\Enums\OrderStatus;
 use App\Enums\OrderType;
@@ -87,7 +88,10 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class Order extends Model
 {
     /** @use HasFactory<OrderFactory> */
-    use BelongsToTenant, HasFactory;
+    use Audited, BelongsToTenant, HasFactory;
+
+    /** Changes to these are written to the audit log. */
+    public const AUDITED = ['status', 'settlement', 'payment_status', 'credit_override_reason', 'total_cents', 'po_number', 'organization_id', 'delivery_fee_cents', 'quote_expires_on', 'revision'];
 
     /**
      * @var array<string, mixed>

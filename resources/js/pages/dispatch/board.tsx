@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 
 type Stop = {
     id: number;
-    kind: 'delivery' | 'rental_drop' | 'rental_pickup';
+    kind: 'delivery' | 'rental_drop' | 'rental_pickup' | 'pallet_pickup';
     rental: boolean;
     title: string;
     where: string;
@@ -460,7 +460,7 @@ function StopPanel({
                             </Link>
                         </Button>
                     )}
-                {stop.rental &&
+                {stop.kind !== 'delivery' &&
                     (stop.status === 'scheduled' ||
                         stop.status === 'en_route') && (
                         <Button
@@ -473,9 +473,9 @@ function StopPanel({
                                 )
                             }
                         >
-                            {stop.kind === 'rental_pickup'
-                                ? 'Picked up'
-                                : 'Dropped off'}
+                            {stop.kind === 'rental_drop'
+                                ? 'Dropped off'
+                                : 'Picked up'}
                         </Button>
                     )}
                 {stop.truck_id && stop.status !== 'done' && (

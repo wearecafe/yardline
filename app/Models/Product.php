@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Audit\Audited;
 use App\Commerce\SyncsWithCommerce;
 use App\Enums\ProductKind;
 use App\Enums\RentalPeriod;
@@ -71,7 +72,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
-    use BelongsToTenant, HasFactory, SyncsWithCommerce;
+    use Audited, BelongsToTenant, HasFactory, SyncsWithCommerce;
+
+    /** Changes to these are written to the audit log. */
+    public const AUDITED = ['price_cents', 'cost_cents', 'is_active', 'taxable'];
 
     /**
      * @var array<string, mixed>

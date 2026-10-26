@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Audit\Audited;
 use App\Tenancy\BelongsToTenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -49,7 +50,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class CreditNote extends Model
 {
-    use BelongsToTenant;
+    use Audited, BelongsToTenant;
+
+    /** Changes to these are written to the audit log. */
+    public const AUDITED = ['applied_cents', 'refunded_cents'];
 
     /**
      * @var array<string, mixed>

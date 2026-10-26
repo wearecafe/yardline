@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Credit\CreditCheck;
 use App\Enums\PaymentTerms;
+use App\Http\Controllers\Settings\AuditController;
 use App\Models\ContractPrice;
 use App\Models\CreditNote;
 use App\Models\Customer;
@@ -80,6 +81,7 @@ class OrganizationController extends Controller
                 ->get()
                 ->map(fn (Order $order) => OrderController::summary($order)),
             'paymentTerms' => PaymentTerms::options(),
+            'history' => AuditController::historyFor($organization),
             'account' => [
                 'pallets_out' => app(PalletLedger::class)->outstanding($organization),
                 'credit_cents' => (int) CreditNote::query()->where('organization_id', $organization->id)->where('status', 'open')->get()->sum(fn ($c) => $c->remainingCents()),

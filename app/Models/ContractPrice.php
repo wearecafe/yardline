@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Audit\Audited;
 use App\Tenancy\BelongsToTenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -29,7 +30,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['organization_id', 'product_id', 'product_unit_id', 'price_cents', 'starts_on', 'ends_on', 'note'])]
 class ContractPrice extends Model
 {
-    use BelongsToTenant;
+    use Audited, BelongsToTenant;
+
+    /** Changes to these are written to the audit log. */
+    public const AUDITED = ['price_cents', 'starts_on', 'ends_on'];
 
     protected function casts(): array
     {

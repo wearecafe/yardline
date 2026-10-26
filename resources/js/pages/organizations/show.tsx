@@ -3,6 +3,8 @@ import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import OrganizationController from '@/actions/App/Http/Controllers/OrganizationController';
 import ReceivablesController from '@/actions/App/Http/Controllers/ReceivablesController';
 import { EmptyRow, Table, Td, Th } from '@/components/yard/data-table';
+import { History } from '@/components/yard/history';
+import type { HistoryEvent } from '@/components/yard/history';
 import {
     ContactsSection,
     ContractPricesSection,
@@ -34,6 +36,7 @@ type Props = {
         credit_cents: number;
         overdue_cents: number;
     };
+    history: HistoryEvent[];
     contacts: OrgContact[];
     roles: Option[];
     otherCustomers: { id: number; name: string }[];
@@ -303,6 +306,9 @@ export default function ShowOrganization(props: Props) {
                             prices={props.contractPrices}
                             products={props.products}
                         />
+                        <Section title="History">
+                            <History events={props.history} />
+                        </Section>
                     </div>
                 </div>
             </PageBody>

@@ -16,6 +16,7 @@ void createInertiaApp({
             case name.startsWith('kiosk/'):
             case name.startsWith('public/'):
             case name.startsWith('print/'):
+            case name.startsWith('portal/'):
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;

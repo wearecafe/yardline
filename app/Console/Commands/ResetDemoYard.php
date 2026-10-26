@@ -25,6 +25,7 @@ class ResetDemoYard extends Command
      * @var list<string>
      */
     private const TABLES = [
+        'audit_events',
         'cycle_count_lines',
         'cycle_counts',
         'stock_transfer_lines',

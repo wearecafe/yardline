@@ -8,6 +8,7 @@ use App\Enums\OrderType;
 use App\Enums\PaymentTender;
 use App\Enums\ProductKind;
 use App\Fulfillment\DeliverySettings;
+use App\Http\Controllers\Settings\AuditController;
 use App\Models\Customer;
 use App\Models\Location;
 use App\Models\Order;
@@ -126,6 +127,7 @@ class OrderController extends Controller
                         'delivery_notes' => $site->delivery_notes,
                     ])
                 : [],
+            'history' => AuditController::historyFor($order),
             'deliveryMethod' => DeliverySettings::current()->method,
             'quote' => [
                 'is_quote' => $order->isQuote(),

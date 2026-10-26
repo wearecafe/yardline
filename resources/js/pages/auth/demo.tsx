@@ -10,9 +10,11 @@ type Props = {
         role: string;
         description: string;
     }[];
+    portalUrl: string;
+    bookingUrl: string;
 };
 
-export default function Demo({ yard, accounts }: Props) {
+export default function Demo({ yard, accounts, portalUrl, bookingUrl }: Props) {
     const [signingIn, setSigningIn] = useState<string | null>(null);
 
     function signIn(email: string) {
@@ -45,6 +47,26 @@ export default function Demo({ yard, accounts }: Props) {
                         </span>
                     </button>
                 ))}
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+                <a
+                    href={portalUrl}
+                    className="grid gap-0.5 rounded-md border border-dashed border-border px-4 py-3 text-left hover:border-foreground"
+                >
+                    <span className="font-medium">A contractor</span>
+                    <span className="text-sm text-muted-foreground">
+                        The customer portal: deliveries, reorders, statements.
+                    </span>
+                </a>
+                <a
+                    href={bookingUrl}
+                    className="grid gap-0.5 rounded-md border border-dashed border-border px-4 py-3 text-left hover:border-foreground"
+                >
+                    <span className="font-medium">A homeowner</span>
+                    <span className="text-sm text-muted-foreground">
+                        The public page for renting equipment.
+                    </span>
+                </a>
             </div>
             <p className="text-center text-sm text-muted-foreground">
                 {yard} is fictional and is rebuilt every night. Other demo

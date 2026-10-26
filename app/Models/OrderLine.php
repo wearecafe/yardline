@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Audit\Audited;
 use App\Tenancy\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -45,7 +46,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class OrderLine extends Model
 {
-    use BelongsToTenant;
+    use Audited, BelongsToTenant;
+
+    /** Changes to these are written to the audit log. */
+    public const AUDITED = ['quantity', 'unit_price_cents', 'price_overridden'];
 
     protected function casts(): array
     {
