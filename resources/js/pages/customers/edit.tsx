@@ -1,6 +1,7 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import CustomerController from '@/actions/App/Http/Controllers/CustomerController';
 import CustomerDocumentController from '@/actions/App/Http/Controllers/CustomerDocumentController';
+import OrganizationController from '@/actions/App/Http/Controllers/OrganizationController';
 import { Chip } from '@/components/yard/chip';
 import { CustomerForm } from '@/components/yard/customer-form';
 import { Field, NativeSelect } from '@/components/yard/field';
@@ -189,10 +190,17 @@ function Documents({
 export default function EditCustomer({
     customer,
     organizations,
+    memberships,
     documents,
 }: {
     customer: Customer;
     organizations: { id: number; name: string; account_number: string }[];
+    memberships: {
+        id: number;
+        name: string;
+        role: string;
+        can_charge_account: boolean;
+    }[];
     documents: Document[];
 }) {
     return (
@@ -205,6 +213,35 @@ export default function EditCustomer({
                     customer={customer}
                     organizations={organizations}
                 />
+                {memberships.length > 0 && (
+                    <Section title="Buys for" className="max-w-3xl">
+                        <ul className="grid gap-2 text-sm">
+                            {memberships.map((m) => (
+                                <li
+                                    key={m.id}
+                                    className="flex flex-wrap items-center justify-between gap-3"
+                                >
+                                    <Link
+                                        href={OrganizationController.show(m.id)}
+                                        className="font-medium hover:underline"
+                                    >
+                                        {m.name}
+                                    </Link>
+                                    <span className="text-muted-foreground">
+                                        {m.role} ·{' '}
+                                        {m.can_charge_account
+                                            ? 'can charge to the account'
+                                            : 'pays by card'}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                        <p className="text-xs text-muted-foreground">
+                            Roles and charge rights are set on each
+                            organization's page.
+                        </p>
+                    </Section>
+                )}
                 <Documents customer={customer} documents={documents} />
             </PageBody>
         </>

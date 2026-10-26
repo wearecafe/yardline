@@ -6,6 +6,7 @@ use App\Enums\ProductKind;
 use App\Models\Order;
 use App\Models\OrderLine;
 use App\Models\Product;
+use App\Models\ProductUnit;
 use App\Pricing\PriceResolver;
 use Illuminate\Support\Facades\DB;
 
@@ -16,7 +17,7 @@ class AddOrderLine
         private readonly RecalculateOrder $recalculate,
     ) {}
 
-    public function handle(Order $order, Product $product, string|float $quantity, ?int $unitPriceCents = null): OrderLine
+    public function handle(Order $order, Product $product, string|float $quantity, ?int $unitPriceCents = null, ?ProductUnit $unit = null): OrderLine
     {
         if (! $order->isDraft()) {
             OrderRules::fail('Only draft orders can be changed.');
@@ -31,22 +32,36 @@ class AddOrderLine
             OrderRules::fail(
                 $wantsRental
                     ? 'Rental orders only take rental items. Put materials on a separate sale order.'
-                    : 'Rental items go on a rental order, which is invoiced separately.',
+                    : 'Rental equipment is booked under Rentals, which is invoiced separately.',
                 'product_id',
             );
         }
 
-        return DB::transaction(function () use ($order, $product, $quantity, $unitPriceCents) {
-            $resolved = $this->prices->unitPrice($product, $order->organization, $quantity);
+        if ($unit !== null && $unit->product_id !== $product->id) {
+            OrderRules::fail('That unit isn’t one of this product’s selling units.', 'product_unit_id');
+        }
+
+        $unit ??= $product->baseUnit;
+
+        if ($unit !== null && ($problem = $unit->quantityProblem($quantity)) !== null) {
+            OrderRules::fail($problem, 'quantity');
+        }
+
+        return DB::transaction(function () use ($order, $product, $quantity, $unitPriceCents, $unit) {
+            $resolved = $this->prices->unitPrice($product, $order->organization, $quantity, $unit);
 
             $line = $order->lines()->create([
                 'product_id' => $product->id,
+                'product_unit_id' => $unit?->id,
                 'sku' => $product->sku,
                 'description' => $product->name,
                 'quantity' => $quantity,
-                'unit' => $product->unit,
+                'unit' => $unit === null || $unit->is_base ? $product->unit->value : $unit->name,
+                'unit_factor' => $unit !== null ? $unit->factor : 1,
+                'base_quantity' => $unit !== null ? $unit->toBase($quantity) : $quantity,
                 'unit_price_cents' => $unitPriceCents ?? $resolved->cents,
                 'price_overridden' => $unitPriceCents !== null,
+                'price_source' => $unitPriceCents !== null ? 'manual' : $resolved->source,
                 'position' => (int) $order->lines()->max('position') + 1,
             ]);
 

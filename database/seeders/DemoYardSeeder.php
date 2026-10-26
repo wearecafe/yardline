@@ -14,11 +14,13 @@ use App\Enums\StockMovementType;
 use App\Enums\Unit;
 use App\Enums\UserRole;
 use App\Inventory\InventoryLedger;
+use App\Models\ContractPrice;
 use App\Models\Customer;
 use App\Models\DeliveryZone;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\Organization;
+use App\Models\OrganizationLocation;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\Rental;
@@ -31,6 +33,7 @@ use App\Orders\AddOrderLine;
 use App\Orders\ConfirmOrder;
 use App\Orders\CreateOrder;
 use App\Orders\FulfillOrder;
+use App\Orders\SendQuote;
 use App\Payments\RecordPayment;
 use App\Rentals\CheckInRental;
 use App\Rentals\CheckOutRental;
@@ -139,9 +142,12 @@ class DemoYardSeeder extends Seeder
                 $this->yards();
                 $this->catalog();
                 $this->pricing();
+                $this->sellingUnits();
                 $this->accounts();
+                $this->accountDetails();
                 $this->openingStock();
                 $this->orders();
+                $this->quotes();
                 $this->rentals();
             });
         });
@@ -189,8 +195,12 @@ class DemoYardSeeder extends Seeder
             ...$header,
         ], $by ?? $this->counter());
 
-        foreach ($lines as $sku => $quantity) {
-            app(AddOrderLine::class)->handle($order, $this->products[$sku], (string) $quantity);
+        // "SKU" sells in the base unit; "SKU@Unit name" in another selling unit.
+        foreach ($lines as $key => $quantity) {
+            [$sku, $unitName] = array_pad(explode('@', $key, 2), 2, null);
+            $product = $this->products[$sku];
+            $unit = $unitName !== null ? $product->units()->where('name', $unitName)->firstOrFail() : null;
+            app(AddOrderLine::class)->handle($order, $product, (string) $quantity, null, $unit);
         }
 
         $order->forceFill(['created_at' => $createdAt, 'updated_at' => $createdAt])->saveQuietly();
@@ -398,6 +408,169 @@ class DemoYardSeeder extends Seeder
 
         $this->contractorListId = $contractor->id;
         $this->builderListId = $builder->id;
+    }
+
+    /**
+     * The ways each material is sold, with prices per unit, and what it
+     * weighs and who supplies it.
+     */
+    private function sellingUnits(): void
+    {
+        // sku => [weight kg per base unit, supplier]
+        $details = [
+            'AGG-SCR' => [1000, 'Niagara Ridge Quarry'],
+            'AGG-34C' => [1000, 'Niagara Ridge Quarry'],
+            'AGG-RVR' => [1000, 'Grand River Aggregates'],
+            'SOIL-3MX' => [1100, 'Flamborough Soils'],
+            'SOIL-GDN' => [1050, 'Flamborough Soils'],
+            'MUL-BCD' => [300, 'Flamborough Soils'],
+            'PAV-60CH' => [12.5, 'Ridgeline Concrete Products'],
+            'PAV-80NT' => [16.5, 'Ridgeline Concrete Products'],
+            'FLG-ARM' => [1400, 'Escarpment Stone Co.'],
+            'ARM-23' => [1000, 'Escarpment Stone Co.'],
+            'WAL-STD' => [32, 'Ridgeline Concrete Products'],
+            'WAL-CAP' => [22, 'Ridgeline Concrete Products'],
+            'BRK-MOD' => [2100, 'Lakeview Brick'],
+            'BLK-8IN' => [17, 'Ridgeline Concrete Products'],
+            'MOR-S30' => [30, 'Hamilton Building Supply'],
+            'CEM-GU30' => [30, 'Hamilton Building Supply'],
+            'SND-POLY' => [25, 'Hamilton Building Supply'],
+        ];
+
+        foreach ($details as $sku => [$kg, $supplier]) {
+            $this->products[$sku]->forceFill(['weight_kg' => $kg, 'supplier_name' => $supplier])->save();
+        }
+
+        // sku => [[name, factor, retail, contractor, measured by, increment, deposit]]
+        $units = [
+            'AGG-SCR' => [
+                ['Cubic yard', 1.35, 5600, 5100, 'bucket', 0.5, 0],
+                ['Half yard', 0.675, 2900, 2650, 'bucket', 1, 0],
+                ['Bulk bag', 1, 7900, 7200, 'count', 1, 2500],
+                ['25 kg bag', 0.025, 649, 549, 'count', 1, 0],
+            ],
+            'AGG-34C' => [
+                ['Cubic yard', 1.4, 6500, 5900, 'bucket', 0.5, 0],
+                ['Bulk bag', 1, 8500, 7700, 'count', 1, 2500],
+            ],
+            'SOIL-3MX' => [
+                ['Half yard', 0.5, 2950, 2650, 'bucket', 1, 0],
+                ['Bulk bag', 1, 6900, 6300, 'count', 1, 2500],
+            ],
+            'MUL-BCD' => [
+                ['Half yard', 0.5, 3300, null, 'bucket', 1, 0],
+                ['Bag, 2 cu ft', 0.074, 799, null, 'count', 1, 0],
+            ],
+            'PAV-60CH' => [['Pallet (115 sq ft)', 115, 59900, 54900, 'count', 1, 0]],
+            'WAL-STD' => [['Pallet (48 blocks)', 48, 59900, 53900, 'count', 1, 0]],
+        ];
+
+        $contractor = PriceList::query()->findOrFail($this->contractorListId);
+
+        foreach ($units as $sku => $rows) {
+            $product = $this->products[$sku];
+            $product->units()->where('is_base', true)->update(['measured_by' => in_array($sku, ['AGG-SCR', 'AGG-34C'], true) ? 'scale' : 'count']);
+
+            foreach ($rows as $position => [$name, $factor, $retail, $trade, $measure, $increment, $deposit]) {
+                $unit = $product->units()->create([
+                    'name' => $name,
+                    'factor' => $factor,
+                    'price_cents' => $retail,
+                    'variant_title' => $name,
+                    'measured_by' => $measure,
+                    'increment' => $increment,
+                    'deposit_cents' => $deposit,
+                    'position' => $position + 1,
+                ]);
+
+                if ($trade !== null) {
+                    $contractor->items()->create(['product_id' => $product->id, 'product_unit_id' => $unit->id, 'min_quantity' => 1, 'price_cents' => $trade]);
+                }
+            }
+        }
+
+        // The quarry put screenings up 4% last week.
+        $this->products['AGG-SCR']->forceFill([
+            'cost_cents' => 3140,
+            'previous_cost_cents' => 3020,
+            'cost_changed_at' => $this->at(6, '09:00'),
+        ])->save();
+
+        // A spring promotion on the contractor list, coming up.
+        $contractor->items()->create([
+            'product_id' => $this->products['PAV-60CH']->id,
+            'min_quantity' => 1,
+            'price_cents' => 449,
+            'starts_on' => CarbonImmutable::today(self::TZ)->addDays(20)->toDateString(),
+            'ends_on' => CarbonImmutable::today(self::TZ)->addDays(50)->toDateString(),
+        ]);
+    }
+
+    /**
+     * Job sites, contact roles and contract prices.
+     */
+    private function accountDetails(): void
+    {
+        $sites = [
+            ['brantwood', 'Orchard Crescent project', '9 Orchard Cres', 'Waterdown', 'L8B 0C2', 'Back gate off the laneway. Text Mike on arrival.', false, true],
+            ['brantwood', 'Hamilton St N reno', '251 Hamilton St N', 'Waterdown', 'L8B 1B4', 'Narrow drive: small truck only.', false, false],
+            ['kerncliff', 'Kerncliff Estates, phase 2', 'Lot 14, Kerncliff Estates', 'Burlington', 'L7P 0A1', 'Site trailer at the north entrance. Hard hats past the fence.', true, true],
+            ['greenline', 'Greenline depot', '780 Plains Rd W', 'Burlington', 'L7T 1H2', 'Drop in bay 3. Open 6:30 to 3.', false, true],
+        ];
+
+        foreach ($sites as [$org, $name, $line1, $city, $postal, $notes, $po, $default]) {
+            OrganizationLocation::query()->create([
+                'organization_id' => $this->orgs[$org]->id,
+                'name' => $name,
+                'address_line1' => $line1,
+                'city' => $city,
+                'region' => 'ON',
+                'postal_code' => $postal,
+                'delivery_notes' => $notes,
+                'location_id' => $this->waterdown->id,
+                'po_required' => $po,
+                'is_default' => $default,
+            ]);
+        }
+
+        // Roles: who can approve, who can charge to the account.
+        $roles = [
+            ['mike', 'brantwood', 'admin', true],
+            ['jen', 'brantwood', 'approver', true],
+            ['tom', 'kerncliff', 'approver', true],
+            ['sam', 'lakeshore', 'buyer', false],
+        ];
+
+        foreach ($roles as [$person, $org, $role, $charge]) {
+            $this->orgs[$org]->contacts()->updateExistingPivot($this->people[$person]->id, ['role' => $role, 'can_charge_account' => $charge]);
+        }
+
+        // Jen also orders for Greenline on a subcontract, by card.
+        $this->orgs['greenline']->contacts()->attach($this->people['jen']->id, [
+            'tenant_id' => $this->orgs['greenline']->tenant_id,
+            'role' => 'buyer',
+            'can_charge_account' => false,
+        ]);
+
+        $contracts = [
+            ['brantwood', 'AGG-SCR', null, 3700, null, null, 'Season pricing, agreed in March'],
+            ['brantwood', 'AGG-SCR', 'Cubic yard', 4900, null, null, null],
+            ['halton', 'MOR-S30', null, 1395, null, CarbonImmutable::today(self::TZ)->endOfYear()->toDateString(), 'Volume deal to year end'],
+            ['greenline', 'MUL-BCD', null, 5600, CarbonImmutable::today(self::TZ)->addDays(10)->toDateString(), null, 'Spring mulch contract'],
+        ];
+
+        foreach ($contracts as [$org, $sku, $unitName, $cents, $from, $until, $note]) {
+            $product = $this->products[$sku];
+            ContractPrice::query()->create([
+                'organization_id' => $this->orgs[$org]->id,
+                'product_id' => $product->id,
+                'product_unit_id' => $unitName ? $product->units()->where('name', $unitName)->value('id') : null,
+                'price_cents' => $cents,
+                'starts_on' => $from,
+                'ends_on' => $until,
+                'note' => $note,
+            ]);
+        }
     }
 
     private function accounts(): void
@@ -667,6 +840,49 @@ class DemoYardSeeder extends Seeder
             $movement = $ledger->record($this->products[$sku], $this->waterdown, $quantity, StockMovementType::Adjustment, user: $this->yardLead(), note: 'Counter sales this week');
             $movement->forceFill(['created_at' => $this->at(1, '17:00')])->saveQuietly();
         }
+    }
+
+    // -------------------------------------------------------------- quotes
+
+    private function quotes(): void
+    {
+        $send = app(SendQuote::class);
+        $sites = OrganizationLocation::query()->get()->keyBy('name');
+
+        // Greenline: sent last week, revised today after they added soil.
+        $depot = $sites['Greenline depot'];
+        $order = $this->draft([
+            'organization_id' => $this->orgs['greenline']->id,
+            'customer_id' => $this->people['ali']->id,
+            'organization_location_id' => $depot->id,
+            'fulfillment' => 'delivery',
+            'delivery_address' => $depot->address(),
+            'requested_on' => $this->at(-9)->toDateString(),
+        ], ['AGG-SCR@Cubic yard' => 18, 'MUL-BCD' => 12], $this->at(6, '14:00'), $this->owner());
+        $send->handle($order, $this->owner(), CarbonImmutable::today(self::TZ)->addDays(24), email: false);
+        $order->forceFill(['quoted_at' => $this->at(6, '14:10')])->save();
+        $order->revisions()->update(['created_at' => $this->at(6, '14:10')]);
+        app(AddOrderLine::class)->handle($order, $this->products['SOIL-3MX'], '4', null, $this->products['SOIL-3MX']->units()->where('name', 'Bulk bag')->firstOrFail());
+        $send->handle($order->refresh(), $this->owner(), CarbonImmutable::today(self::TZ)->addDays(24), email: false);
+
+        // Lakeshore: accepted online yesterday, waiting to be confirmed.
+        $order = $this->draft([
+            'organization_id' => $this->orgs['lakeshore']->id,
+            'customer_id' => $this->people['sam']->id,
+            ...['fulfillment' => 'delivery', 'delivery_address' => ['line1' => '41 Bayview Dr', 'city' => 'Burlington', 'region' => 'ON', 'postal_code' => 'L7T 3S2', 'country' => 'CA']],
+        ], ['PAV-60CH@Pallet (115 sq ft)' => 4, 'SND-POLY' => 10, 'AGG-SCR' => 6], $this->at(3, '10:00'));
+        $send->handle($order, $this->counter(), CarbonImmutable::today(self::TZ)->addDays(27), email: false);
+        $order->forceFill(['quoted_at' => $this->at(3, '10:15'), 'quote_accepted_at' => $this->at(1, '19:42'), 'quote_accepted_by' => 'Sam Ferreira', 'po_number' => 'LPP-118'])->save();
+        $order->revisions()->update(['created_at' => $this->at(3, '10:15')]);
+
+        // Halton: a quote that ran out.
+        $order = $this->draft([
+            'organization_id' => $this->orgs['halton']->id,
+            'customer_id' => $this->people['priya']->id,
+        ], ['BRK-MOD' => 4, 'MOR-S30' => 40], $this->at(44, '15:30'));
+        $send->handle($order, $this->counter(), CarbonImmutable::today(self::TZ)->subDays(14), email: false);
+        $order->forceFill(['quoted_at' => $this->at(44, '15:40')])->save();
+        $order->revisions()->update(['created_at' => $this->at(44, '15:40')]);
     }
 
     // ------------------------------------------------------------- rentals

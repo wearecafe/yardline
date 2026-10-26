@@ -15,7 +15,7 @@ export function OrderStatusBadge({
     status,
     rental = false,
 }: {
-    status: OrderStatus;
+    status: OrderStatus | 'quote';
     rental?: boolean;
 }) {
     const [label, tone] = orderStatus[status] ?? [status, 'neutral'];

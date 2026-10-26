@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderLine;
 use App\Models\Product;
+use App\Models\ProductUnit;
 use App\Orders\AddOrderLine;
 use App\Orders\OrderRules;
 use App\Orders\RecalculateOrder;
@@ -20,6 +21,7 @@ class OrderLineController extends Controller
     {
         $data = $request->validate([
             'product_id' => ['required', TenantRule::exists('products')],
+            'product_unit_id' => ['nullable', TenantRule::exists('product_units')],
             'quantity' => ['required', 'numeric', 'min:0.001', 'max:999999'],
             'unit_price' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
         ]);
@@ -31,6 +33,7 @@ class OrderLineController extends Controller
             Product::query()->findOrFail((int) $data['product_id']),
             $data['quantity'],
             $priceOverride,
+            isset($data['product_unit_id']) ? ProductUnit::query()->findOrFail((int) $data['product_unit_id']) : null,
         );
 
         return back();
@@ -46,6 +49,10 @@ class OrderLineController extends Controller
             'quantity' => ['required', 'numeric', 'min:0.001', 'max:999999'],
             'unit_price' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
         ]);
+
+        if ($line->productUnit !== null && ($problem = $line->productUnit->quantityProblem($data['quantity'])) !== null) {
+            OrderRules::fail($problem, 'quantity');
+        }
 
         $line->quantity = $data['quantity'];
 

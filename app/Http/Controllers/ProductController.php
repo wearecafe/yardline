@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\ProductKind;
 use App\Enums\RentalPeriod;
 use App\Enums\Unit;
+use App\Http\Presenters\ProductEditor;
 use App\Models\Product;
 use App\Support\Money;
 use App\Tenancy\TenantRule;
@@ -58,12 +59,24 @@ class ProductController extends Controller
         return Inertia::render('products/edit', [
             'product' => $product,
             ...$this->formOptions(),
+            ...ProductEditor::props($product),
         ]);
     }
 
     public function update(Request $request, Product $product): RedirectResponse
     {
-        $product->update($this->validated($request, $product));
+        $data = $this->validated($request, $product);
+        $oldCost = $product->cost_cents;
+
+        $product->fill($data);
+
+        // Remember a supplier cost change so the editor can flag its effect on margin.
+        if ($product->isDirty('cost_cents') && $oldCost !== null && $product->cost_cents !== null) {
+            $product->previous_cost_cents = $oldCost;
+            $product->cost_changed_at = now()->toImmutable();
+        }
+
+        $product->save();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Product saved.']);
 
@@ -87,6 +100,9 @@ class ProductController extends Controller
             'rental_period' => ['nullable', Rule::enum(RentalPeriod::class)],
             'deposit' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
             'tax_code' => ['nullable', 'string', 'max:50'],
+            'taxable' => ['boolean'],
+            'weight_kg' => ['nullable', 'numeric', 'min:0', 'max:100000'],
+            'supplier_name' => ['nullable', 'string', 'max:255'],
             'track_inventory' => ['boolean'],
             'is_active' => ['boolean'],
             ...array_fill_keys(self::RENTAL_MONEY, ['nullable', 'numeric', 'min:0', 'max:9999999']),

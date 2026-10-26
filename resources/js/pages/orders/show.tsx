@@ -5,15 +5,20 @@ import OrderActionController from '@/actions/App/Http/Controllers/OrderActionCon
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import OrderLineController from '@/actions/App/Http/Controllers/OrderLineController';
 import OrganizationController from '@/actions/App/Http/Controllers/OrganizationController';
+import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
+import { Chip } from '@/components/yard/chip';
 import InputError from '@/components/input-error';
 import { EmptyRow, Table, Td, Th } from '@/components/yard/data-table';
-import { Field, NativeSelect } from '@/components/yard/field';
+import { Checkbox, Field, NativeSelect } from '@/components/yard/field';
 import {
     headerPayload,
     OrderHeaderFields,
     toLocalInput,
 } from '@/components/yard/order-header-fields';
-import type { OrderHeaderData } from '@/components/yard/order-header-fields';
+import type {
+    JobSite,
+    OrderHeaderData,
+} from '@/components/yard/order-header-fields';
 import { PageBody, PageHeader, Section } from '@/components/yard/page-header';
 import { OrderStatusBadge, PaymentBadge } from '@/components/yard/status-badge';
 import { Button } from '@/components/ui/button';
@@ -47,6 +52,13 @@ type Props = {
         last_name: string | null;
     }[];
     locations: { id: number; name: string }[];
+    sites: JobSite[];
+    quote: {
+        is_quote: boolean;
+        expired: boolean;
+        locked: boolean;
+        url: string | null;
+    };
 };
 
 export default function ShowOrder(props: Props) {
@@ -98,6 +110,9 @@ export default function ShowOrder(props: Props) {
 
                     <aside className="grid content-start gap-8">
                         <Totals order={order} />
+                        {isDraft && !isRental && (
+                            <QuotePanel order={order} quote={props.quote} />
+                        )}
                         {isDraft && props.credit && (
                             <ConfirmPanel
                                 order={order}
@@ -390,9 +405,23 @@ function AddLine({
     products: OrderProduct[];
 }) {
     const { auth } = usePage().props;
-    const form = useForm({ product_id: '', quantity: '', unit_price: '' });
+    const form = useForm({
+        product_id: '',
+        product_unit_id: '',
+        quantity: '',
+        unit_price: '',
+    });
     const [search, setSearch] = useState('');
     const product = products.find((p) => String(p.id) === form.data.product_id);
+    const units = product?.units ?? [];
+    const unit =
+        units.find((u) => String(u.id) === form.data.product_unit_id) ??
+        units.find((u) => u.is_base);
+    const price = unit?.price_cents ?? product?.price_cents ?? 0;
+    const sourceLabel: Record<string, string> = {
+        contract: ' (contract price)',
+        price_list: ' (price list)',
+    };
 
     function submit(event: FormEvent) {
         event.preventDefault();
@@ -408,7 +437,7 @@ function AddLine({
     return (
         <form
             onSubmit={submit}
-            className="mt-3 grid items-start gap-3 rounded-md border border-dashed border-border p-3 sm:grid-cols-[minmax(0,1fr)_7rem_7rem_auto]"
+            className="mt-3 grid items-start gap-3 rounded-md border border-dashed border-border p-3 sm:grid-cols-[minmax(0,1fr)_7rem_9rem_7rem_auto]"
         >
             <Field
                 label="Add item"
@@ -426,10 +455,11 @@ function AddLine({
                         const match = products.find(
                             (p) => `${p.name} (${p.sku})` === e.target.value,
                         );
-                        form.setData(
-                            'product_id',
-                            match ? String(match.id) : '',
-                        );
+                        form.setData((d) => ({
+                            ...d,
+                            product_id: match ? String(match.id) : '',
+                            product_unit_id: '',
+                        }));
                     }}
                 />
                 <datalist id="order-products">
@@ -439,11 +469,13 @@ function AddLine({
                 </datalist>
                 <p id="product-hint" className="text-xs text-muted-foreground">
                     {product
-                        ? `${formatMoney(product.price_cents)} / ${
+                        ? `${formatMoney(price)} / ${
                               order.type === 'rental'
                                   ? product.rental_period
-                                  : unitLabel(product.unit)
-                          }${product.contract_price ? ' (price list)' : ''}${
+                                  : unit && !unit.is_base
+                                    ? unit.name.toLowerCase()
+                                    : unitLabel(product.unit)
+                          }${sourceLabel[unit?.price_source ?? ''] ?? ''}${
                               product.on_hand !== null
                                   ? `. ${formatQuantity(product.on_hand)} on hand`
                                   : ''
@@ -469,6 +501,27 @@ function AddLine({
                 />
             </Field>
             <Field
+                label="Unit"
+                htmlFor="product_unit_id"
+                error={form.errors.product_unit_id}
+            >
+                <NativeSelect
+                    id="product_unit_id"
+                    value={form.data.product_unit_id || String(unit?.id ?? '')}
+                    disabled={units.length < 2}
+                    onChange={(e) =>
+                        form.setData('product_unit_id', e.target.value)
+                    }
+                >
+                    {units.length === 0 && <option value="">—</option>}
+                    {units.map((u) => (
+                        <option key={u.id} value={u.id}>
+                            {u.name}
+                        </option>
+                    ))}
+                </NativeSelect>
+            </Field>
+            <Field
                 label="Price"
                 htmlFor="unit_price"
                 error={form.errors.unit_price}
@@ -477,9 +530,7 @@ function AddLine({
                 <Input
                     id="unit_price"
                     inputMode="decimal"
-                    placeholder={
-                        product ? (product.price_cents / 100).toFixed(2) : ''
-                    }
+                    placeholder={product ? (price / 100).toFixed(2) : ''}
                     value={form.data.unit_price}
                     disabled={!auth.can.manageBusiness}
                     onChange={(e) => form.setData('unit_price', e.target.value)}
@@ -905,13 +956,22 @@ function OrderDetails({ order }: { order: Order }) {
     );
 }
 
-function DraftDetails({ order, organizations, customers, locations }: Props) {
+function DraftDetails({
+    order,
+    organizations,
+    customers,
+    locations,
+    sites,
+}: Props) {
     const isRental = order.type === 'rental';
     const form = useForm<OrderHeaderData>({
         organization_id: order.organization_id
             ? String(order.organization_id)
             : '',
         customer_id: order.customer_id ? String(order.customer_id) : '',
+        organization_location_id: order.organization_location_id
+            ? String(order.organization_location_id)
+            : '',
         location_id: String(order.location_id),
         fulfillment: order.fulfillment,
         delivery_address: order.delivery_address ?? {},
@@ -939,6 +999,7 @@ function DraftDetails({ order, organizations, customers, locations }: Props) {
                     organizations={organizations}
                     customers={customers}
                     locations={locations}
+                    sites={sites}
                 />
                 <div>
                     <Button
@@ -955,6 +1016,131 @@ function DraftDetails({ order, organizations, customers, locations }: Props) {
                     )}
                 </div>
             </form>
+        </Section>
+    );
+}
+
+/**
+ * Send the draft as a quote, with prices held until it expires. Sending
+ * again after changes makes a new revision.
+ */
+function QuotePanel({ order, quote }: { order: Order; quote: Props['quote'] }) {
+    const inThirty = new Date(Date.now() + 30 * 86_400_000)
+        .toISOString()
+        .slice(0, 10);
+    const form = useForm({
+        expires_on: order.quote_expires_on?.slice(0, 10) ?? inThirty,
+        email: Boolean(order.customer?.email),
+    });
+
+    return (
+        <Section
+            title={
+                quote.is_quote ? `Quote · revision ${order.revision}` : 'Quote'
+            }
+            actions={
+                quote.is_quote ? (
+                    quote.expired ? (
+                        <Chip tone="danger">Expired</Chip>
+                    ) : order.quote_accepted_at ? (
+                        <Chip tone="success">Accepted</Chip>
+                    ) : (
+                        <Chip tone="info">Sent</Chip>
+                    )
+                ) : undefined
+            }
+        >
+            {quote.is_quote ? (
+                <div className="grid gap-1 text-sm">
+                    <p>
+                        {quote.expired
+                            ? `Expired ${formatDate(order.quote_expires_on)}. Prices update to today's on the next change.`
+                            : `Prices held until ${formatDate(order.quote_expires_on)}.`}
+                    </p>
+                    {order.quote_accepted_at && (
+                        <p className="text-muted-foreground">
+                            Accepted by {order.quote_accepted_by} on{' '}
+                            {formatDate(order.quote_accepted_at)}. Confirm it to
+                            make it an order.
+                        </p>
+                    )}
+                    {quote.url && (
+                        <p>
+                            <a
+                                href={quote.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-medium underline underline-offset-4"
+                            >
+                                Customer's quote page
+                            </a>
+                        </p>
+                    )}
+                </div>
+            ) : (
+                <p className="text-sm text-muted-foreground">
+                    Send this draft to the customer as a quote. Prices hold
+                    until it expires, and they can accept it online.
+                </p>
+            )}
+            <form
+                className="grid gap-3"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    form.post(QuoteController.send.url(order.id), {
+                        preserveScroll: true,
+                    });
+                }}
+            >
+                <Field
+                    label="Good until"
+                    htmlFor="quote_expires_on"
+                    error={form.errors.expires_on}
+                >
+                    <Input
+                        id="quote_expires_on"
+                        type="date"
+                        value={form.data.expires_on}
+                        onChange={(e) =>
+                            form.setData('expires_on', e.target.value)
+                        }
+                    />
+                </Field>
+                <Checkbox
+                    id="quote_email"
+                    label={
+                        order.customer?.email
+                            ? `Email it to ${order.customer.email}`
+                            : 'No email on file for the contact'
+                    }
+                    checked={form.data.email}
+                    disabled={!order.customer?.email}
+                    onChange={(checked) => form.setData('email', checked)}
+                />
+                <Button
+                    type="submit"
+                    variant="outline"
+                    disabled={form.processing || order.lines.length === 0}
+                >
+                    {quote.is_quote ? 'Send revised quote' : 'Send quote'}
+                </Button>
+            </form>
+            {(order.revisions?.length ?? 0) > 0 && (
+                <ul className="grid gap-1.5 border-t border-border pt-3 text-sm">
+                    {order.revisions!.map((r) => (
+                        <li key={r.id} className="flex justify-between gap-3">
+                            <span>
+                                Revision {r.revision} ·{' '}
+                                {formatDate(r.created_at)}
+                                {r.creator ? ` · ${r.creator.name}` : ''}
+                            </span>
+                            <span className="figure">
+                                {formatMoney(r.snapshot.total_cents)}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </Section>
     );
 }

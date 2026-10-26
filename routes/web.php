@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ContractPriceController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DemoLoginController;
@@ -9,10 +10,14 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\OrderActionController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderLineController;
+use App\Http\Controllers\OrganizationContactController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\OrganizationLocationController;
 use App\Http\Controllers\PriceListController;
 use App\Http\Controllers\PriceListItemController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductUnitController;
+use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\Webhooks\ShopifyWebhookController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
@@ -51,6 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('cancel', 'cancel')->name('cancel');
         Route::post('payments', 'recordPayment')->name('payments.store');
         Route::post('payment-link', 'paymentLink')->name('payment-link');
+        Route::post('quote', [QuoteController::class, 'send'])->name('quote');
     });
 
     // Accounts
@@ -59,6 +65,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Catalog and pricing
     Route::resource('products', ProductController::class)->except(['show', 'destroy']);
+    Route::put('products/{product}/units', [ProductUnitController::class, 'sync'])->name('products.units.sync');
+
+    Route::scopeBindings()->prefix('organizations/{organization}')->name('organizations.')->group(function () {
+        Route::post('locations', [OrganizationLocationController::class, 'store'])->name('locations.store');
+        Route::put('locations/{site}', [OrganizationLocationController::class, 'update'])->name('locations.update');
+        Route::delete('locations/{site}', [OrganizationLocationController::class, 'destroy'])->name('locations.destroy');
+        Route::post('contract-prices', [ContractPriceController::class, 'store'])->name('contract-prices.store');
+        Route::delete('contract-prices/{contractPrice}', [ContractPriceController::class, 'destroy'])->name('contract-prices.destroy');
+        Route::post('contacts', [OrganizationContactController::class, 'store'])->name('contacts.store');
+        Route::patch('contacts/{customer}', [OrganizationContactController::class, 'update'])->withoutScopedBindings()->name('contacts.update');
+        Route::delete('contacts/{customer}', [OrganizationContactController::class, 'destroy'])->withoutScopedBindings()->name('contacts.destroy');
+    });
 
     Route::resource('price-lists', PriceListController::class)
         ->only(['index', 'store', 'edit', 'update'])
@@ -76,6 +94,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Local development only (the controller 404s otherwise).
     Route::get('dev/fake-checkout/{session}', FakeCheckoutController::class)->name('dev.fake-checkout');
 });
+
+Route::get('q/{token}', [QuoteController::class, 'show'])->name('quotes.public');
+Route::post('q/{token}/accept', [QuoteController::class, 'accept'])->middleware('throttle:10,1')->name('quotes.accept');
 
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
 Route::post('webhooks/shopify', ShopifyWebhookController::class)->name('webhooks.shopify');

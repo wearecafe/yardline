@@ -15,7 +15,7 @@ class FlatRateTaxCalculator implements TaxCalculator
         $lines = [];
 
         foreach ($request->lines as $line) {
-            $lines[$line->reference] = $request->exempt ? 0 : (int) round($line->amountCents * $this->rate);
+            $lines[$line->reference] = $request->exempt || $line->taxCode === TaxLine::NONTAXABLE ? 0 : (int) round($line->amountCents * $this->rate);
         }
 
         return new TaxResult($lines, array_sum($lines));

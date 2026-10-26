@@ -22,17 +22,23 @@ class RecalculateOrder
     public function handle(Order $order, bool $withTax = false): Order
     {
         $order->load([
-            'lines' => fn ($query) => $query->with('product')->orderBy('position')->orderBy('id'),
+            'lines' => fn ($query) => $query->with(['product.baseUnit', 'productUnit'])->orderBy('position')->orderBy('id'),
             'organization',
             'location',
             'tenant',
         ]);
 
+        // A sent quote holds its prices until it expires.
+        $reprice = $order->isDraft() && ! $order->pricesLocked();
+
         foreach ($order->lines as $line) {
-            if (! $line->price_overridden && $line->product !== null && $order->isDraft()) {
-                $line->unit_price_cents = $this->prices
-                    ->unitPrice($line->product, $order->organization, $line->quantity)
-                    ->cents;
+            $line->unit_factor = $line->productUnit !== null ? $line->productUnit->factor : ($line->unit_factor ?: '1');
+            $line->base_quantity = number_format((float) $line->quantity * (float) $line->unit_factor, 3, '.', '');
+
+            if ($reprice && ! $line->price_overridden && $line->product !== null) {
+                $resolved = $this->prices->unitPrice($line->product, $order->organization, $line->quantity, $line->productUnit);
+                $line->unit_price_cents = $resolved->cents;
+                $line->price_source = $resolved->source;
             }
 
             $period = $order->isRental() ? $line->product?->rental_period : null;
@@ -43,9 +49,12 @@ class RecalculateOrder
 
             // Rentals: units × periods × rate. Deposits are per unit, not per period.
             $line->line_total_cents = Money::extend($line->quantity, $line->unit_price_cents) * $line->periods;
-            $line->deposit_cents = $order->isRental() && $line->product !== null
-                ? Money::extend($line->quantity, $line->product->deposit_cents)
-                : 0;
+            // Rental deposits per unit; for sales, a container deposit (bulk bags) per unit sold.
+            $line->deposit_cents = match (true) {
+                $line->product === null => 0,
+                $order->isRental() => Money::extend($line->quantity, $line->product->deposit_cents),
+                default => Money::extend($line->quantity, $line->productUnit !== null ? $line->productUnit->deposit_cents : 0),
+            };
             $line->tax_cents = 0;
         }
 

@@ -30,7 +30,8 @@ final class OrderTax
 
         $lines = [];
         foreach ($order->lines as $line) {
-            $lines[] = new TaxLine('line_'.$line->id, $line->line_total_cents, $line->product?->tax_code);
+            $code = $line->product !== null && ! $line->product->taxable ? TaxLine::NONTAXABLE : $line->product?->tax_code;
+            $lines[] = new TaxLine('line_'.$line->id, $line->line_total_cents, $code);
         }
 
         return new TaxRequest(

@@ -41,6 +41,11 @@ export type Product = {
     service_interval_days?: number | null;
     use_case?: string | null;
     bookable_online?: boolean;
+    taxable?: boolean;
+    weight_kg?: string | null;
+    supplier_name?: string | null;
+    previous_cost_cents?: number | null;
+    cost_changed_at?: string | null;
 };
 
 export type PriceListSummary = {
@@ -56,6 +61,10 @@ export type PriceListItem = {
     product_id: number;
     min_quantity: string;
     price_cents: number;
+    product_unit_id: number | null;
+    starts_on: string | null;
+    ends_on: string | null;
+    unit: { id: number; name: string; price_cents: number } | null;
     product: Pick<Product, 'id' | 'sku' | 'name' | 'unit' | 'price_cents'>;
 };
 
@@ -122,6 +131,7 @@ export type OrderSummary = {
     number: string;
     type: OrderType;
     status: OrderStatus;
+    is_quote?: boolean;
     settlement: Settlement | null;
     payment_status: PaymentStatus;
     organization: string | null;
@@ -143,6 +153,9 @@ export type OrderLine = {
     periods: number;
     period_unit: 'day' | 'week' | null;
     price_overridden: boolean;
+    price_source?: 'list' | 'price_list' | 'contract' | 'manual' | null;
+    product_unit_id?: number | null;
+    base_quantity?: string | null;
     line_total_cents: number;
     tax_cents: number;
     deposit_cents: number;
@@ -175,6 +188,7 @@ export type Order = {
     source: string;
     organization_id: number | null;
     customer_id: number | null;
+    organization_location_id: number | null;
     location_id: number;
     fulfillment: 'pickup' | 'delivery';
     delivery_address: DeliveryAddress | null;
@@ -198,6 +212,23 @@ export type Order = {
     returned_at: string | null;
     notes: string | null;
     created_at: string;
+    quoted_at: string | null;
+    quote_expires_on: string | null;
+    revision: number;
+    quote_accepted_at: string | null;
+    quote_accepted_by: string | null;
+    organization_location?: {
+        id: number;
+        name: string;
+        po_required: boolean;
+    } | null;
+    revisions?: {
+        id: number;
+        revision: number;
+        created_at: string;
+        snapshot: { total_cents: number; expires_on: string | null };
+        creator: { id: number; name: string } | null;
+    }[];
     lines: OrderLine[];
     payments: Payment[];
     organization: Organization | null;
@@ -226,4 +257,17 @@ export type OrderProduct = Pick<
     | 'rental_period'
     | 'deposit_cents'
     | 'track_inventory'
-> & { contract_price: boolean; on_hand: string | null };
+> & {
+    contract_price: boolean;
+    on_hand: string | null;
+    units: {
+        id: number;
+        name: string;
+        is_base: boolean;
+        factor: string;
+        increment: string | null;
+        min_quantity: string | null;
+        price_cents: number;
+        price_source: string;
+    }[];
+};

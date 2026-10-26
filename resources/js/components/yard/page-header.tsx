@@ -72,12 +72,14 @@ export function useInCard(): boolean {
  */
 export function Section({
     title,
+    description,
     actions,
     children,
     className,
     flush = false,
 }: {
     title?: ReactNode;
+    description?: ReactNode;
     actions?: ReactNode;
     children: ReactNode;
     className?: string;
@@ -99,7 +101,14 @@ export function Section({
                     )}
                 >
                     {title && (
-                        <h2 className="text-base font-semibold">{title}</h2>
+                        <div className="min-w-0">
+                            <h2 className="text-base font-semibold">{title}</h2>
+                            {description && (
+                                <p className="mt-0.5 max-w-prose text-sm text-muted-foreground">
+                                    {description}
+                                </p>
+                            )}
+                        </div>
                     )}
                     {actions}
                 </div>

@@ -37,13 +37,15 @@ class PriceListController extends Controller
     public function edit(PriceList $priceList): Response
     {
         $priceList->load(['items' => fn ($query) => $query
-            ->with('product:id,sku,name,unit,price_cents')
+            ->with(['product:id,sku,name,unit,price_cents', 'unit:id,name,price_cents'])
             ->orderBy('product_id')
+            ->orderBy('product_unit_id')
             ->orderBy('min_quantity')]);
 
         return Inertia::render('price-lists/edit', [
             'priceList' => $priceList,
             'products' => Product::query()
+                ->with('units:id,product_id,name,is_base,price_cents')
                 ->where('kind', 'sale')
                 ->where('is_active', true)
                 ->orderBy('name')

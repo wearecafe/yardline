@@ -65,6 +65,7 @@ export default function Orders({
                         }
                     >
                         <option value="">Any status</option>
+                        <option value="quote">Quotes</option>
                         <option value="draft">Draft</option>
                         <option value="confirmed">Confirmed</option>
                         <option value="fulfilled">Released</option>
@@ -123,7 +124,11 @@ export default function Orders({
                                 <Td>
                                     <div className="flex items-center gap-2">
                                         <OrderStatusBadge
-                                            status={order.status}
+                                            status={
+                                                order.is_quote
+                                                    ? 'quote'
+                                                    : order.status
+                                            }
                                             rental={order.type === 'rental'}
                                         />
                                         {order.status !== 'draft' &&
