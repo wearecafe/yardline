@@ -15,9 +15,10 @@ import PasskeyVerify from '@/components/passkey-verify';
 type Props = {
     status?: string;
     canResetPassword: boolean;
+    demo?: boolean;
 };
 
-export default function Login({ status, canResetPassword }: Props) {
+export default function Login({ status, canResetPassword, demo }: Props) {
     return (
         <>
             <Head title="Log in" />
@@ -101,6 +102,13 @@ export default function Login({ status, canResetPassword }: Props) {
                     </>
                 )}
             </Form>
+
+            {demo && (
+                <p className="text-center text-sm text-muted-foreground">
+                    Just looking?{' '}
+                    <TextLink href="/demo">Try the demo yard</TextLink>
+                </p>
+            )}
 
             {status && (
                 <div className="mb-4 text-center text-sm font-medium text-green-600">

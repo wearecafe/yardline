@@ -4,6 +4,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Demo yard
+    |--------------------------------------------------------------------------
+    |
+    | Turns on /demo: one-click sign-in to the fictional Escarpment Stone demo
+    | yard, rebuilt every night by the scheduler. The demo yard always uses
+    | flat-rate tax and fake card payments, whatever the drivers below say,
+    | so it never touches Stripe. Safe alongside real yards.
+    |
+    */
+
+    'demo' => (bool) env('YARDLINE_DEMO', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Tax
     |--------------------------------------------------------------------------
     |

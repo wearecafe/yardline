@@ -35,7 +35,14 @@ class RecalculateOrder
                     ->cents;
             }
 
-            $line->line_total_cents = Money::extend($line->quantity, $line->unit_price_cents);
+            $period = $order->isRental() ? $line->product?->rental_period : null;
+            $line->period_unit = $period?->value;
+            $line->periods = $period !== null && $order->rental_starts_at !== null && $order->rental_ends_at !== null
+                ? $period->countBetween($order->rental_starts_at, $order->rental_ends_at)
+                : 1;
+
+            // Rentals: units × periods × rate. Deposits are per unit, not per period.
+            $line->line_total_cents = Money::extend($line->quantity, $line->unit_price_cents) * $line->periods;
             $line->deposit_cents = $order->isRental() && $line->product !== null
                 ? Money::extend($line->quantity, $line->product->deposit_cents)
                 : 0;

@@ -21,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $quantity
  * @property Unit $unit
  * @property int $unit_price_cents
+ * @property int $periods
+ * @property string|null $period_unit
  * @property bool $price_overridden
  * @property int $line_total_cents
  * @property int $tax_cents
@@ -31,7 +33,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'order_id', 'product_id', 'sku', 'description', 'quantity', 'unit',
-    'unit_price_cents', 'price_overridden', 'line_total_cents', 'tax_cents',
+    'unit_price_cents', 'periods', 'period_unit', 'price_overridden', 'line_total_cents', 'tax_cents',
     'deposit_cents', 'position',
 ])]
 class OrderLine extends Model
@@ -44,6 +46,7 @@ class OrderLine extends Model
             'quantity' => 'decimal:3',
             'unit' => Unit::class,
             'unit_price_cents' => 'integer',
+            'periods' => 'integer',
             'price_overridden' => 'boolean',
             'line_total_cents' => 'integer',
             'tax_cents' => 'integer',

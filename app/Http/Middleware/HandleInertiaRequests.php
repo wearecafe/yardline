@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Demo;
 use App\Tenancy\CurrentTenant;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -46,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                 ],
             ],
             'tenant' => fn () => CurrentTenant::get()?->only('id', 'name', 'currency'),
+            'isDemo' => fn () => Demo::isDemoUser($request->user()),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

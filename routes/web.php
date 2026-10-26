@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DemoLoginController;
 use App\Http\Controllers\FakeCheckoutController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LocationController;
@@ -15,9 +16,21 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\Webhooks\ShopifyWebhookController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
+use App\Support\Demo;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+use Laravel\Fortify\Features;
 
-Route::inertia('/', 'welcome')->name('home');
+Route::get('/', fn () => Inertia::render('welcome', [
+    'demo' => Demo::available(),
+    'canRegister' => Features::enabled(Features::registration()),
+]))->name('home');
+
+// One-click sign-in to the demo yard (404 unless YARDLINE_DEMO=true).
+Route::middleware('guest')->group(function () {
+    Route::get('demo', [DemoLoginController::class, 'show'])->name('demo');
+    Route::post('demo', [DemoLoginController::class, 'login'])->middleware('throttle:20,1')->name('demo.login');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');

@@ -9,22 +9,25 @@
 3. Attach a database (Postgres or MySQL both work).
 4. Build commands:
 
-   ```
-   composer install --no-dev --optimize-autoloader
-   npm ci
-   npm run build
-   ```
+    ```
+    composer install --no-dev --optimize-autoloader
+    npm ci
+    npm run build
+    ```
 
-   The build runs `php artisan wayfinder:generate` through the Vite
-   plugin, so PHP dependencies must be installed before `npm run build`.
+    The build runs `php artisan wayfinder:generate` through the Vite
+    plugin, so PHP dependencies must be installed before `npm run build`.
 
 5. Deploy commands:
 
-   ```
-   php artisan migrate --force
-   ```
+    ```
+    php artisan migrate --force
+    ```
 
-6. Turn on a queue worker for the app (Shopify sync runs on the queue).
+6. Turn on the scheduler. With `YARDLINE_DEMO=true` it rebuilds the demo
+   yard at 3:00 a.m. Toronto time every night, and only the demo yard.
+
+7. Turn on a queue worker for the app (Shopify sync runs on the queue).
    `QUEUE_CONNECTION=database` is fine to start.
 
 ## Environment
@@ -35,6 +38,7 @@ Laravel Cloud sets `APP_KEY`, `APP_URL` and database variables. Add:
 APP_NAME=Yardline
 APP_ENV=production
 APP_DEBUG=false
+YARDLINE_DEMO=true
 
 YARDLINE_TAX_DRIVER=stripe
 YARDLINE_PAYMENTS_DRIVER=stripe
@@ -68,3 +72,18 @@ environment can use Stripe test keys with the same drivers.
 ## Shopify
 
 See [shopify.md](shopify.md).
+
+## Demo yard
+
+Run once from Cloud's Commands tab to create it:
+
+```
+php artisan yardline:demo:reset --force
+```
+
+It's then reachable at `/demo`, linked from the home and login pages.
+Demo accounts have random passwords, can only be entered through `/demo`,
+and can't change account or business settings. The demo yard always uses
+flat-rate tax and fake card payments, so it never creates Stripe Tax
+transactions or Checkout sessions on your live account.
+

@@ -12,6 +12,7 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth & { can: { manageBusiness: boolean } };
             tenant: { id: number; name: string; currency: string } | null;
+            isDemo: boolean;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

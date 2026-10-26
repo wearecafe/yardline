@@ -128,6 +128,8 @@ export type OrderLine = {
     quantity: string;
     unit: string;
     unit_price_cents: number;
+    periods: number;
+    period_unit: 'day' | 'week' | null;
     price_overridden: boolean;
     line_total_cents: number;
     tax_cents: number;

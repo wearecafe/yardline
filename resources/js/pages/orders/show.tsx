@@ -272,7 +272,7 @@ function Lines({
                                     {unitLabel(line.unit)}
                                 </Td>
                                 <Td numeric>
-                                    {formatMoney(line.unit_price_cents)}
+                                    <Rate line={line} />
                                 </Td>
                                 <Td numeric>
                                     {formatMoney(line.line_total_cents)}
@@ -284,6 +284,26 @@ function Lines({
             </Table>
             {editable && <AddLine order={order} products={products} />}
         </Section>
+    );
+}
+
+/**
+ * Unit price, plus "× 3 days" on rental lines.
+ */
+function Rate({ line }: { line: OrderLine }) {
+    if (!line.period_unit) {
+        return <>{formatMoney(line.unit_price_cents)}</>;
+    }
+
+    const unit = line.periods === 1 ? line.period_unit : `${line.period_unit}s`;
+
+    return (
+        <>
+            {formatMoney(line.unit_price_cents)}
+            <span className="block text-xs text-muted-foreground">
+                × {line.periods} {unit}
+            </span>
+        </>
     );
 }
 
@@ -337,7 +357,9 @@ function EditableLine({ order, line }: { order: Order; line: OrderLine }) {
                     </span>
                 </div>
             </Td>
-            <Td numeric>{formatMoney(line.unit_price_cents)}</Td>
+            <Td numeric>
+                <Rate line={line} />
+            </Td>
             <Td numeric>{formatMoney(line.line_total_cents)}</Td>
             <Td className="text-right">
                 <Button

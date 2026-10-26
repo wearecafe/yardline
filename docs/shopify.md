@@ -17,15 +17,15 @@ A public OAuth app replaces step 1 if Yardline is offered to other yards.
 
 ## What syncs
 
-| Yardline | Shopify | Status |
-| --- | --- | --- |
-| Products (sale items) | Products, one variant, price copied from list price | Built (`productSet`) |
-| Customers | Customers | Built (`customerCreate` / `customerUpdate`) |
-| Rental equipment | Not sent | By design |
-| Organizations | B2B companies (Shopify Plus) | Not built |
-| Price lists | B2B catalogs and price lists | Not built |
-| Stock levels | Inventory levels per location | Not built |
-| Orders placed in Shopify | Yardline orders | Webhook verified and queued; import is a stub (`ImportShopifyOrder`) |
+| Yardline                 | Shopify                                             | Status                                                               |
+| ------------------------ | --------------------------------------------------- | -------------------------------------------------------------------- |
+| Products (sale items)    | Products, one variant, price copied from list price | Built (`productSet`)                                                 |
+| Customers                | Customers                                           | Built (`customerCreate` / `customerUpdate`)                          |
+| Rental equipment         | Not sent                                            | By design                                                            |
+| Organizations            | B2B companies (Shopify Plus)                        | Not built                                                            |
+| Price lists              | B2B catalogs and price lists                        | Not built                                                            |
+| Stock levels             | Inventory levels per location                       | Not built                                                            |
+| Orders placed in Shopify | Yardline orders                                     | Webhook verified and queued; import is a stub (`ImportShopifyOrder`) |
 
 ## How it works
 

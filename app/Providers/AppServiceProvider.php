@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Payments\CheckoutLinks;
 use App\Payments\FakeCheckoutLinks;
 use App\Payments\StripeCheckoutLinks;
+use App\Support\Demo;
 use App\Support\StripeGateway;
 use App\Tax\FlatRateTaxCalculator;
 use App\Tax\StripeTaxCalculator;
@@ -36,13 +37,19 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(StripeGateway::class, fn () => new StripeGateway(config('services.stripe.secret')));
 
-        $this->app->bind(TaxCalculator::class, fn (Application $app) => match (config('yardline.tax.driver')) {
+        // The demo yard never talks to Stripe: flat tax and fake payment links,
+        // whatever the configured drivers are.
+        $this->app->bind(TaxCalculator::class, fn (Application $app) => match (Demo::isCurrentTenant() ? 'flat' : config('yardline.tax.driver')) {
             'stripe' => $app->make(StripeTaxCalculator::class),
             'flat' => new FlatRateTaxCalculator((float) config('yardline.tax.flat_rate')),
             default => throw new RuntimeException('Unknown YARDLINE_TAX_DRIVER: '.config('yardline.tax.driver')),
         });
 
         $this->app->bind(CheckoutLinks::class, function (Application $app) {
+            if (Demo::isCurrentTenant()) {
+                return new FakeCheckoutLinks;
+            }
+
             $driver = config('yardline.payments.driver');
 
             if ($driver === 'fake' && $app->isProduction()) {

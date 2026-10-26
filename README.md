@@ -20,10 +20,11 @@ npm install
 composer dev
 ```
 
-Open http://localhost:8000 and sign in as `owner@yardline.test` /
-`password` (or `counter@yardline.test` for a staff account). The demo
-yard has products, a contractor price list, three organizations and a
-draft order.
+Open http://localhost:8000/demo and pick someone at Escarpment Stone, the
+fictional demo yard: the owner, office manager, counter or yard lead. It has
+two yards, contractor and builder price lists, five organizations (one on
+credit hold, one near its limit) and orders and rentals in every state, all
+dated relative to today. `php artisan yardline:demo:reset` rebuilds it.
 
 Locally, tax is a flat 13% and card payment links are fake: opening one
 marks the order paid. Set the drivers in `.env` to use Stripe (see
@@ -53,12 +54,12 @@ quantity break) or the product's list price.
 **Orders** (`app/Orders`). Draft, confirmed, released (`fulfilled`), and
 for rentals, returned. Confirming calculates tax and decides settlement:
 
-- *Account*: allowed when the order fits the organization's available
+- _Account_: allowed when the order fits the organization's available
   credit (limit minus unpaid account orders). Over the limit, on credit
   hold or with no limit, an owner or admin can override with a reason.
-- *Prepaid*: card, cash, cheque or e-Transfer before release. Walk-ins
+- _Prepaid_: card, cash, cheque or e-Transfer before release. Walk-ins
   are always prepaid.
-- *Rentals* are separate orders, always prepaid, with the deposit due up
+- _Rentals_ are separate orders, always prepaid, with the deposit due up
   front.
 
 Business rules throw validation errors (`OrderRules::fail`) so the UI
