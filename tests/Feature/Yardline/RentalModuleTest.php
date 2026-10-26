@@ -3,9 +3,11 @@
 namespace Tests\Feature\Yardline;
 
 use App\Enums\DepositStatus;
+use App\Enums\DocumentKind;
 use App\Enums\RentalStatus;
 use App\Models\Customer;
 use App\Models\Location;
+use App\Models\Organization;
 use App\Models\Product;
 use App\Models\Rental;
 use App\Models\RentalUnit;
@@ -244,6 +246,77 @@ class RentalModuleTest extends TestCase
         $this->assertSame('online', $rental->source);
         $this->assertSame(RentalStatus::Reserved, $rental->status);
         $this->assertSame($this->unit->id, $rental->items()->withoutGlobalScopes()->value('rental_unit_id'));
+    }
+
+    public function test_a_signed_in_contractor_books_to_their_account(): void
+    {
+        $tenant = CurrentTenant::get();
+        $this->assertInstanceOf(Tenant::class, $tenant);
+        $org = Organization::factory()->create(['name' => 'Brantwood Landscaping']);
+        $mike = Customer::factory()->create([
+            'organization_id' => $org->id,
+            'first_name' => 'Mike',
+            'last_name' => 'Brant',
+            'email' => 'mike@brantwood.example',
+            'phone' => '905-555-0100',
+        ]);
+        $mike->documents()->create(['kind' => DocumentKind::DriversLicence, 'verified_at' => now()]);
+        auth()->logout();
+
+        $session = ['portal' => ['customer_id' => $mike->id, 'tenant_id' => $tenant->id, 'slug' => $tenant->slug]];
+
+        $this->withSession($session)->get(route('book.show', $tenant->slug))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('portal.organization.name', 'Brantwood Landscaping')
+                ->where('account.email', 'mike@brantwood.example')
+                ->where('account.phone', '905-555-0100')
+                ->where('account.on_file.0.kind', 'drivers_licence'));
+
+        // Name and email come from the account, whatever the form says.
+        $this->withSession($session)->post(route('book.store', $tenant->slug), [
+            'product_id' => $this->buggy->id,
+            'pickup_on' => '2026-11-03',
+            'return_on' => '2026-11-04',
+            'damage_waiver' => true,
+            'email' => 'someone-else@example.com',
+            'phone' => '905-555-0199',
+        ])->assertRedirect();
+
+        $rental = Rental::query()->withoutGlobalScopes()->latest('id')->firstOrFail();
+        $this->assertSame($mike->id, $rental->customer_id);
+        $this->assertSame($org->id, $rental->organization_id);
+        $this->assertSame('905-555-0199', $mike->refresh()->phone);
+        $this->assertSame(0, Customer::query()->withoutGlobalScopes()->where('email', 'someone-else@example.com')->count());
+    }
+
+    public function test_a_guest_sees_the_public_page_and_another_yards_session_is_ignored(): void
+    {
+        $tenant = CurrentTenant::get();
+        $this->assertInstanceOf(Tenant::class, $tenant);
+        auth()->logout();
+
+        $this->get(route('book.show', $tenant->slug))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('portal', null)->where('account', null));
+
+        $this->withSession(['portal' => ['customer_id' => 1, 'tenant_id' => $tenant->id + 1, 'slug' => 'elsewhere']])
+            ->get(route('book.show', $tenant->slug))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('portal', null));
+    }
+
+    public function test_the_booking_calendar_marks_fully_booked_days(): void
+    {
+        $tenant = CurrentTenant::get();
+        $this->assertInstanceOf(Tenant::class, $tenant);
+        $rental = $this->quote(['starts_at' => '2026-11-04T07:00', 'ends_at' => '2026-11-05T17:00']);
+        $this->post(route('rentals.reserve', $rental))->assertSessionHasNoErrors();
+        auth()->logout();
+
+        $this->getJson(route('book.availability', ['tenant' => $tenant->slug, 'product_id' => $this->buggy->id, 'from' => '2026-11-02', 'days' => 7]))
+            ->assertOk()
+            ->assertJsonPath('booked', ['2026-11-04', '2026-11-05']);
     }
 
     public function test_rental_pages_render(): void

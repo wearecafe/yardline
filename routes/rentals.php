@@ -84,6 +84,7 @@ Route::post('sign/{token}', [AgreementController::class, 'publicSign'])->middlew
 Route::post('sign/{token}/pay', [AgreementController::class, 'publicPay'])->middleware('throttle:10,1')->name('rentals.public-sign.pay');
 
 Route::get('book/{tenant:slug}', [BookingController::class, 'show'])->name('book.show');
+Route::get('book/{tenant:slug}/availability', [BookingController::class, 'availability'])->middleware('throttle:60,1')->name('book.availability');
 Route::get('book/{tenant:slug}/quote', [BookingController::class, 'quote'])->middleware('throttle:60,1')->name('book.quote');
 Route::post('book/{tenant:slug}', [BookingController::class, 'store'])->middleware('throttle:10,1')->name('book.store');
 
