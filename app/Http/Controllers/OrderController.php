@@ -190,7 +190,7 @@ class OrderController extends Controller
      * Active products of the right kind, priced for this order's organization
      * (at quantity 1) and with on-hand at the order's yard.
      *
-     * @return list<array<string, mixed>>
+     * @return array<int, array<string, mixed>>
      */
     private function productsFor(Order $order, ProductKind $kind): array
     {
