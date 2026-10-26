@@ -48,6 +48,9 @@ const movementLabels: Record<string, string> = {
     sale: 'Sold',
     rental_out: 'Rented out',
     rental_return: 'Returned',
+    return: 'Customer return',
+    transfer_out: 'Transferred out',
+    transfer_in: 'Transferred in',
     damage: 'Damaged',
 };
 

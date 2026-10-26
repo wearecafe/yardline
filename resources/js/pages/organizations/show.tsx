@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import OrganizationController from '@/actions/App/Http/Controllers/OrganizationController';
+import ReceivablesController from '@/actions/App/Http/Controllers/ReceivablesController';
 import { EmptyRow, Table, Td, Th } from '@/components/yard/data-table';
 import {
     ContactsSection,
@@ -28,6 +29,11 @@ type Props = {
     };
     orders: OrderSummary[];
     paymentTerms: Option[];
+    account: {
+        pallets_out: number;
+        credit_cents: number;
+        overdue_cents: number;
+    };
     contacts: OrgContact[];
     roles: Option[];
     otherCustomers: { id: number; name: string }[];
@@ -68,6 +74,15 @@ export default function ShowOrganization(props: Props) {
                         <>
                             <Button variant="outline" asChild>
                                 <Link
+                                    href={ReceivablesController.statement(
+                                        organization.id,
+                                    )}
+                                >
+                                    Statement
+                                </Link>
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <Link
                                     href={OrganizationController.edit(
                                         organization.id,
                                     )}
@@ -93,6 +108,34 @@ export default function ShowOrganization(props: Props) {
                 <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
                     <div className="grid content-start gap-8">
                         <Section title="Credit">
+                            {(props.account.overdue_cents > 0 ||
+                                props.account.credit_cents > 0 ||
+                                props.account.pallets_out > 0) && (
+                                <ul className="mb-3 grid gap-1 text-sm">
+                                    {props.account.overdue_cents > 0 && (
+                                        <li className="font-semibold text-danger">
+                                            {formatMoney(
+                                                props.account.overdue_cents,
+                                            )}{' '}
+                                            overdue
+                                        </li>
+                                    )}
+                                    {props.account.credit_cents > 0 && (
+                                        <li className="text-success">
+                                            {formatMoney(
+                                                props.account.credit_cents,
+                                            )}{' '}
+                                            credit to use
+                                        </li>
+                                    )}
+                                    {props.account.pallets_out > 0 && (
+                                        <li>
+                                            {props.account.pallets_out} pallets
+                                            out on deposit
+                                        </li>
+                                    )}
+                                </ul>
+                            )}
                             {organization.credit_hold && (
                                 <p className="mb-3 rounded-md border border-danger/20 bg-danger-soft px-3 py-2 text-sm text-danger">
                                     On credit hold. New orders must be paid up

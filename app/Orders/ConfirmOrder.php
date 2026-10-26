@@ -10,6 +10,7 @@ use App\Enums\Settlement;
 use App\Enums\StopStatus;
 use App\Models\Order;
 use App\Models\User;
+use App\Receivables\IssueInvoice;
 use App\Tax\TaxCalculationFailed;
 use Illuminate\Support\Facades\DB;
 
@@ -84,6 +85,10 @@ class ConfirmOrder
             $order->credit_override_reason = $overrideBy ? $overrideReason : null;
             $order->save();
         });
+
+        if (! $order->isRental()) {
+            app(IssueInvoice::class)->forOrder($order);
+        }
 
         // Deliveries go on the dispatch board to plan a truck.
         if ($order->fulfillment === FulfillmentMethod::Delivery && ! $order->isRental()) {

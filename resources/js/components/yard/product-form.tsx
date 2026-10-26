@@ -32,6 +32,10 @@ export function ProductForm({
         taxable: product?.taxable ?? true,
         weight_kg: product?.weight_kg ? String(Number(product.weight_kg)) : '',
         supplier_name: product?.supplier_name ?? '',
+        pallet_deposit: product?.pallet_deposit ?? false,
+        per_pallet: product?.per_pallet
+            ? String(Number(product.per_pallet))
+            : '',
         track_inventory: product?.track_inventory ?? true,
         is_active: product?.is_active ?? true,
         rate_hour: centsToInput(product?.rate_hour_cents),
@@ -313,6 +317,36 @@ export function ProductForm({
                                 }
                             />
                         </Field>
+                    </div>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:items-end">
+                        <Checkbox
+                            id="pallet_deposit"
+                            label="Ships on pallets that carry a deposit"
+                            checked={form.data.pallet_deposit}
+                            onChange={(checked) =>
+                                form.setData('pallet_deposit', checked)
+                            }
+                        />
+                        {form.data.pallet_deposit && (
+                            <Field
+                                label="Base units per pallet"
+                                htmlFor="per_pallet"
+                                error={form.errors.per_pallet}
+                                hint="e.g. 115 sq ft of pavers. Blank if it's sold by the pallet."
+                            >
+                                <Input
+                                    id="per_pallet"
+                                    inputMode="decimal"
+                                    value={form.data.per_pallet}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'per_pallet',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </Field>
+                        )}
                     </div>
                 </Section>
             )}

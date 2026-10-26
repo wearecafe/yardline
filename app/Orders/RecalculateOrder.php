@@ -5,7 +5,9 @@ namespace App\Orders;
 use App\Enums\FulfillmentMethod;
 use App\Fulfillment\DeliveryPricer;
 use App\Models\Order;
+use App\Models\OrderLine;
 use App\Pricing\PriceResolver;
+use App\Receivables\ReturnsSettings;
 use App\Support\Money;
 use App\Tax\TaxCalculator;
 
@@ -33,6 +35,8 @@ class RecalculateOrder
 
         // A sent quote holds its prices until it expires.
         $reprice = $order->isDraft() && ! $order->pricesLocked();
+        $returns = ReturnsSettings::for($order->tenant);
+        $palletFee = $returns->palletDeposits && $order->location->pallet_deposits ? $returns->palletDepositCents : 0;
 
         foreach ($order->lines as $line) {
             $line->unit_factor = $line->productUnit !== null ? $line->productUnit->factor : ($line->unit_factor ?: '1');
@@ -52,11 +56,14 @@ class RecalculateOrder
 
             // Rentals: units × periods × rate. Deposits are per unit, not per period.
             $line->line_total_cents = Money::extend($line->quantity, $line->unit_price_cents) * $line->periods;
-            // Rental deposits per unit; for sales, a container deposit (bulk bags) per unit sold.
+            // Rental deposits per unit; for sales, a container deposit (bulk
+            // bags) per unit sold plus a deposit on each pallet it ships on.
+            $line->pallets = $order->isRental() || ! $palletFee ? 0 : $this->pallets($line);
             $line->deposit_cents = match (true) {
                 $line->product === null => 0,
                 $order->isRental() => Money::extend($line->quantity, $line->product->deposit_cents),
-                default => Money::extend($line->quantity, $line->productUnit !== null ? $line->productUnit->deposit_cents : 0),
+                default => Money::extend($line->quantity, $line->productUnit !== null ? $line->productUnit->deposit_cents : 0)
+                    + $line->pallets * $palletFee,
             };
             $line->tax_cents = 0;
         }
@@ -96,5 +103,23 @@ class RecalculateOrder
         $order->save();
 
         return $order;
+    }
+
+    /**
+     * Pallets a line ships on, for the deposit.
+     */
+    private function pallets(OrderLine $line): int
+    {
+        $product = $line->product;
+
+        if ($product === null || ! $product->pallet_deposit) {
+            return 0;
+        }
+
+        $perPallet = (float) ($product->per_pallet ?? 0);
+
+        return $perPallet > 0
+            ? (int) ceil($line->baseQuantity() / $perPallet - 1e-9)
+            : (int) ceil((float) $line->quantity - 1e-9);
     }
 }

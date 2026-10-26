@@ -42,6 +42,9 @@ use App\Orders\CreateOrder;
 use App\Orders\FulfillOrder;
 use App\Orders\SendQuote;
 use App\Payments\RecordPayment;
+use App\Receivables\PalletLedger;
+use App\Receivables\ProcessReturn;
+use App\Receivables\UseCredit;
 use App\Rentals\CheckInRental;
 use App\Rentals\CheckOutRental;
 use App\Rentals\InspectionData;
@@ -160,6 +163,7 @@ class DemoYardSeeder extends Seeder
                 $this->orders();
                 $this->quotes();
                 $this->fulfillmentToday();
+                $this->returnsAndCredits();
                 $this->rentals();
             });
         });
@@ -225,6 +229,14 @@ class DemoYardSeeder extends Seeder
         app(ConfirmOrder::class)->handle($order, $settlement, $this->owner(), $override);
 
         $order->forceFill(['confirmed_at' => $at, 'updated_at' => $at])->saveQuietly();
+
+        // The invoice was issued the day it was confirmed.
+        $invoice = $order->invoice()->first();
+        $invoice?->forceFill([
+            'issued_on' => $at->toDateString(),
+            'due_on' => $at->addDays($invoice->terms->days())->toDateString(),
+            'created_at' => $at,
+        ])->saveQuietly();
 
         return $order->refresh();
     }
@@ -466,6 +478,11 @@ class DemoYardSeeder extends Seeder
 
         foreach ($details as $sku => [$kg, $supplier]) {
             $this->products[$sku]->forceFill(['weight_kg' => $kg, 'supplier_name' => $supplier])->save();
+        }
+
+        // Pavers, wall block and brick ship on deposit pallets.
+        foreach (['PAV-60CH' => 115, 'PAV-80NT' => 90, 'WAL-STD' => 48, 'WAL-CAP' => 60, 'BRK-MOD' => null, 'FLG-ARM' => null] as $sku => $perPallet) {
+            $this->products[$sku]->forceFill(['pallet_deposit' => true, 'per_pallet' => $perPallet])->save();
         }
 
         // sku => [[name, factor, retail, contractor, measured by, increment, deposit]]
@@ -948,6 +965,30 @@ class DemoYardSeeder extends Seeder
             'po_number' => 'HM-RIDGEVIEW',
         ], ['WAL-STD@Pallet (48 blocks)' => 3, 'WAL-CAP' => 40, 'AGG-34C' => 6], $this->at(0, '09:20'));
         $this->confirm($order, Settlement::Account, $this->at(0, '09:25'), override: 'Good for it: cheque for HM-TOWNSEND came in today. (Gord)');
+    }
+
+    /**
+     * A return with a restocking fee, pallets back, and a credit used.
+     */
+    private function returnsAndCredits(): void
+    {
+        $brantwood = $this->orgs['brantwood'];
+        $orchard = Order::query()->where('po_number', 'BW-ORCHARD')->firstOrFail();
+        $pavers = $orchard->lines()->where('sku', 'PAV-80NT')->firstOrFail();
+
+        $credit = app(ProcessReturn::class)->handle($orchard, [
+            ['order_line_id' => $pavers->id, 'quantity' => 60, 'restock' => true],
+        ], $this->yardLead(), 'Over-ordered: one pallet came back unopened');
+        $credit->forceFill(['issued_on' => $this->at(8)->toDateString(), 'created_at' => $this->at(8, '14:20')])->saveQuietly();
+
+        $pallets = app(PalletLedger::class)->returned($brantwood, null, 5, $this->waterdown, $this->yardLead());
+        $pallets->forceFill(['issued_on' => $this->at(2)->toDateString(), 'created_at' => $this->at(2, '15:40')])->saveQuietly();
+
+        // The pallet credit went against last week's unpaid order.
+        $unpaid = Order::query()->where('organization_id', $brantwood->id)->where('payment_status', 'unpaid')->where('status', 'fulfilled')->latest('id')->first();
+        if ($unpaid !== null) {
+            app(UseCredit::class)->apply($pallets->refresh(), $unpaid, $this->owner());
+        }
     }
 
     // -------------------------------------------------------------- quotes

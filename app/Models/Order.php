@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
@@ -74,6 +75,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property-read OrganizationLocation|null $organizationLocation
  * @property-read DeliveryZone|null $deliveryZone
  * @property-read Collection<int, Shipment> $shipments
+ * @property-read Invoice|null $invoice
  * @property-read Collection<int, OrderRevision> $revisions
  * @property-read Collection<int, OrderLine> $lines
  */
@@ -189,6 +191,30 @@ class Order extends Model
     public function stops(): MorphMany
     {
         return $this->morphMany(Stop::class, 'stoppable');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * @return HasOne<Invoice, $this>
+     */
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
+    }
+
+    /**
+     * @return HasMany<CreditNote, $this>
+     */
+    public function creditNotes(): HasMany
+    {
+        return $this->hasMany(CreditNote::class);
     }
 
     /**

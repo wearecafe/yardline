@@ -9,6 +9,7 @@ enum PaymentTender: string
     case Cash = 'cash';
     case Cheque = 'cheque';
     case ETransfer = 'etransfer';
+    case CreditNote = 'credit_note';
 
     public function label(): string
     {
@@ -18,6 +19,7 @@ enum PaymentTender: string
             self::Cash => 'Cash',
             self::Cheque => 'Cheque',
             self::ETransfer => 'e-Transfer',
+            self::CreditNote => 'Account credit',
         };
     }
 

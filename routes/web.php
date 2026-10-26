@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ContractPriceController;
+use App\Http\Controllers\CounterController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\DispatchController;
 use App\Http\Controllers\FakeCheckoutController;
 use App\Http\Controllers\FulfillmentController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\OrderActionController;
 use App\Http\Controllers\OrderController;
@@ -21,6 +23,8 @@ use App\Http\Controllers\PriceListItemController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductUnitController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\ReceivablesController;
+use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockLevelController;
 use App\Http\Controllers\Webhooks\ShopifyWebhookController;
@@ -104,6 +108,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('shipments/{shipment}/ticket', [FulfillmentController::class, 'ticket'])->name('shipments.ticket');
     Route::get('deliver/{shipment}', [DeliveryController::class, 'show'])->name('shipments.deliver');
     Route::post('deliver/{shipment}', [DeliveryController::class, 'complete'])->name('shipments.complete');
+
+    Route::get('counter', [CounterController::class, 'show'])->name('counter.show');
+    Route::get('counter/prices', [CounterController::class, 'prices'])->name('counter.prices');
+    Route::post('counter', [CounterController::class, 'store'])->name('counter.store');
+    Route::get('counter/receipt/{order}', [CounterController::class, 'receipt'])->name('counter.receipt');
+
+    Route::get('receivables', [ReceivablesController::class, 'index'])->name('receivables.index');
+    Route::get('organizations/{organization}/statement', [ReceivablesController::class, 'statement'])->name('organizations.statement');
+    Route::get('organizations/{organization}/statement.pdf', [ReceivablesController::class, 'pdf'])->name('organizations.statement.pdf');
+    Route::post('organizations/{organization}/statement/email', [ReceivablesController::class, 'email'])->name('organizations.statement.email');
+    Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+
+    Route::get('returns', [ReturnController::class, 'index'])->name('returns.index');
+    Route::get('orders/{order}/returns/create', [ReturnController::class, 'create'])->name('orders.returns.create');
+    Route::post('orders/{order}/returns', [ReturnController::class, 'store'])->name('orders.returns.store');
+    Route::get('credit-notes/{creditNote}', [ReturnController::class, 'show'])->name('credit-notes.show');
+    Route::post('credit-notes/{creditNote}/apply', [ReturnController::class, 'apply'])->name('credit-notes.apply');
+    Route::post('credit-notes/{creditNote}/refund', [ReturnController::class, 'refund'])->name('credit-notes.refund');
+    Route::post('pallet-returns', [ReturnController::class, 'pallets'])->name('pallet-returns.store');
 
     Route::get('dispatch', [DispatchController::class, 'board'])->name('dispatch.board');
     Route::post('dispatch/etas', [DispatchController::class, 'etas'])->name('dispatch.etas');

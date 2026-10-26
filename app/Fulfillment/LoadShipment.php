@@ -11,6 +11,7 @@ use App\Inventory\InventoryLedger;
 use App\Models\Shipment;
 use App\Models\User;
 use App\Orders\OrderRules;
+use App\Receivables\PalletLedger;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -54,6 +55,8 @@ class LoadShipment
                 $orderLine->shipped_quantity = (string) min((float) $orderLine->quantity, (float) $orderLine->shipped_quantity + $quantity);
                 $orderLine->save();
             }
+
+            app(PalletLedger::class)->shipped($shipment, $user);
 
             $shipment->forceFill([
                 'status' => $shipment->isDelivery() ? ShipmentStatus::Loaded : ShipmentStatus::Ready,

@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\CreditNote;
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\Organization;
@@ -124,7 +126,9 @@ class AppServiceProvider extends ServiceProvider
         // Stable names in polymorphic columns (stock movement references,
         // external references) instead of PHP class names.
         Relation::enforceMorphMap([
+            'credit_note' => CreditNote::class,
             'customer' => Customer::class,
+            'invoice' => Invoice::class,
             'location' => Location::class,
             'order' => Order::class,
             'organization' => Organization::class,

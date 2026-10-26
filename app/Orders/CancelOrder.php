@@ -23,6 +23,7 @@ class CancelOrder
         $order->save();
 
         $order->stops()->whereNotIn('status', ['done', 'cancelled'])->update(['status' => 'cancelled']);
+        $order->invoice()->update(['status' => 'void']);
 
         return $order;
     }
