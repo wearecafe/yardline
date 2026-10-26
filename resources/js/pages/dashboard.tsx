@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import InventoryController from '@/actions/App/Http/Controllers/InventoryController';
+import RentalController from '@/actions/App/Http/Controllers/Rentals/RentalController';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import { Table, Td, Th, EmptyRow } from '@/components/yard/data-table';
 import { PageBody, PageHeader, Section } from '@/components/yard/page-header';
@@ -51,11 +52,7 @@ export default function Dashboard({ stats, recentOrders, lowStock }: Props) {
                     actions={
                         <>
                             <Button variant="outline" asChild>
-                                <Link
-                                    href={OrderController.create({
-                                        query: { type: 'rental' },
-                                    })}
-                                >
+                                <Link href={RentalController.create()}>
                                     New rental
                                 </Link>
                             </Button>

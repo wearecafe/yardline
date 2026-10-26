@@ -17,6 +17,12 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
+    /** Rental money fields on the product form, stored as {field}_cents. */
+    private const RENTAL_MONEY = [
+        'rate_hour', 'rate_half_day', 'rate_weekend', 'rate_week', 'rate_month',
+        'minimum_charge', 'fuel_charge', 'cleaning_fee',
+    ];
+
     public function index(Request $request): Response
     {
         $products = Product::query()
@@ -78,21 +84,39 @@ class ProductController extends Controller
             'unit' => ['required', Rule::enum(Unit::class)],
             'price' => ['required', 'numeric', 'min:0', 'max:9999999'],
             'cost' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
-            'rental_period' => ['nullable', 'required_if:kind,rental', Rule::enum(RentalPeriod::class)],
+            'rental_period' => ['nullable', Rule::enum(RentalPeriod::class)],
             'deposit' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
             'tax_code' => ['nullable', 'string', 'max:50'],
             'track_inventory' => ['boolean'],
             'is_active' => ['boolean'],
+            ...array_fill_keys(self::RENTAL_MONEY, ['nullable', 'numeric', 'min:0', 'max:9999999']),
+            'service_interval_hours' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'service_interval_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
+            'use_case' => ['nullable', 'string', 'max:255'],
+            'bookable_online' => ['boolean'],
         ]);
 
         $isRental = $data['kind'] === ProductKind::Rental->value;
 
+        $rental = [];
+
+        foreach (self::RENTAL_MONEY as $field) {
+            $cents = $isRental ? Money::parse($data[$field] ?? null) : null;
+            // Optional rates stay null; the flat charges default to zero.
+            $rental["{$field}_cents"] = str_starts_with($field, 'rate_') ? $cents : ($cents ?? 0);
+        }
+
         return [
-            ...Arr::except($data, ['price', 'cost', 'deposit']),
+            ...Arr::except($data, ['price', 'cost', 'deposit', ...self::RENTAL_MONEY]),
+            ...$rental,
+            'service_interval_hours' => $isRental ? ($data['service_interval_hours'] ?? null) : null,
+            'service_interval_days' => $isRental ? ($data['service_interval_days'] ?? null) : null,
+            'use_case' => $isRental ? ($data['use_case'] ?? null) : null,
+            'bookable_online' => $isRental && ($data['bookable_online'] ?? false),
             'price_cents' => Money::parse($data['price']),
             'cost_cents' => Money::parse($data['cost'] ?? null),
             'deposit_cents' => $isRental ? (Money::parse($data['deposit'] ?? null) ?? 0) : 0,
-            'rental_period' => $isRental ? $data['rental_period'] : null,
+            'rental_period' => $isRental ? ($data['rental_period'] ?? 'day') : null,
         ];
     }
 

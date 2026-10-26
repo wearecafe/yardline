@@ -9,10 +9,16 @@ use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\Rental;
+use App\Models\RentalUnit;
 use App\Models\User;
 use App\Payments\CheckoutLinks;
 use App\Payments\FakeCheckoutLinks;
 use App\Payments\StripeCheckoutLinks;
+use App\Rentals\Payments\FakeRentalGateway;
+use App\Rentals\Payments\RentalGateway;
+use App\Rentals\Payments\StripeRentalGateway;
+use App\Rentals\RentalSettings;
 use App\Support\Demo;
 use App\Support\StripeGateway;
 use App\Tax\FlatRateTaxCalculator;
@@ -44,6 +50,22 @@ class AppServiceProvider extends ServiceProvider
             'flat' => new FlatRateTaxCalculator((float) config('yardline.tax.flat_rate')),
             default => throw new RuntimeException('Unknown YARDLINE_TAX_DRIVER: '.config('yardline.tax.driver')),
         });
+
+        $this->app->bind(RentalGateway::class, function (Application $app) {
+            if (Demo::isCurrentTenant()) {
+                return new FakeRentalGateway;
+            }
+
+            $driver = config('yardline.payments.driver');
+
+            if ($driver === 'fake' && $app->isProduction()) {
+                throw new RuntimeException('The fake payments driver cannot be used in production.');
+            }
+
+            return $driver === 'stripe' ? $app->make(StripeRentalGateway::class) : new FakeRentalGateway;
+        });
+
+        $this->app->bind(RentalSettings::class, fn () => RentalSettings::current());
 
         $this->app->bind(CheckoutLinks::class, function (Application $app) {
             if (Demo::isCurrentTenant()) {
@@ -108,6 +130,8 @@ class AppServiceProvider extends ServiceProvider
             'payment' => Payment::class,
             'price_list' => PriceList::class,
             'product' => Product::class,
+            'rental' => Rental::class,
+            'rental_unit' => RentalUnit::class,
             'user' => User::class,
         ]);
     }

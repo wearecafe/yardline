@@ -2,21 +2,27 @@
 
 namespace Database\Seeders;
 
+use App\Enums\FuelLevel;
+use App\Enums\MaintenanceKind;
 use App\Enums\PaymentTender;
 use App\Enums\PaymentTerms;
 use App\Enums\ProductKind;
 use App\Enums\RentalPeriod;
+use App\Enums\RentalTender;
 use App\Enums\Settlement;
 use App\Enums\StockMovementType;
 use App\Enums\Unit;
 use App\Enums\UserRole;
 use App\Inventory\InventoryLedger;
 use App\Models\Customer;
+use App\Models\DeliveryZone;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\Organization;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\Rental;
+use App\Models\RentalUnit;
 use App\Models\StockLevel;
 use App\Models\StockMovement;
 use App\Models\Tenant;
@@ -25,11 +31,19 @@ use App\Orders\AddOrderLine;
 use App\Orders\ConfirmOrder;
 use App\Orders\CreateOrder;
 use App\Orders\FulfillOrder;
-use App\Orders\ReturnRental;
 use App\Payments\RecordPayment;
+use App\Rentals\CheckInRental;
+use App\Rentals\CheckOutRental;
+use App\Rentals\InspectionData;
+use App\Rentals\Maintenance;
+use App\Rentals\Payments\RentalPayments;
+use App\Rentals\ReserveRental;
+use App\Rentals\SaveRental;
+use App\Rentals\SignAgreement;
 use App\Tenancy\CurrentTenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -218,16 +232,6 @@ class DemoYardSeeder extends Seeder
         return $order->refresh();
     }
 
-    private function checkIn(Order $order, CarbonImmutable $at): Order
-    {
-        app(ReturnRental::class)->handle($order, $this->yardLead());
-
-        $order->forceFill(['returned_at' => $at, 'updated_at' => $at])->saveQuietly();
-        $this->backdateMovements($order, $at, [StockMovementType::RentalReturn]);
-
-        return $order->refresh();
-    }
-
     /**
      * @param  list<StockMovementType>  $types
      */
@@ -319,24 +323,37 @@ class DemoYardSeeder extends Seeder
             ]);
         }
 
-        // sku, name, daily rate, deposit (cents)
+        // sku, name, use, day, half day, weekend, week, month, deposit, fuel, cleaning, service hours
         $rentals = [
-            ['RNT-PLATE', 'Plate compactor', 9500, 25000],
-            ['RNT-SAW14', 'Masonry saw, 14 in', 8500, 30000],
-            ['RNT-MIXER', 'Mortar mixer', 7500, 20000],
-            ['RNT-BUGGY', 'Power buggy', 16500, 50000],
+            ['RNT-PLATE', 'Plate compactor', 'Compacting base for patios and walkways', 9500, 6500, 14000, 38000, 105000, 25000, 2500, 4000, 100],
+            ['RNT-SAW14', 'Masonry saw, 14 in', 'Cutting pavers, block and wall caps', 8500, 5500, 12500, 34000, 95000, 30000, 2500, 5000, 150],
+            ['RNT-MIXER', 'Mortar mixer', 'Mixing mortar and grout on site', 7500, 5000, 11000, 30000, 82500, 20000, 2000, 6000, 200],
+            ['RNT-BUGGY', 'Power buggy', 'Moving stone, soil and mix across a site', 16500, 11000, 24500, 49500, 135000, 50000, 3500, 5000, 150],
+            ['RNT-EXC17', 'Mini excavator, 1.7 t', 'Digging footings, trenches and patio bases', 32900, 22500, 49500, 129900, 349900, 100000, 9500, 7500, 250],
+            ['RNT-TILL', 'Rear-tine tiller', 'Breaking up and amending garden beds', 6500, 4500, 9500, 26000, 72000, 15000, 1500, 3000, 100],
         ];
 
-        foreach ($rentals as [$sku, $name, $rate, $deposit]) {
+        foreach ($rentals as [$sku, $name, $use, $day, $half, $weekend, $week, $month, $deposit, $fuel, $cleaning, $service]) {
             $this->products[$sku] = Product::query()->create([
                 'sku' => $sku,
                 'name' => $name,
-                'category' => 'Equipment rental',
+                'use_case' => $use,
+                'category' => str_contains($name, 'excavator') || str_contains($name, 'buggy') ? 'Earthmoving' : 'Hardscape tools',
                 'kind' => ProductKind::Rental,
                 'unit' => Unit::Each,
                 'rental_period' => RentalPeriod::Day,
-                'price_cents' => $rate,
+                'price_cents' => $day,
+                'rate_half_day_cents' => $half,
+                'rate_weekend_cents' => $weekend,
+                'rate_week_cents' => $week,
+                'rate_month_cents' => $month,
+                'minimum_charge_cents' => $half,
                 'deposit_cents' => $deposit,
+                'fuel_charge_cents' => $fuel,
+                'cleaning_fee_cents' => $cleaning,
+                'service_interval_hours' => $service,
+                'track_inventory' => false,
+                'bookable_online' => true,
             ]);
         }
     }
@@ -489,10 +506,6 @@ class DemoYardSeeder extends Seeder
             'CEM-GU30' => [190, 60, 60],
             'SND-POLY' => [70, 20, 40],
             'FAB-GEO' => [1200, 0, 300],
-            'RNT-PLATE' => [3, 0, null],
-            'RNT-SAW14' => [2, 0, null],
-            'RNT-MIXER' => [2, 0, null],
-            'RNT-BUGGY' => [1, 0, null],
         ];
 
         foreach ($stock as $sku => [$waterdown, $stoneyCreek, $reorder]) {
@@ -658,43 +671,218 @@ class DemoYardSeeder extends Seeder
         }
     }
 
+    // ------------------------------------------------------------- rentals
+
+    /** A hand-drawn signature for the demo agreements. */
+    private const SIGNATURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAABGCAQAAABYz9FxAAACl0lEQVR42u2bW3LDIAxFgyfLyP5X5n2kHx6PxzWYlySEc85XmyZG1UVCCPJ6AQAAAAAAAAAAAAAAAAAAwK/x+X6+eMEzoU/e/ac14MqHCbyJuwm7C43M/lj65X291oC0jxL4LO8RvazHjxA4Ji8J+mEpOiUmMTy9wHcSEsP+eEvG7zYBkLklYLS8FurNuTcFgVtzoY7fqgXOmZGfAhArVVOlq+kaXFpCjSi1Pt+6tmnt+3Xl/d8yGhTBZenXOobrU51Ncqz3kUYUh16jRkscT3Wp8a9/1UqNbf6RtyZIx6+l01LjSL2uZ3d6LOngWOqc2b+N0pd3742f19jtt3jXXGv9a/WkpCVqMamfpnMjXN2Ue7fFxMx7UjafLDryeoiDc7SWnHjpx3CJJ82LrFZ5dWNC/uk2Oae8ypexZZkxenXEsDnwLLFasiZY9OSdr581tmaotaSsVbPoRq9ORGgmU80YXoOULYe0OZnfmql5DZwPt06czXfXHXO8VZPeWSv3U3RiTTuCdSxuLVSPz7U0at76q5H0AeKs51UtNu9xfP+MNVRG8G9vZ2qfnz+y782IPZ8f1i/2vVstP1TJR+nYjaaL5py3BF1+LHq2Jf6fjl1SFv0hpFv5dh3j2mkbP+QYu/KbntqmxC6XzO5IIHfz7M5u2wsF97aaH3T3dm/sjiL7iib525Jp77kROC1R2Tptt5rd2aNbNLXJ6Ejg9qiwrUbTo8lMM2kh3QucF3DMZb54q7Du8tKoUtGZwPnEaL3ZKN0IeRByCoH9XIuLTas5v5XlzrBYpI7rBR0j+7z44KLRIVOAjHHtvm+fVV6HAl9bIWN7QcdlvTm/ceXU6PlTIwJXpGnkfaDAY4srAAAAAAAAAAAAABDkDz4VeEPQ4wq3AAAAAElFTkSuQmCC';
+
+    /** @var array<string, RentalUnit> */
+    private array $units = [];
+
     private function rentals(): void
     {
-        $rental = fn (array $header, int $startDaysAgo, int $days) => [
-            'type' => 'rental',
-            'rental_starts_at' => $this->at($startDaysAgo, '07:30'),
-            'rental_ends_at' => $this->at($startDaysAgo - $days, '07:30'),
-            ...$header,
-        ];
+        $this->rentalSetup();
+        $this->fleet();
 
-        // Out now, due back tomorrow.
-        $order = $this->draft($rental([
+        $tz = self::TZ;
+        $day = fn (int $daysFromNow, string $time) => CarbonImmutable::now($tz)->addDays($daysFromNow)->setTimeFromTimeString($time);
+
+        // Brantwood has the excavator on a monthly rate. Card on file.
+        $this->people['mike']->forceFill(['stripe_payment_method_id' => 'pm_demo_visa', 'card_brand' => 'visa', 'card_last4' => '4242'])->save();
+        $rental = $this->quote([
             'organization_id' => $this->orgs['brantwood']->id,
             'customer_id' => $this->people['mike']->id,
-        ], 1, 2), ['RNT-PLATE' => 1], $this->at(2, '16:00'));
-        $this->confirm($order, Settlement::Prepaid, $this->at(2, '16:05'));
-        $this->pay($order, PaymentTender::CardTerminal, $this->at(1, '07:25'), reference: 'Auth 549907');
-        $this->release($order, $this->at(1, '07:35'));
+            'fulfillment' => 'delivery',
+            'delivery_address' => ['line1' => '48 Flamboro St', 'city' => 'Waterdown', 'region' => 'ON', 'postal_code' => 'L8B 1H7', 'country' => 'CA'],
+            'payment_method' => 'card_on_file',
+            'text_reminders' => true,
+        ], $day(-10, '07:00'), $day(18, '17:00'), ['EX-01']);
+        $this->goOut($rental, $day(-10, '07:10'), ['EX-01' => 1212.0]);
 
-        // Returned last week.
-        $order = $this->draft($rental(['customer_id' => $this->people['dana']->id], 8, 1), ['RNT-SAW14' => 1], $this->at(9, '12:00'));
-        $this->confirm($order, Settlement::Prepaid, $this->at(8, '07:20'));
-        $this->pay($order, PaymentTender::CardTerminal, $this->at(8, '07:21'), reference: 'Auth 530118');
-        $this->release($order, $this->at(8, '07:30'));
-        $this->checkIn($order, $this->at(7, '07:10'));
-
-        // Paid, going out tomorrow morning.
-        $order = $this->draft($rental([
+        // A plate compactor due back today.
+        $rental = $this->quote([
             'organization_id' => $this->orgs['halton']->id,
             'customer_id' => $this->people['priya']->id,
-        ], -1, 3), ['RNT-MIXER' => 1, 'RNT-BUGGY' => 1], $this->at(0, '09:40'));
-        $this->confirm($order, Settlement::Prepaid, $this->at(0, '09:45'));
-        $this->pay($order, PaymentTender::CardTerminal, $this->at(0, '09:46'), reference: 'Auth 553310');
+            'payment_method' => 'counter',
+        ], $day(-2, '07:30'), $day(0, '17:00'), ['PC-01']);
+        $this->goOut($rental, $day(-2, '07:40'), ['PC-01' => 61.5], RentalTender::CardTerminal);
 
-        // A quote for next week, still in draft.
-        $this->draft($rental([
+        // A walk-in who hasn't brought the saw back.
+        $rental = $this->quote([
+            'customer_id' => $this->people['marcus']->id,
+            'payment_method' => 'counter',
+            'text_reminders' => true,
+        ], $day(-3, '08:00'), $day(-1, '17:00'), ['SAW-01']);
+        $this->goOut($rental, $day(-3, '08:05'), ['SAW-01' => 410.0], RentalTender::Cash);
+
+        // Back last week: a weekend on the free-Sunday rule, returned with a dent.
+        $saturday = CarbonImmutable::now($tz)->previous(CarbonImmutable::SATURDAY)->subWeek()->setTimeFromTimeString('08:00');
+        $rental = $this->quote([
+            'customer_id' => $this->people['dana']->id,
+            'payment_method' => 'counter',
+            'damage_waiver' => true,
+        ], $saturday, $saturday->addDays(2)->setTimeFromTimeString('08:00'), ['PB-01']);
+        $this->goOut($rental, $saturday->addMinutes(10), ['PB-01' => 388.0], RentalTender::CardTerminal);
+        $item = $rental->items()->firstOrFail();
+        app(CheckInRental::class)->handle($rental, [
+            new InspectionData($item->id, 392.5, FuelLevel::Low, true, 'Dent on the left side of the tub.', damageDescription: 'Dent, left side of tub', damageCents: 18000, damageCoveredByWaiver: true),
+        ], $this->yardLead(), $saturday->addDays(2)->setTimeFromTimeString('07:50'));
+        $this->backdate($rental, $saturday->addDays(2)->setTimeFromTimeString('07:50'));
+
+        // Reserved for tomorrow: paid, agreement still to sign.
+        $rental = $this->quote([
+            'organization_id' => $this->orgs['kerncliff']->id,
+            'customer_id' => $this->people['tom']->id,
+            'payment_method' => 'counter',
+        ], $day(1, '07:00'), $day(3, '17:00'), ['MX-01', 'SAW-02']);
+        app(ReserveRental::class)->handle($rental);
+        app(RentalPayments::class)->recordCounterPayment($rental, RentalTender::ETransfer, $rental->total_cents, $this->counter(), 'e-Transfer CA8812');
+
+        // Booked online for the weekend, signed and paid.
+        $nextSaturday = CarbonImmutable::now($tz)->next(CarbonImmutable::SATURDAY)->setTimeFromTimeString('08:00');
+        $this->people['helen']->forceFill(['stripe_payment_method_id' => 'pm_demo_mc', 'card_brand' => 'mastercard', 'card_last4' => '4444'])->save();
+        $rental = $this->quote([
+            'customer_id' => $this->people['helen']->id,
+            'payment_method' => 'card_on_file',
+            'source' => 'online',
+        ], $nextSaturday, $nextSaturday->addDays(2), ['PC-02']);
+        app(ReserveRental::class)->handle($rental);
+        $this->sign($rental, 'Helen Wu', 'online');
+        app(RentalPayments::class)->chargeCardOnFile($rental, null);
+
+        // A quote for a patio job next week, delivered.
+        $this->quote([
             'organization_id' => $this->orgs['greenline']->id,
             'customer_id' => $this->people['ali']->id,
-        ], -6, 5), ['RNT-PLATE' => 2], $this->at(0, '11:20'));
+            'fulfillment' => 'delivery',
+            'delivery_address' => ['line1' => '2100 Lakeshore Rd', 'city' => 'Burlington', 'region' => 'ON', 'postal_code' => 'L7R 1A3', 'country' => 'CA'],
+            'payment_method' => 'payment_link',
+        ], $day(6, '07:00'), $day(13, '17:00'), ['PC-03', 'MX-02']);
+
+        $this->maintenanceHistory();
+    }
+
+    private function rentalSetup(): void
+    {
+        foreach ([
+            ['Zone 1 · Waterdown and Flamborough', ['L8B', 'L9H', 'L0R'], 6500],
+            ['Zone 2 · Hamilton and Stoney Creek', ['L8', 'L9'], 8500],
+            ['Zone 3 · Burlington and Oakville', ['L7', 'L6'], 11500],
+        ] as $position => [$name, $prefixes, $fee]) {
+            DeliveryZone::query()->create(['name' => $name, 'postal_prefixes' => $prefixes, 'fee_cents' => $fee, 'position' => $position + 1]);
+        }
+    }
+
+    private function fleet(): void
+    {
+        // serial, sku, hour meter, last service at
+        $fleet = [
+            ['PC-01', 'RNT-PLATE', 61.5, 0.0],
+            ['PC-02', 'RNT-PLATE', 140.0, 100.0],
+            ['PC-03', 'RNT-PLATE', 22.0, 0.0],
+            ['SAW-01', 'RNT-SAW14', 410.0, 300.0],
+            ['SAW-02', 'RNT-SAW14', 96.0, 0.0],
+            ['MX-01', 'RNT-MIXER', 520.0, 400.0],
+            ['MX-02', 'RNT-MIXER', 188.0, 0.0],
+            ['PB-01', 'RNT-BUGGY', 388.0, 300.0],
+            ['EX-01', 'RNT-EXC17', 1212.0, 1000.0],
+            ['TL-01', 'RNT-TILL', 97.0, 0.0],
+        ];
+
+        foreach ($fleet as [$serial, $sku, $hours, $lastService]) {
+            $this->units[$serial] = RentalUnit::query()->create([
+                'product_id' => $this->products[$sku]->id,
+                'location_id' => $this->waterdown->id,
+                'serial' => $serial,
+                'hour_meter' => $hours,
+                'last_service_hours' => $lastService,
+                'last_service_on' => $this->at(60)->toDateString(),
+                'purchased_on' => $this->at(400)->toDateString(),
+                'purchase_cost_cents' => (int) round($this->products[$sku]->price_cents * 38, -2),
+            ]);
+        }
+    }
+
+    private function maintenanceHistory(): void
+    {
+        $maintenance = app(Maintenance::class);
+
+        $record = $maintenance->logService($this->units['PB-01'], '150-hr service: oil, filters, track tension', 300.0, 18500, $this->yardLead());
+        $record->forceFill(['opened_at' => $this->at(40, '13:00'), 'completed_at' => $this->at(40, '15:30')])->save();
+
+        $record = $maintenance->logService($this->units['MX-01'], 'Drum seals and grease', 400.0, 6400, $this->yardLead());
+        $record->forceFill(['opened_at' => $this->at(25, '10:00'), 'completed_at' => $this->at(25, '11:15')])->save();
+
+        $record = $maintenance->open($this->units['TL-01'], MaintenanceKind::Repair, 'Tine shaft bearing grinding. Parts ordered.', $this->yardLead());
+        $record->forceFill(['opened_at' => $this->at(2, '16:20')])->save();
+    }
+
+    /**
+     * @param  array<string, mixed>  $header
+     * @param  list<string>  $serials
+     */
+    private function quote(array $header, CarbonImmutable $start, CarbonImmutable $end, array $serials): Rental
+    {
+        $items = array_map(fn (string $serial) => [
+            'product_id' => $this->units[$serial]->product_id,
+            'rental_unit_id' => $this->units[$serial]->id,
+        ], $serials);
+
+        $rental = app(SaveRental::class)->handle([
+            'location_id' => $this->waterdown->id,
+            'fulfillment' => 'pickup',
+            'damage_waiver' => true,
+            'bill_fuel_cleaning' => true,
+            ...$header,
+            'starts_at' => $start->utc(),
+            'ends_at' => $end->utc(),
+        ], $items, $this->counter());
+
+        $rental->forceFill(['created_at' => $start->subDays(2)->min(CarbonImmutable::now())])->save();
+
+        return $rental;
+    }
+
+    private function sign(Rental $rental, string $name, string $via): void
+    {
+        app(SignAgreement::class)->handle($rental, $name, self::SIGNATURE, true, $via, Request::create('/', 'POST', server: ['REMOTE_ADDR' => '127.0.0.1']));
+    }
+
+    /**
+     * Reserve, sign at the counter, take payment and send it out, then move
+     * the timestamps back to when it really went.
+     *
+     * @param  array<string, float>  $hours  hour meter by serial
+     */
+    private function goOut(Rental $rental, CarbonImmutable $at, array $hours, ?RentalTender $tender = null): void
+    {
+        app(ReserveRental::class)->handle($rental);
+        $customer = $rental->customer;
+        $this->sign($rental, $customer !== null ? $customer->full_name : 'Walk-in', 'counter');
+
+        if ($tender !== null) {
+            app(RentalPayments::class)->recordCounterPayment($rental->refresh(), $tender, $rental->total_cents, $this->counter(), $tender === RentalTender::CardTerminal ? 'Auth '.random_int(500000, 599999) : null);
+        }
+
+        $items = $rental->items()->with('unit')->get();
+        $inspections = $items->map(fn ($item) => new InspectionData(
+            $item->id,
+            $hours[$item->unit?->serial] ?? null,
+            FuelLevel::Full,
+            true,
+            null,
+        ))->all();
+
+        app(CheckOutRental::class)->handle($rental->refresh(), $inspections, $this->yardLead(), $tender);
+        $rental->forceFill(['checked_out_at' => $at])->save();
+        $this->backdate($rental, $at);
+    }
+
+    private function backdate(Rental $rental, CarbonImmutable $at): void
+    {
+        $rental->payments()->where('succeeded_at', '>', $at)->update(['succeeded_at' => $at, 'created_at' => $at]);
+        DB::table('rental_agreements')->where('rental_id', $rental->id)->update(['signed_at' => $at->subMinutes(5)]);
+        DB::table('rental_inspections')->where('rental_id', $rental->id)->where('created_at', '>', $at)->update(['created_at' => $at]);
+        DB::table('rental_notifications')->where('rental_id', $rental->id)->update(['sent_at' => $at->subMinutes(10)]);
     }
 }

@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Order queue</title>
+        <script src="./support.js"></script>
+    </head>
+    <body>
+        <x-dc>
+            <helmet>
+                <link
+                    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap"
+                    rel="stylesheet"
+                />
+                <style>
+                    body {
+                        margin: 0;
+                    }
+                    a {
+                        color: #c2410c;
+                    }
+                    a:hover {
+                        color: #9a3412;
+                    }
+                </style>
+            </helmet>
+            <div
+                style="
+                    min-height: 900px;
+                    display: flex;
+                    flex-wrap: wrap;
+                    background: #f5f3ef;
+                    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+                    color: #1c1917;
+                    font-size: 14px;
+                "
+            >
+                <nav
+                    aria-label="Main"
+                    style="
+                        flex: 0 1 232px;
+                        background: #1c1917;
+                        color: #d6d3d1;
+                        padding: 20px 14px;
+                        box-sizing: border-box;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                    "
+                >
+                    <div
+                        style="
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                            padding: 4px 10px 20px;
+                        "
+                    >
+                        <div
+                            style="
+                                width: 28px;
+                                height: 28px;
+                                border-radius: 6px;
+                                background: #c2410c;
+                            "
+                        ></div>
+                        <div
+                            style="
+                                font-weight: 700;
+                                font-size: 17px;
+                                color: #fafaf9;
+                            "
+                        >
+                            Yardline
+                        </div>
+                    </div>
+                    <div
+                        style="
+                            font-size: 11px;
+                            letter-spacing: 0.08em;
+                            text-transform: uppercase;
+                            color: #a8a29e;
+                            padding: 8px 10px 4px;
+                        "
+                    >
+                        Supply yard
+                    </div>
+                    <a
+                        href="Main.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Products</a
+                    >
+                    <a
+                        href="Stock.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Stock</a
+                    >
+                    <a
+                        href="Orders.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            background: #292524;
+                            color: #fafaf9;
+                            text-decoration: none;
+                            font-weight: 600;
+                        "
+                        >Orders and picking</a
+                    >
+                    <a
+                        href="Dispatch.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Dispatch</a
+                    >
+                    <a
+                        href="#"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Purchasing</a
+                    >
+                    <div
+                        style="
+                            font-size: 11px;
+                            letter-spacing: 0.08em;
+                            text-transform: uppercase;
+                            color: #a8a29e;
+                            padding: 16px 10px 4px;
+                        "
+                    >
+                        Rental
+                    </div>
+                    <a
+                        href="Fleet.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Fleet</a
+                    >
+                    <a
+                        href="Calendar.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Calendar</a
+                    >
+                </nav>
+                <main
+                    style="
+                        flex: 999 1 560px;
+                        min-width: 0;
+                        padding: 28px 32px;
+                        box-sizing: border-box;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 20px;
+                    "
+                >
+                    <div
+                        style="
+                            display: flex;
+                            flex-wrap: wrap;
+                            align-items: flex-end;
+                            justify-content: space-between;
+                            gap: 16px;
+                        "
+                    >
+                        <div>
+                            <h1
+                                style="
+                                    margin: 0;
+                                    font-size: 28px;
+                                    font-weight: 700;
+                                "
+                            >
+                                Orders and picking
+                            </h1>
+                            <p style="margin: 4px 0 0; color: #57534e">
+                                Every Shopify sale lands here as a pick list.
+                                Today, Mon Oct 26.
+                            </p>
+                        </div>
+                        <span
+                            style="
+                                padding: 6px 10px;
+                                border-radius: 999px;
+                                background: #dcfce7;
+                                color: #166534;
+                                font-size: 12px;
+                                font-weight: 600;
+                            "
+                            >Shopify live · last order 1 min ago</span
+                        >
+                    </div>
+                    <div
+                        style="
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 20px;
+                            align-items: flex-start;
+                        "
+                    >
+                        <div
+                            style="
+                                flex: 999 1 560px;
+                                min-width: 0;
+                                display: grid;
+                                grid-template-columns: repeat(
+                                    auto-fit,
+                                    minmax(190px, 1fr)
+                                );
+                                gap: 14px;
+                            "
+                        >
+                            <sc-for
+                                list="{{cols}}"
+                                as="c"
+                                hint-placeholder-count="4"
+                            >
+                                <section
+                                    style="
+                                        background: #e7e5e4;
+                                        border-radius: 10px;
+                                        padding: 12px;
+                                        display: flex;
+                                        flex-direction: column;
+                                        gap: 10px;
+                                    "
+                                >
+                                    <h2
+                                        style="
+                                            margin: 0;
+                                            font-size: 13px;
+                                            text-transform: uppercase;
+                                            letter-spacing: 0.05em;
+                                            color: #44403c;
+                                            display: flex;
+                                            justify-content: space-between;
+                                        "
+                                    >
+                                        {{c.title}}<span
+                                            style="
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                            "
+                                            >{{c.count}}</span
+                                        >
+                                    </h2>
+                                    <sc-for
+                                        list="{{c.cards}}"
+                                        as="o"
+                                        hint-placeholder-count="2"
+                                    >
+                                        <article
+                                            style="
+                                                background: #ffffff;
+                                                border-radius: 8px;
+                                                padding: 12px;
+                                                border: 1px solid #d6d3d1;
+                                                display: flex;
+                                                flex-direction: column;
+                                                gap: 6px;
+                                            "
+                                        >
+                                            <div
+                                                style="
+                                                    display: flex;
+                                                    justify-content: space-between;
+                                                    gap: 8px;
+                                                "
+                                            >
+                                                <span
+                                                    style="
+                                                        font-family:
+                                                            'IBM Plex Mono',
+                                                            monospace;
+                                                        font-weight: 500;
+                                                    "
+                                                    >{{o.id}}</span
+                                                ><span
+                                                    style="
+                                                        font-size: 12px;
+                                                        color: #57534e;
+                                                    "
+                                                    >{{o.time}}</span
+                                                >
+                                            </div>
+                                            <div style="font-weight: 600">
+                                                {{o.customer}}
+                                            </div>
+                                            <div
+                                                style="
+                                                    color: #57534e;
+                                                    font-size: 13px;
+                                                "
+                                            >
+                                                {{o.summary}}
+                                            </div>
+                                            <div
+                                                style="
+                                                    font-size: 12px;
+                                                    font-weight: 600;
+                                                    color: #9a3412;
+                                                "
+                                            >
+                                                {{o.mode}}
+                                            </div>
+                                        </article>
+                                    </sc-for>
+                                </section>
+                            </sc-for>
+                        </div>
+                        <aside
+                            style="
+                                flex: 1 1 340px;
+                                min-width: 0;
+                                background: #ffffff;
+                                border: 1px solid #e7e5e4;
+                                border-radius: 10px;
+                                padding: 20px;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 14px;
+                            "
+                        >
+                            <div>
+                                <div
+                                    style="
+                                        font-family: 'IBM Plex Mono', monospace;
+                                        color: #57534e;
+                                    "
+                                >
+                                    #4021 · Shopify POS, counter 1
+                                </div>
+                                <h2 style="margin: 4px 0 0; font-size: 20px">
+                                    Brick &amp; Stone Contracting
+                                </h2>
+                                <div style="color: #57534e">
+                                    Contractor tier · delivery to 18 Ridgeview
+                                    Dr, Waterdown
+                                </div>
+                            </div>
+                            <h3
+                                style="
+                                    margin: 4px 0 0;
+                                    font-size: 13px;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.05em;
+                                    color: #57534e;
+                                "
+                            >
+                                Pick list
+                            </h3>
+                            <div style="display: flex; flex-direction: column">
+                                <sc-for
+                                    list="{{picks}}"
+                                    as="p"
+                                    hint-placeholder-count="4"
+                                >
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                            gap: 12px;
+                                            padding: 10px 0;
+                                            border-bottom: 1px solid #f5f5f4;
+                                        "
+                                    >
+                                        <div>
+                                            <div style="font-weight: 600">
+                                                {{p.item}}
+                                            </div>
+                                            <div
+                                                style="
+                                                    color: #57534e;
+                                                    font-size: 13px;
+                                                "
+                                            >
+                                                {{p.where}}
+                                            </div>
+                                        </div>
+                                        <div
+                                            style="
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                                text-align: right;
+                                                white-space: nowrap;
+                                            "
+                                        >
+                                            {{p.qty}}
+                                        </div>
+                                    </div>
+                                </sc-for>
+                            </div>
+                            <div
+                                style="
+                                    padding: 12px;
+                                    border-radius: 8px;
+                                    background: #f5f3ef;
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 6px;
+                                "
+                            >
+                                <div
+                                    style="
+                                        display: flex;
+                                        justify-content: space-between;
+                                    "
+                                >
+                                    <span>Load weight</span
+                                    ><span
+                                        style="
+                                            font-family:
+                                                'IBM Plex Mono', monospace;
+                                        "
+                                        >≈ 13.8 t</span
+                                    >
+                                </div>
+                                <div
+                                    style="
+                                        display: flex;
+                                        justify-content: space-between;
+                                    "
+                                >
+                                    <span>Pallet deposits</span
+                                    ><span
+                                        style="
+                                            font-family:
+                                                'IBM Plex Mono', monospace;
+                                        "
+                                        >6 × $25</span
+                                    >
+                                </div>
+                                <div
+                                    style="
+                                        display: flex;
+                                        justify-content: space-between;
+                                    "
+                                >
+                                    <span>Delivery zone</span
+                                    ><span>Zone 2 · paid in Shopify</span>
+                                </div>
+                            </div>
+                            <div
+                                style="
+                                    display: flex;
+                                    flex-wrap: wrap;
+                                    gap: 10px;
+                                "
+                            >
+                                <button
+                                    type="button"
+                                    style="
+                                        flex: 1 1 140px;
+                                        height: 44px;
+                                        border-radius: 8px;
+                                        border: 1px solid #d6d3d1;
+                                        background: #ffffff;
+                                        font: inherit;
+                                        font-weight: 500;
+                                    "
+                                >
+                                    Print pick ticket
+                                </button>
+                                <button
+                                    type="button"
+                                    style="
+                                        flex: 1 1 140px;
+                                        height: 44px;
+                                        border-radius: 8px;
+                                        border: none;
+                                        background: #c2410c;
+                                        color: #ffffff;
+                                        font: inherit;
+                                        font-weight: 600;
+                                    "
+                                >
+                                    Assign picker
+                                </button>
+                            </div>
+                        </aside>
+                    </div>
+                </main>
+            </div>
+        </x-dc>
+        <script
+            type="text/x-dc"
+            data-dc-script
+            data-props='{"$preview":{"width":1440,"height":900}}'
+        >
+            class Component extends DCLogic {
+            renderVals() {
+            const cols = [
+            { title: 'New from Shopify', cards: [
+            { id: '#4021', time: '9:42', customer: 'Brick & Stone Contracting', summary: '6 pallets pavers, 4 t screenings, 2 bulk bags sand', mode: 'Delivery · Zone 2' },
+            { id: '#4020', time: '9:31', customer: 'Walk-in · M. Patel', summary: '1.5 yd black mulch', mode: 'Pickup · loader' }
+            ]},
+            { title: 'Picking', cards: [
+            { id: '#4018', time: '9:05', customer: 'Greenway Landscapes', summary: '8 yd triple mix', mode: 'Delivery · Zone 1' },
+            { id: '#4017', time: '8:58', customer: 'Hamilton Hardscape', summary: '9 pallets wall block, cap', mode: 'Delivery · Zone 3' }
+            ]},
+            { title: 'Loaded', cards: [
+            { id: '#4015', time: '8:20', customer: 'Northshore Masonry', summary: '40 bags Type S, 2 pallets brick', mode: 'Delivery · Zone 2' }
+            ]},
+            { title: 'Ready for pickup', cards: [
+            { id: '#4012', time: '7:48', customer: 'Walk-in · J. Ross', summary: '20 bags polymeric sand', mode: 'Pickup · counter' }
+            ]}
+            ];
+            return {
+            cols: cols.map(c => ({ ...c, count: String(c.cards.length) })),
+            picks: [
+            { item: 'Paver 60 mm, Charcoal', where: 'Row C · run 2611-B only', qty: '6 pallets' },
+            { item: 'Limestone screenings', where: 'Bay 4 · weigh on scale', qty: '4.0 t' },
+            { item: 'Concrete sand, bulk bag', where: 'Aisle D', qty: '2 bags' },
+            { item: 'Edge restraint', where: 'Aisle B', qty: '12 pcs' }
+            ]
+            };
+            }
+            }
+        </script>
+    </body>
+</html>

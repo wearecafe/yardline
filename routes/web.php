@@ -81,3 +81,4 @@ Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.s
 Route::post('webhooks/shopify', ShopifyWebhookController::class)->name('webhooks.shopify');
 
 require __DIR__.'/settings.php';
+require __DIR__.'/rentals.php';

@@ -203,37 +203,15 @@ class OrderLifecycleTest extends TestCase
         $this->assertSame(1_130, $order->amount_paid_cents);
     }
 
-    public function test_rentals_are_prepaid_with_a_deposit_and_come_back_into_stock(): void
+    public function test_rentals_are_booked_in_the_rental_module_not_as_orders(): void
     {
-        $saw = Product::factory()->rental(deposit: 30_000)->create(['price_cents' => 8_500]);
-        app(InventoryLedger::class)->record($saw, $this->yard, 2, StockMovementType::Receipt);
-
         $this->post(route('orders.store'), [
             'type' => 'rental',
             'location_id' => $this->yard->id,
             'fulfillment' => 'pickup',
-            'rental_starts_at' => now()->addDay()->toDateTimeString(),
-            'rental_ends_at' => now()->addDays(2)->toDateTimeString(),
-        ]);
-        $order = Order::query()->latest('id')->firstOrFail();
-        $this->assertStringStartsWith('RN-', $order->number);
+        ])->assertSessionHasErrors('type');
 
-        $this->addLine($order, $saw, 1);
-
-        $this->post(route('orders.confirm', $order), ['settlement' => 'account'])->assertSessionHasErrors('order');
-        $this->post(route('orders.confirm', $order), ['settlement' => 'prepaid'])->assertSessionHasNoErrors();
-
-        $order->refresh();
-        $this->assertSame(30_000, $order->deposit_cents);
-        $this->assertSame(8_500 + 1_105 + 30_000, $order->amountDueCents());
-
-        $this->post(route('orders.payments.store', $order), ['tender' => 'card_terminal', 'amount' => $order->amountDueCents() / 100]);
-        $this->post(route('orders.fulfill', $order))->assertSessionHasNoErrors();
-        $this->assertSame('1.000', app(InventoryLedger::class)->onHand($saw, $this->yard));
-
-        $this->post(route('orders.return', $order))->assertSessionHasNoErrors();
-        $this->assertSame(OrderStatus::Returned, $order->refresh()->status);
-        $this->assertSame('2.000', app(InventoryLedger::class)->onHand($saw, $this->yard));
+        $this->assertSame(0, Order::query()->count());
     }
 
     public function test_sale_and_rental_items_do_not_mix(): void

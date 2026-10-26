@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Notifications\Notifiable;
 
 /**
  * A person who buys: an organization's contact or a walk-in.
@@ -23,6 +24,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $email
  * @property string|null $phone
  * @property string|null $stripe_customer_id
+ * @property string|null $stripe_payment_method_id
+ * @property string|null $card_brand
+ * @property string|null $card_last4
  * @property string|null $notes
  * @property-read string $full_name
  * @property-read Organization|null $organization
@@ -31,7 +35,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */
-    use BelongsToTenant, HasFactory, SyncsWithCommerce;
+    use BelongsToTenant, HasFactory, Notifiable, SyncsWithCommerce;
 
     /**
      * @var list<string>
@@ -44,6 +48,35 @@ class Customer extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /**
+     * @return HasMany<CustomerDocument, $this>
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(CustomerDocument::class);
+    }
+
+    /**
+     * @return HasMany<Rental, $this>
+     */
+    public function rentals(): HasMany
+    {
+        return $this->hasMany(Rental::class);
+    }
+
+    public function routeNotificationForSms(): ?string
+    {
+        return $this->phone;
+    }
+
+    /**
+     * "Visa 4417", if a card is saved.
+     */
+    public function cardLabel(): ?string
+    {
+        return $this->card_last4 ? trim(ucfirst((string) $this->card_brand).' '.$this->card_last4) : null;
     }
 
     /**

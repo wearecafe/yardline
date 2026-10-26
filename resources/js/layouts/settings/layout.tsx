@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import BusinessController from '@/actions/App/Http/Controllers/Settings/BusinessController';
+import RentalSettingsController from '@/actions/App/Http/Controllers/Settings/RentalSettingsController';
 import ShopifyController from '@/actions/App/Http/Controllers/Settings/ShopifyController';
 import type { PropsWithChildren } from 'react';
 import Heading from '@/components/heading';
@@ -34,6 +35,11 @@ const businessNavItems: NavItem[] = [
     {
         title: 'Business',
         href: BusinessController.edit(),
+        icon: null,
+    },
+    {
+        title: 'Rentals',
+        href: RentalSettingsController.edit(),
         icon: null,
     },
     {

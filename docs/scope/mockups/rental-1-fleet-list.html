@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8" />
         <title>Rental fleet</title>
-        <script src="f5458366-def9-4641-beb1-5a6548e69ec3"></script>
+        <script src="./support.js"></script>
     </head>
     <body>
         <x-dc>
@@ -354,15 +354,15 @@
                             overflow-x: auto;
                         "
                     >
-                        <sc-raw-table
+                        <table
                             style="
                                 width: 100%;
                                 border-collapse: collapse;
                                 min-width: 900px;
                             "
                         >
-                            <sc-raw-thead>
-                                <sc-raw-tr
+                            <thead>
+                                <tr
                                     style="
                                         text-align: left;
                                         color: #57534e;
@@ -371,72 +371,80 @@
                                         letter-spacing: 0.04em;
                                     "
                                 >
-                                    <sc-raw-th
+                                    <th
                                         style="
                                             padding: 12px 16px;
                                             border-bottom: 1px solid #e7e5e4;
                                         "
-                                        >Unit</sc-raw-th
                                     >
-                                    <sc-raw-th
+                                        Unit
+                                    </th>
+                                    <th
                                         style="
                                             padding: 12px 16px;
                                             border-bottom: 1px solid #e7e5e4;
                                         "
-                                        >Serial</sc-raw-th
                                     >
-                                    <sc-raw-th
+                                        Serial
+                                    </th>
+                                    <th
                                         style="
                                             padding: 12px 16px;
                                             border-bottom: 1px solid #e7e5e4;
                                         "
-                                        >Status</sc-raw-th
                                     >
-                                    <sc-raw-th
+                                        Status
+                                    </th>
+                                    <th
                                         style="
                                             padding: 12px 16px;
                                             border-bottom: 1px solid #e7e5e4;
                                         "
-                                        >With / due back</sc-raw-th
                                     >
-                                    <sc-raw-th
-                                        style="
-                                            padding: 12px 16px;
-                                            border-bottom: 1px solid #e7e5e4;
-                                            text-align: right;
-                                        "
-                                        >Hours</sc-raw-th
-                                    >
-                                    <sc-raw-th
-                                        style="
-                                            padding: 12px 16px;
-                                            border-bottom: 1px solid #e7e5e4;
-                                        "
-                                        >Next service</sc-raw-th
-                                    >
-                                    <sc-raw-th
+                                        With / due back
+                                    </th>
+                                    <th
                                         style="
                                             padding: 12px 16px;
                                             border-bottom: 1px solid #e7e5e4;
                                             text-align: right;
                                         "
-                                        >Day rate</sc-raw-th
                                     >
-                                </sc-raw-tr>
-                            </sc-raw-thead>
-                            <sc-raw-tbody>
+                                        Hours
+                                    </th>
+                                    <th
+                                        style="
+                                            padding: 12px 16px;
+                                            border-bottom: 1px solid #e7e5e4;
+                                        "
+                                    >
+                                        Next service
+                                    </th>
+                                    <th
+                                        style="
+                                            padding: 12px 16px;
+                                            border-bottom: 1px solid #e7e5e4;
+                                            text-align: right;
+                                        "
+                                    >
+                                        Day rate
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
                                 <sc-for
                                     list="{{units}}"
                                     as="u"
                                     hint-placeholder-count="8"
                                 >
-                                    <sc-raw-tr>
-                                        <sc-raw-td
+                                    <tr>
+                                        <td
                                             style="
                                                 padding: 12px 16px;
                                                 border-bottom: 1px solid #f5f5f4;
                                             "
-                                            ><div style="font-weight: 600">
+                                        >
+                                            <div style="font-weight: 600">
                                                 {{u.name}}
                                             </div>
                                             <div
@@ -446,9 +454,9 @@
                                                 "
                                             >
                                                 {{u.cat}}
-                                            </div></sc-raw-td
-                                        >
-                                        <sc-raw-td
+                                            </div>
+                                        </td>
+                                        <td
                                             style="
                                                 padding: 12px 16px;
                                                 border-bottom: 1px solid #f5f5f4;
@@ -456,27 +464,30 @@
                                                     'IBM Plex Mono', monospace;
                                                 color: #57534e;
                                             "
-                                            >{{u.serial}}</sc-raw-td
                                         >
-                                        <sc-raw-td
+                                            {{u.serial}}
+                                        </td>
+                                        <td
                                             style="
                                                 padding: 12px 16px;
                                                 border-bottom: 1px solid #f5f5f4;
                                             "
-                                            ><span
+                                        >
+                                            <span
                                                 style="padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: {{u.chipBg}}; color: {{u.chipFg}}"
                                                 >{{u.status}}</span
-                                            ></sc-raw-td
-                                        >
-                                        <sc-raw-td
+                                            >
+                                        </td>
+                                        <td
                                             style="
                                                 padding: 12px 16px;
                                                 border-bottom: 1px solid #f5f5f4;
                                                 color: #44403c;
                                             "
-                                            >{{u.with}}</sc-raw-td
                                         >
-                                        <sc-raw-td
+                                            {{u.with}}
+                                        </td>
+                                        <td
                                             style="
                                                 padding: 12px 16px;
                                                 border-bottom: 1px solid #f5f5f4;
@@ -484,17 +495,19 @@
                                                 font-family:
                                                     'IBM Plex Mono', monospace;
                                             "
-                                            >{{u.hours}}</sc-raw-td
                                         >
-                                        <sc-raw-td
+                                            {{u.hours}}
+                                        </td>
+                                        <td
                                             style="
                                                 padding: 12px 16px;
                                                 border-bottom: 1px solid #f5f5f4;
                                                 color: #44403c;
                                             "
-                                            >{{u.service}}</sc-raw-td
                                         >
-                                        <sc-raw-td
+                                            {{u.service}}
+                                        </td>
+                                        <td
                                             style="
                                                 padding: 12px 16px;
                                                 border-bottom: 1px solid #f5f5f4;
@@ -502,19 +515,20 @@
                                                 font-family:
                                                     'IBM Plex Mono', monospace;
                                             "
-                                            >{{u.rate}}</sc-raw-td
                                         >
-                                    </sc-raw-tr>
+                                            {{u.rate}}
+                                        </td>
+                                    </tr>
                                 </sc-for>
-                            </sc-raw-tbody>
-                        </sc-raw-table>
+                            </tbody>
+                        </table>
                     </section>
                 </main>
             </div>
         </x-dc>
         <script
             type="text/x-dc"
-            data-dc-script=""
+            data-dc-script
             data-props='{"$preview":{"width":1440,"height":900}}'
         >
             class Component extends DCLogic {

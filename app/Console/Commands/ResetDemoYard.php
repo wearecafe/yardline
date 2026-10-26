@@ -25,6 +25,18 @@ class ResetDemoYard extends Command
      * @var list<string>
      */
     private const TABLES = [
+        'rental_payments',
+        'rental_notifications',
+        'rental_charges',
+        'inspection_photos',
+        'rental_inspections',
+        'rental_agreements',
+        'rental_items',
+        'rentals',
+        'maintenance_records',
+        'rental_units',
+        'customer_documents',
+        'delivery_zones',
         'payments',
         'order_lines',
         'stock_movements',

@@ -1,4 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
+import RentalController from '@/actions/App/Http/Controllers/Rentals/RentalController';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import { EmptyRow, Table, Td, Th } from '@/components/yard/data-table';
 import { NativeSelect } from '@/components/yard/field';
@@ -36,11 +37,7 @@ export default function Orders({
                     actions={
                         <>
                             <Button variant="outline" asChild>
-                                <Link
-                                    href={OrderController.create({
-                                        query: { type: 'rental' },
-                                    })}
-                                >
+                                <Link href={RentalController.create()}>
                                     New rental
                                 </Link>
                             </Button>

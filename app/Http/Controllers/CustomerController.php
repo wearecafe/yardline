@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\CustomerDocument;
 use App\Models\Organization;
+use App\Support\Files;
 use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -59,6 +61,15 @@ class CustomerController extends Controller
         return Inertia::render('customers/edit', [
             'customer' => $customer,
             'organizations' => $this->organizations(),
+            'documents' => $customer->documents()->latest('id')->get()->map(fn (CustomerDocument $document) => [
+                'id' => $document->id,
+                'kind' => $document->kind->value,
+                'label' => $document->kind->label(),
+                'reference' => $document->reference,
+                'expires_on' => $document->expires_on?->toDateString(),
+                'current' => $document->isCurrent(),
+                'url' => Files::url((string) $document->path),
+            ]),
         ]);
     }
 
