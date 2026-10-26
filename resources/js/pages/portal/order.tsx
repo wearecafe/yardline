@@ -122,7 +122,7 @@ export default function PortalOrder({ order }: Props) {
                 >
                     Orders
                 </Link>
-                <h1 className="flex flex-wrap items-center gap-3 text-3xl font-bold">
+                <h1 className="flex flex-wrap items-center gap-3 text-2xl font-bold sm:text-3xl">
                     Order {order.number}
                     <span
                         className={cn(

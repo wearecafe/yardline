@@ -306,7 +306,19 @@ class PortalController extends Controller
     {
         $order->loadMissing('lines');
 
-        return $order->lines->take(3)->map(fn (OrderLine $l) => rtrim(rtrim(number_format((float) $l->quantity, 3, '.', ''), '0'), '.').' '.mb_strtolower($l->unit === 'tonne' ? 't' : $l->unit).' '.mb_strtolower($l->description))->implode(', ')
+        // "6 yd triple mix soil", "6 pallets paver, 60 mm, charcoal".
+        $units = ['tonne' => 't', 'cubic_yard' => 'yd', 'sq_ft' => 'sq ft', 'lin_ft' => 'lin ft', 'each' => '×'];
+
+        return $order->lines->take(3)->map(function (OrderLine $l) use ($units) {
+            $quantity = (float) $l->quantity;
+            $unit = $units[$l->unit] ?? mb_strtolower((string) preg_replace('/\s*\(.*\)$/', '', $l->unit));
+
+            if (! isset($units[$l->unit]) && $quantity !== 1.0 && ! str_ends_with($unit, 's')) {
+                $unit .= 's';
+            }
+
+            return rtrim(rtrim(number_format($quantity, 3, '.', ''), '0'), '.').' '.$unit.' '.mb_strtolower($l->description);
+        })->implode(', ')
             .($order->lines->count() > 3 ? ', …' : '');
     }
 

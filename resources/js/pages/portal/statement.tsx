@@ -37,7 +37,9 @@ export default function PortalStatement({
             <Head title="Statement" />
             <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h1 className="text-3xl font-bold">Statement</h1>
+                    <h1 className="text-2xl font-bold sm:text-3xl">
+                        Statement
+                    </h1>
                     <p className="text-muted-foreground">
                         As of {formatDate(s.date)}
                     </p>
