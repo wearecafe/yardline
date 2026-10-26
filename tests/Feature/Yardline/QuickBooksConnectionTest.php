@@ -111,8 +111,11 @@ class QuickBooksConnectionTest extends TestCase
 
     public function test_an_expired_access_token_is_refreshed_before_calling(): void
     {
-        $integration = $this->connect();
-        $integration->forceFill(['credentials' => [...$integration->credentials ?? [], 'access_expires_at' => now()->subMinutes(5)->toIso8601String()]])->save();
+        $integration = Integration::query()->create([
+            'provider' => IntegrationProvider::QuickBooks,
+            'external_account' => '9130',
+            'credentials' => ['access_token' => 'access-1', 'refresh_token' => 'refresh-1', 'access_expires_at' => now()->subMinutes(5)->toIso8601String()],
+        ]);
 
         Http::fake([
             QuickBooksOAuth::TOKEN_URL => Http::response(['access_token' => 'access-2', 'refresh_token' => 'refresh-2', 'expires_in' => 3600]),

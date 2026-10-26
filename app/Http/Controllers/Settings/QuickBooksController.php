@@ -14,6 +14,7 @@ use App\Tenancy\CurrentTenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -140,7 +141,8 @@ class QuickBooksController extends Controller
             'accounts.*' => ['nullable', 'string', 'max:40'],
         ]);
 
-        $accounts = collect($data['accounts'] ?? [])->only(array_keys(AccountMapping::KEYS))->filter()->all();
+        $given = is_array($data['accounts'] ?? null) ? $data['accounts'] : [];
+        $accounts = array_filter(Arr::only($given, array_keys(AccountMapping::KEYS)));
 
         $integration->forceFill(['settings' => [
             ...($integration->settings ?? []),
