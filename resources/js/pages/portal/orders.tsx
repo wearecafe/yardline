@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import PortalController from '@/actions/App/Http/Controllers/Portal/PortalController';
 import { PortalLayout } from '@/components/yard/portal-layout';
+import { PortalOrderCards } from '@/components/yard/portal-order-cards';
 import { formatDate, formatMoney } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { statusTone } from './home';
@@ -10,8 +11,11 @@ export default function PortalOrders({ orders }: { orders: PortalOrder[] }) {
     return (
         <PortalLayout active="orders">
             <Head title="Orders" />
-            <h1 className="text-3xl font-bold">Orders</h1>
-            <section className="overflow-x-auto rounded-[10px] border border-border bg-card">
+            <h1 className="text-2xl font-bold sm:text-3xl">Orders</h1>
+            <section className="overflow-hidden rounded-[10px] border border-border bg-card md:hidden">
+                <PortalOrderCards orders={orders} showTotal />
+            </section>
+            <section className="hidden overflow-x-auto rounded-[10px] border border-border bg-card md:block">
                 <table className="w-full min-w-[720px] border-collapse text-sm">
                     <thead>
                         <tr className="border-b border-border text-left text-xs text-muted-foreground">
