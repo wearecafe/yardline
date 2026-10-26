@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Audit\Audit;
 use App\Enums\FuelLevel;
 use App\Enums\MaintenanceKind;
 use App\Enums\PaymentTender;
@@ -11,6 +12,7 @@ use App\Enums\RentalPeriod;
 use App\Enums\RentalTender;
 use App\Enums\Settlement;
 use App\Enums\StockMovementType;
+use App\Enums\StopStatus;
 use App\Enums\Unit;
 use App\Enums\UserRole;
 use App\Fulfillment\CompleteShipment;
@@ -19,6 +21,7 @@ use App\Fulfillment\LoadShipment;
 use App\Fulfillment\RecordPick;
 use App\Fulfillment\StartPicking;
 use App\Inventory\InventoryLedger;
+use App\Models\AuditEvent;
 use App\Models\ContractPrice;
 use App\Models\Customer;
 use App\Models\DeliveryZone;
@@ -62,6 +65,7 @@ use App\Rentals\SaveRental;
 use App\Rentals\SignAgreement;
 use App\Tenancy\CurrentTenant;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -178,10 +182,98 @@ class DemoYardSeeder extends Seeder
                 $this->returnsAndCredits();
                 $this->purchasingActivity();
                 $this->rentals();
+                $this->portalActivity();
+                $this->auditHistory();
             });
         });
 
         $this->command?->info('Escarpment Stone demo yard created.');
+    }
+
+    // ------------------------------------------------------- portal + audit
+
+    /**
+     * What contractors have done in the portal: a reorder waiting for the
+     * counter to confirm and a pallet pickup to schedule.
+     */
+    private function portalActivity(): void
+    {
+        $mike = $this->people['mike'];
+        $last = Order::query()->where('organization_id', $this->orgs['brantwood']->id)->where('status', '!=', 'draft')->latest('id')->first();
+
+        Audit::$customerId = $mike->id;
+
+        try {
+            $draft = $this->draft([
+                'type' => 'sale',
+                'organization_id' => $this->orgs['brantwood']->id,
+                'customer_id' => $mike->id,
+                'fulfillment' => 'delivery',
+                'delivery_address' => ['line1' => '48 Flamboro St', 'city' => 'Waterdown', 'region' => 'ON', 'postal_code' => 'L8B 0E2', 'country' => 'CA'],
+            ], $last !== null
+                ? $last->lines()->with('product')->get()->filter(fn ($l) => $l->product !== null && $l->product->kind->value === 'sale')->mapWithKeys(fn ($l) => [$l->product->sku => (string) ($l->base_quantity ?? $l->quantity)])->all()
+                : ['PAV-60CH' => 120],
+                $this->at(0, '07:12'));
+            $draft->forceFill([
+                'source' => 'portal',
+                'notes' => ($last ? "Reorder of {$last->number}" : 'Reorder').'. Requested in the portal by Mike Brant.',
+            ])->saveQuietly();
+
+            $halton = $this->orgs['halton'];
+            Stop::query()->create([
+                'stoppable_type' => $halton->getMorphClass(),
+                'stoppable_id' => $halton->id,
+                'kind' => 'pallet_pickup',
+                'status' => StopStatus::Unscheduled,
+                'date' => $this->at(-1)->setTimezone(self::TZ)->toDateString(),
+                'address' => ['line1' => $halton->address_line1, 'city' => $halton->city, 'postal_code' => $halton->postal_code],
+                'needs' => 'Pick up 12 pallets · asked by Priya Singh',
+                'duration_minutes' => 30,
+            ]);
+        } finally {
+            Audit::$customerId = null;
+        }
+    }
+
+    /**
+     * Seeding writes an audit event for every row it creates, all stamped
+     * "now". Swap those for the history a real yard would have: who
+     * confirmed each order and when, price and credit changes, and what
+     * contractors did in the portal.
+     */
+    private function auditHistory(): void
+    {
+        $portal = AuditEvent::query()->whereNotNull('customer_id')->pluck('id');
+        AuditEvent::query()->whereNotIn('id', $portal)->delete();
+        AuditEvent::query()->whereIn('id', $portal)->update(['created_at' => $this->at(0, '07:12')]);
+
+        $log = function (Model $subject, string $event, CarbonImmutable $at, ?User $by, ?array $changes = null, ?string $note = null): void {
+            AuditEvent::query()->create([
+                'user_id' => $by?->id,
+                'subject_type' => $subject->getMorphClass(),
+                'subject_id' => (int) $subject->getKey(),
+                'subject_label' => $subject->getAttribute('number') ?? $subject->getAttribute('name'),
+                'event' => $event,
+                'changes' => $changes,
+                'note' => $note,
+                'created_at' => $at,
+            ]);
+        };
+
+        foreach (Order::query()->whereNotNull('confirmed_at')->where('source', '!=', 'portal')->get() as $order) {
+            $by = $order->created_by !== null ? User::query()->find($order->created_by) : $this->counter();
+            $log($order, 'created', CarbonImmutable::parse($order->created_at), $by);
+            $log($order, 'updated', CarbonImmutable::parse($order->confirmed_at), $by, ['status' => ['draft', 'confirmed']]);
+        }
+
+        foreach (['PAV-60CH' => [52, 515], 'WAL-CAP' => [18, 1_750]] as $sku => [$daysAgo, $was]) {
+            $product = $this->products[$sku];
+            $log($product, 'updated', $this->at($daysAgo, '16:40'), $this->owner(), ['price_cents' => [$was, $product->price_cents]], 'Spring price increase from the supplier');
+        }
+
+        $halton = $this->orgs['halton'];
+        $log($halton, 'updated', $this->at(21, '11:05'), $this->owner(), ['credit_limit_cents' => [400_000, $halton->credit_limit_cents]], 'Two seasons paying on time');
+        $log($this->orgs['lakeshore'], 'updated', $this->at(9, '14:30'), $this->owner(), ['payment_terms' => ['net_30', 'due_on_receipt']], 'New account, prepaid for six months');
     }
 
     // ------------------------------------------------------------- helpers

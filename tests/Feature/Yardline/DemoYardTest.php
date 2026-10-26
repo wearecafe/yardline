@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Yardline;
 
+use App\Models\AuditEvent;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Rental;
+use App\Models\Stop;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Payments\CheckoutLinks;
@@ -157,6 +159,19 @@ class DemoYardTest extends TestCase
         $this->get(route('portal.home'))->assertOk()->assertInertia(fn (Assert $page) => $page->has('orders')->has('calculator.pavers'));
         $this->get(route('portal.orders'))->assertOk();
         $this->get(route('portal.statement'))->assertOk();
+    }
+
+    public function test_the_demo_yard_has_portal_activity_and_history(): void
+    {
+        $tenant = Tenant::query()->where('slug', DemoYardSeeder::SLUG)->firstOrFail();
+
+        CurrentTenant::run($tenant, function () {
+            $this->assertTrue(Order::query()->where('source', 'portal')->where('status', 'draft')->exists());
+            $this->assertTrue(Stop::query()->where('kind', 'pallet_pickup')->exists());
+            $this->assertTrue(AuditEvent::query()->whereNotNull('customer_id')->exists());
+            $this->assertTrue(AuditEvent::query()->where('subject_type', 'product')->where('event', 'updated')->exists());
+            $this->assertGreaterThan(5, AuditEvent::query()->where('subject_type', 'order')->count());
+        });
     }
 
     public function test_every_demo_page_renders(): void

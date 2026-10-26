@@ -22,9 +22,13 @@ composer dev
 
 Open http://localhost:8000/demo and pick someone at Escarpment Stone, the
 fictional demo yard: the owner, office manager, counter or yard lead. It has
-two yards, contractor and builder price lists, five organizations (one on
-credit hold, one near its limit) and orders and rentals in every state, all
-dated relative to today. `php artisan yardline:demo:reset` rebuilds it.
+two yards, a truck and rental fleet, contractor and builder price lists, job
+sites and contract prices, purchase orders and colour runs, today's pick
+queue and dispatch board, invoices across every aging bucket, returns,
+pallet deposits, a portal reorder waiting to be confirmed and an audit
+trail, all dated relative to today. The contractor portal is at
+http://localhost:8000/portal/escarpment-stone. `php artisan
+yardline:demo:reset` rebuilds it.
 
 Locally, tax is a flat 13% and card payment links are fake: opening one
 marks the order paid. Set the drivers in `.env` to use Stripe (see
@@ -46,10 +50,15 @@ and lives in hidden `Context`, so queued jobs inherit it. With no tenant
 set, scoped queries return nothing. Validate incoming IDs with
 `TenantRule::exists()` so one tenant can't reference another's rows.
 
+**What's in it.** See [docs/features.md](docs/features.md) for the
+modules and where each lives in the code.
+
 **Commerce.** Yardline owns organizations, customers, products, pricing
 and orders, and works without Shopify. Prices resolve in
-`App\Pricing\PriceResolver`: the organization's price list (best
-quantity break) or the product's list price.
+`App\Pricing\PriceResolver`: a contract price for the organization, then
+its price list (per selling unit, dated, best quantity break), then the
+unit's retail price. Products sell in several units (bag, pallet, tonne);
+stock is kept in the base unit and every line converts back to it.
 
 **Orders** (`app/Orders`). Draft, confirmed, released (`fulfilled`), and
 for rentals, returned. Confirming calculates tax and decides settlement:
@@ -59,8 +68,9 @@ for rentals, returned. Confirming calculates tax and decides settlement:
   hold or with no limit, an owner or admin can override with a reason.
 - _Prepaid_: card, cash, cheque or e-Transfer before release. Walk-ins
   are always prepaid.
-- _Rentals_ are separate orders, always prepaid, with the deposit due up
-  front.
+
+Equipment rentals are not orders; they live in their own module
+(`app/Rentals`) with availability, rate pricing, agreements and check-in.
 
 Business rules throw validation errors (`OrderRules::fail`) so the UI
 shows them in place.
@@ -85,10 +95,7 @@ controllers from `@/actions/...` (generated at build time, not committed).
 
 ## Not built yet
 
+- Shopify order import and two-way sync (products and stock push today)
+- QuickBooks Online sync for invoices, payments and rentals
 - Inviting staff into an existing business (sign-up creates a new one)
-- Invoices and statements for account orders; recording payments against
-  several orders at once
-- Rental deposit settlement, extra-day charges, damage
 - Refunds and Stripe Tax reversals on cancellation
-- Unit conversions (pallet ↔ each), purchasing and receiving against POs
-- Shopify order import, B2B companies and catalogs, inventory push
