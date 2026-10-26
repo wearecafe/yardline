@@ -5,6 +5,7 @@ namespace App\Rentals\Notifications;
 use App\Models\Rental;
 use App\Notifications\Channels\SmsChannel;
 use App\Notifications\Channels\SmsMessage;
+use App\Notifications\YardMail;
 use App\Support\Files;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -38,7 +39,7 @@ class RentalMessage extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $mail = (new MailMessage)
+        $mail = YardMail::for($this->rental->tenant)
             ->subject($this->subject)
             ->greeting('Hello')
             ->line($this->text);

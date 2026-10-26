@@ -36,6 +36,16 @@ class Tenant extends Model
     }
 
     /**
+     * Where customer replies to quote and rental emails should go.
+     */
+    public function replyToEmail(): ?string
+    {
+        $email = $this->settings['reply_to_email'] ?? null;
+
+        return is_string($email) && $email !== '' ? $email : null;
+    }
+
+    /**
      * @return HasMany<User, $this>
      */
     public function users(): HasMany

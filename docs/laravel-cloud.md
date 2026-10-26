@@ -50,8 +50,17 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 SHOPIFY_API_VERSION=2026-07
 SHOPIFY_WEBHOOK_SECRET=...   # the Shopify app's client secret
 
-MAIL_MAILER=...              # for password resets and email verification
+MAIL_MAILER=resend
+RESEND_API_KEY=re_...
+MAIL_FROM_ADDRESS=...        # on a domain verified in Resend
+MAIL_FROM_NAME=Yardline
 ```
+
+Email goes through Resend: password resets, email verification, quotes,
+and rental confirmations, signing links, reminders and receipts. Customer
+emails are sent from `MAIL_FROM_ADDRESS` under the yard's name, and replies
+go to the reply-to address set in Settings, Business. The demo yard never
+emails its customers.
 
 The fake payments driver refuses to run in production. A staging
 environment can use Stripe test keys with the same drivers.

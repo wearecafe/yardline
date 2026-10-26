@@ -24,7 +24,7 @@ class QuoteMessage extends Notification
         $order = $this->order;
         $expires = $order->quote_expires_on?->format('F j, Y');
 
-        return (new MailMessage)
+        return YardMail::for($order->tenant)
             ->subject("Quote {$order->number} from {$order->tenant->name}")
             ->greeting('Hello')
             ->line("Here's your quote for ".Money::format($order->total_cents).'.'.($expires ? " Prices hold until {$expires}." : ''))
