@@ -108,9 +108,12 @@ class RentalModuleTest extends TestCase
     {
         $saw = Product::factory()->rental()->create(['price_cents' => 5_500]);
 
-        $quote = app(RentalPricer::class)->quote($saw, $this->local('2026-11-07 08:00'), $this->local('2026-11-09 08:00'));
+        $pricer = app(RentalPricer::class);
 
-        $this->assertSame(11_000, $quote->cents);
+        // Out Saturday, back Monday morning: one day.
+        $this->assertSame(5_500, $pricer->quote($saw, $this->local('2026-11-07 08:00'), $this->local('2026-11-09 08:00'))->cents);
+        // Kept through Monday: two days.
+        $this->assertSame(11_000, $pricer->quote($saw, $this->local('2026-11-07 08:00'), $this->local('2026-11-09 17:00'))->cents);
     }
 
     public function test_a_unit_cannot_be_double_booked(): void

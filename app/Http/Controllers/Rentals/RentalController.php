@@ -241,7 +241,8 @@ class RentalController extends Controller
                 ? (int) RentalUnit::query()->whereKey($data['rental_unit_id'])->value('product_id')
                 : $item->product_id,
             'rental_unit_id' => $item->id === (int) $data['rental_item_id'] ? (int) $data['rental_unit_id'] : $item->rental_unit_id,
-        ])->all();
+        ])->values()->all();
+        $items = array_values($items);
 
         $save->handle([
             'starts_at' => CarbonImmutable::parse($data['starts_at'], $tz)->utc(),

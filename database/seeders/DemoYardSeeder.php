@@ -510,7 +510,7 @@ class DemoYardSeeder extends Seeder
 
         foreach ($stock as $sku => [$waterdown, $stoneyCreek, $reorder]) {
             $product = $this->products[$sku];
-            $note = $product->isRental() ? 'Rental fleet' : 'Opening stock';
+            $note = 'Opening stock';
 
             $ledger->record($product, $this->waterdown, $waterdown, StockMovementType::Receipt, user: $this->yardLead(), note: $note);
 
@@ -518,12 +518,10 @@ class DemoYardSeeder extends Seeder
                 $ledger->record($product, $this->stoneyCreek, $stoneyCreek, StockMovementType::Receipt, user: $this->yardLead(), note: $note);
             }
 
-            if ($reorder !== null) {
-                StockLevel::query()
-                    ->where('product_id', $product->id)
-                    ->where('location_id', $this->waterdown->id)
-                    ->update(['reorder_point' => $reorder]);
-            }
+            StockLevel::query()
+                ->where('product_id', $product->id)
+                ->where('location_id', $this->waterdown->id)
+                ->update(['reorder_point' => $reorder]);
         }
 
         StockMovement::query()->update(['created_at' => $this->at(45, '07:30')]);
@@ -865,13 +863,13 @@ class DemoYardSeeder extends Seeder
         }
 
         $items = $rental->items()->with('unit')->get();
-        $inspections = $items->map(fn ($item) => new InspectionData(
+        $inspections = array_values($items->map(fn ($item) => new InspectionData(
             $item->id,
             $hours[$item->unit?->serial] ?? null,
             FuelLevel::Full,
             true,
             null,
-        ))->all();
+        ))->all());
 
         app(CheckOutRental::class)->handle($rental->refresh(), $inspections, $this->yardLead(), $tender);
         $rental->forceFill(['checked_out_at' => $at])->save();

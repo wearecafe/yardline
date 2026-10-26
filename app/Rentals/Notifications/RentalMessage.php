@@ -30,10 +30,10 @@ class RentalMessage extends Notification
      */
     public function via(object $notifiable): array
     {
-        return array_values(array_map(
+        return array_map(
             fn (string $channel) => $channel === 'sms' ? SmsChannel::class : $channel,
             $this->channels,
-        ));
+        );
     }
 
     public function toMail(object $notifiable): MailMessage

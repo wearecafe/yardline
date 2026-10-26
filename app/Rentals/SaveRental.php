@@ -89,7 +89,7 @@ class SaveRental
         $end = CarbonImmutable::instance($rental->ends_at);
         $taken = [];
 
-        foreach (array_values($items) as $position => $item) {
+        foreach ($items as $position => $item) {
             $product = Product::query()->findOrFail((int) $item['product_id']);
 
             if ($product->kind !== ProductKind::Rental) {
