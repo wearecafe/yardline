@@ -10,6 +10,7 @@ use App\Http\Controllers\DemoLoginController;
 use App\Http\Controllers\DispatchController;
 use App\Http\Controllers\FakeCheckoutController;
 use App\Http\Controllers\FulfillmentController;
+use App\Http\Controllers\HelpController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LocationController;
@@ -43,6 +44,14 @@ Route::get('/', fn () => Inertia::render('welcome', [
     'demo' => Demo::enabled(),
     'canRegister' => Features::enabled(Features::registration()),
 ]))->name('home');
+
+// The public help center. Articles are Markdown in resources/help.
+Route::controller(HelpController::class)->prefix('help')->name('help.')->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::get('search', 'search')->name('search');
+    Route::get('{category}', 'category')->where('category', '[a-z0-9-]+')->name('category');
+    Route::get('{category}/{article}', 'article')->where(['category' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->name('article');
+});
 
 // One-click sign-in to the demo yard (404 unless YARDLINE_DEMO=true).
 Route::middleware('guest')->group(function () {

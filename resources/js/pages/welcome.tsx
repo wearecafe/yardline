@@ -25,6 +25,7 @@ const nav = [
     { href: '#rentals', label: 'Rentals' },
     { href: '#portal', label: 'Contractor portal' },
     { href: '#faq', label: 'FAQ' },
+    { href: '/help', label: 'Help' },
 ];
 
 const pains = [

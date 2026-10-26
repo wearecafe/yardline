@@ -97,3 +97,14 @@ order and organization pages show their own history.
 Supply with data for every module, dated relative to today.
 `yardline:demo:reset` rebuilds it nightly. When adding a tenant table, add
 it to `ResetDemoYard::TABLES` (children before parents).
+
+## Help center
+
+The public help center is at `/help`, for yard staff and their customers.
+Articles are Markdown files in `resources/help/{category}/{slug}.md`, with
+`title`, `summary`, `order`, and optional `popular` and `related` front
+matter. Categories are listed in `App\Help\HelpCenter::CATEGORIES`. Link
+between articles with `/help/{category}/{slug}`; `HelpCenterTest` fails on
+a broken link. A blockquote starting with **Tip**, **Note** or **Heads up**
+renders as a callout. When a screen or rule changes, update its article.
+Set `YARDLINE_SUPPORT_EMAIL` to show contact links.

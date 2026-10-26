@@ -64,6 +64,12 @@ return [
         ],
     ],
 
+    /*
+    | Where the public help center (/help) sends people who need more help.
+    | Leave blank to hide the contact links.
+    */
+    'support_email' => env('YARDLINE_SUPPORT_EMAIL'),
+
     'shopify' => [
         'api_version' => env('SHOPIFY_API_VERSION', '2026-07'),
     ],

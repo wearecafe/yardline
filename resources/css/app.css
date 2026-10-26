@@ -192,4 +192,72 @@
         font-family: var(--font-mono);
         font-variant-numeric: tabular-nums;
     }
+
+    /* Help center article bodies, rendered from Markdown. */
+    .help-prose {
+        @apply text-[15.5px] leading-7 text-foreground;
+
+        & > * + * {
+            @apply mt-4;
+        }
+        & h2 {
+            @apply mt-10 scroll-mt-24 text-xl font-semibold tracking-tight;
+        }
+        & h3 {
+            @apply mt-7 text-base font-semibold;
+        }
+        & h2 + *,
+        & h3 + * {
+            @apply mt-2;
+        }
+        & a {
+            @apply font-medium text-primary underline decoration-primary/30 underline-offset-2 hover:decoration-primary;
+        }
+        & strong {
+            @apply font-semibold;
+        }
+        & ul,
+        & ol {
+            @apply space-y-1.5 pl-6;
+        }
+        & ul {
+            @apply list-disc marker:text-muted-foreground;
+        }
+        & ol {
+            @apply list-decimal marker:font-semibold marker:text-primary;
+        }
+        & li > p {
+            @apply mt-0;
+        }
+        & code {
+            @apply rounded bg-secondary px-1.5 py-0.5 font-mono text-[0.85em];
+        }
+        & table {
+            @apply block w-full overflow-x-auto text-sm sm:table;
+        }
+        & th {
+            @apply border-b bg-secondary px-3 py-2 text-left font-semibold;
+        }
+        & td {
+            @apply border-b px-3 py-2 align-top;
+        }
+        & blockquote {
+            @apply rounded-r-md border-l-4 border-border bg-secondary/60 px-4 py-3 text-[15px];
+        }
+        & blockquote.callout-tip {
+            @apply border-success bg-success-soft;
+        }
+        & blockquote.callout-note {
+            @apply border-info bg-info-soft;
+        }
+        & blockquote.callout-heads-up {
+            @apply border-warning bg-warning-soft;
+        }
+        & blockquote > p > strong:first-child {
+            @apply mr-1;
+        }
+        & blockquote > * + * {
+            @apply mt-2;
+        }
+    }
 }
