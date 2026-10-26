@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Audit\Audited;
 use App\Enums\PaymentTerms;
 use App\Tenancy\BelongsToTenant;
 use Database\Factories\OrganizationFactory;
@@ -49,7 +50,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Organization extends Model
 {
     /** @use HasFactory<OrganizationFactory> */
-    use BelongsToTenant, HasFactory;
+    use Audited, BelongsToTenant, HasFactory;
+
+    /** Changes to these are written to the audit log. */
+    public const AUDITED = ['credit_limit_cents', 'payment_terms', 'credit_hold', 'price_list_id', 'tax_exempt'];
 
     /**
      * @var array<string, mixed>

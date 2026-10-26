@@ -48,6 +48,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'tenant' => fn () => CurrentTenant::get()?->only('id', 'name', 'currency'),
             'isDemo' => fn () => Demo::isDemoUser($request->user()),
+            'portal_flash' => fn () => $request->hasSession() ? $request->session()->get('portal_flash') : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

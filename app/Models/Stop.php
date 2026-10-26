@@ -76,7 +76,7 @@ class Stop extends Model
 
     public function isRental(): bool
     {
-        return $this->kind !== 'delivery';
+        return in_array($this->kind, ['rental_drop', 'rental_pickup'], true);
     }
 
     public function addressLine(): string

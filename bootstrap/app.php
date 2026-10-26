@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsurePortalCustomer;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\IdentifyTenant;
@@ -19,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+
+        $middleware->alias(['portal' => EnsurePortalCustomer::class]);
 
         $middleware->web(append: [
             IdentifyTenant::class,

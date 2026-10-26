@@ -11,6 +11,8 @@ import OrderLineController from '@/actions/App/Http/Controllers/OrderLineControl
 import OrganizationController from '@/actions/App/Http/Controllers/OrganizationController';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import { Chip } from '@/components/yard/chip';
+import { History } from '@/components/yard/history';
+import type { HistoryEvent } from '@/components/yard/history';
 import InputError from '@/components/input-error';
 import { EmptyRow, Table, Td, Th } from '@/components/yard/data-table';
 import { Checkbox, Field, NativeSelect } from '@/components/yard/field';
@@ -58,6 +60,7 @@ type Props = {
     locations: { id: number; name: string }[];
     sites: JobSite[];
     deliveryMethod: 'zone' | 'distance' | 'truckload';
+    history: HistoryEvent[];
     quote: {
         is_quote: boolean;
         expired: boolean;
@@ -158,6 +161,9 @@ export default function ShowOrder(props: Props) {
                                 tenders={props.tenders}
                             />
                         )}
+                        <Section title="History">
+                            <History events={props.history} />
+                        </Section>
                     </aside>
                 </div>
             </PageBody>

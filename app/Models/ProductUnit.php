@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Audit\Audited;
 use App\Tenancy\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -33,7 +34,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class ProductUnit extends Model
 {
-    use BelongsToTenant;
+    use Audited, BelongsToTenant;
+
+    /** Changes to these are written to the audit log. */
+    public const AUDITED = ['price_cents', 'factor', 'deposit_cents'];
 
     public const MEASURES = [
         'scale' => 'Truck scale weight',

@@ -147,4 +147,25 @@ class DemoYardTest extends TestCase
 
         $this->assertDatabaseHas('products', ['id' => $realProduct->id, 'tenant_id' => $other->id]);
     }
+
+    public function test_visitors_can_try_the_contractor_portal(): void
+    {
+        config(['yardline.demo' => true]);
+
+        $this->get(route('portal.login', DemoYardSeeder::SLUG))->assertOk()->assertInertia(fn (Assert $page) => $page->whereNot('demo', null));
+        $this->post(route('portal.demo', DemoYardSeeder::SLUG))->assertRedirect(route('portal.home'));
+        $this->get(route('portal.home'))->assertOk()->assertInertia(fn (Assert $page) => $page->has('orders')->has('calculator.pavers'));
+        $this->get(route('portal.orders'))->assertOk();
+        $this->get(route('portal.statement'))->assertOk();
+    }
+
+    public function test_every_demo_page_renders(): void
+    {
+        config(['yardline.demo' => true]);
+        $this->post('/demo', ['email' => self::OWNER]);
+
+        foreach (['dashboard', 'orders.index', 'orders.queue', 'dispatch.board', 'counter.show', 'inventory.index', 'purchasing.index', 'returns.index', 'receivables.index', 'products.index', 'organizations.index', 'customers.index', 'price-lists.index', 'fleet.index', 'rentals.calendar', 'rentals.index', 'maintenance.index', 'rental-payments.index', 'audit.index', 'delivery-settings.edit', 'rental-settings.edit'] as $name) {
+            $this->get(route($name))->assertOk();
+        }
+    }
 }

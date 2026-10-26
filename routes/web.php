@@ -19,6 +19,8 @@ use App\Http\Controllers\OrderLineController;
 use App\Http\Controllers\OrganizationContactController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationLocationController;
+use App\Http\Controllers\Portal\PortalAuthController;
+use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\PriceListController;
 use App\Http\Controllers\PriceListItemController;
 use App\Http\Controllers\ProductController;
@@ -156,6 +158,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Local development only (the controller 404s otherwise).
     Route::get('dev/fake-checkout/{session}', FakeCheckoutController::class)->name('dev.fake-checkout');
 });
+
+// The contractor portal.
+Route::middleware('portal')->prefix('portal/account')->name('portal.')->group(function () {
+    Route::get('/', [PortalController::class, 'home'])->name('home');
+    Route::get('orders', [PortalController::class, 'orders'])->name('orders');
+    Route::get('orders/{order}', [PortalController::class, 'order'])->name('order');
+    Route::post('orders/{order}/reorder', [PortalController::class, 'reorder'])->name('reorder');
+    Route::post('calculator', [PortalController::class, 'calculate'])->name('calculate');
+    Route::get('statement', [PortalController::class, 'statement'])->name('statement');
+    Route::get('statement.pdf', [PortalController::class, 'statementPdf'])->name('statement.pdf');
+    Route::post('pallet-pickup', [PortalController::class, 'palletPickup'])->name('pallet-pickup');
+    Route::post('logout', [PortalAuthController::class, 'logout'])->name('logout');
+});
+
+Route::get('portal/{tenant:slug}', [PortalAuthController::class, 'show'])->name('portal.login');
+Route::post('portal/{tenant:slug}', [PortalAuthController::class, 'send'])->middleware('throttle:6,1')->name('portal.send');
+Route::get('portal/{tenant:slug}/enter/{customer}', [PortalAuthController::class, 'enter'])->middleware('signed')->whereNumber('customer')->name('portal.enter');
+Route::post('portal/{tenant:slug}/demo', [PortalAuthController::class, 'demo'])->middleware('throttle:20,1')->name('portal.demo');
 
 Route::get('q/{token}', [QuoteController::class, 'show'])->name('quotes.public');
 Route::post('q/{token}/accept', [QuoteController::class, 'accept'])->middleware('throttle:10,1')->name('quotes.accept');

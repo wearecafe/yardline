@@ -37,6 +37,8 @@ class DemoLoginController extends Controller
         return Inertia::render('auth/demo', [
             'yard' => $tenant->name,
             'accounts' => $accounts,
+            'portalUrl' => route('portal.login', $tenant->slug),
+            'bookingUrl' => route('book.show', $tenant->slug),
         ]);
     }
 

@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import BusinessController from '@/actions/App/Http/Controllers/Settings/BusinessController';
+import AuditController from '@/actions/App/Http/Controllers/Settings/AuditController';
 import DeliverySettingsController from '@/actions/App/Http/Controllers/Settings/DeliverySettingsController';
 import RentalSettingsController from '@/actions/App/Http/Controllers/Settings/RentalSettingsController';
 import ShopifyController from '@/actions/App/Http/Controllers/Settings/ShopifyController';
@@ -46,6 +47,11 @@ const businessNavItems: NavItem[] = [
     {
         title: 'Rentals',
         href: RentalSettingsController.edit(),
+        icon: null,
+    },
+    {
+        title: 'Audit log',
+        href: AuditController.index(),
         icon: null,
     },
     {
