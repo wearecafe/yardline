@@ -33,7 +33,7 @@ class FulfillmentController extends Controller
     public function queue(Request $request): Response
     {
         $new = Order::query()
-            ->with([...self::WITH, 'lines.productUnit', 'lines.product:id,weight_kg'])
+            ->with([...self::WITH, 'lines.productUnit', 'lines.product:id,weight_kg,track_lots'])
             ->where('status', OrderStatus::Confirmed->value)
             ->whereDoesntHave('shipments', fn ($q) => $q->where('status', ShipmentStatus::Picking->value))
             ->orderBy('confirmed_at')
@@ -42,7 +42,7 @@ class FulfillmentController extends Controller
             ->values();
 
         $shipments = Shipment::query()
-            ->with(['order' => fn ($q) => $q->with(self::WITH), 'lines.orderLine.productUnit', 'lines.orderLine.product:id,weight_kg', 'picker:id,name'])
+            ->with(['order' => fn ($q) => $q->with(self::WITH), 'lines.orderLine.productUnit', 'lines.orderLine.product:id,weight_kg,track_lots', 'lines.lot', 'picker:id,name'])
             ->whereIn('status', [ShipmentStatus::Picking->value, ShipmentStatus::Loaded->value, ShipmentStatus::Out->value, ShipmentStatus::Ready->value])
             ->orderBy('created_at')
             ->get();
@@ -104,7 +104,7 @@ class FulfillmentController extends Controller
 
     public function pick(Shipment $shipment): Response
     {
-        $shipment->load(['order' => fn ($q) => $q->with(self::WITH), 'lines.orderLine.productUnit', 'lines.orderLine.product:id,weight_kg', 'picker:id,name']);
+        $shipment->load(['order' => fn ($q) => $q->with(self::WITH), 'lines.orderLine.productUnit', 'lines.orderLine.product:id,weight_kg,track_lots', 'lines.lot', 'picker:id,name']);
         $order = $shipment->order;
         $levels = StockLevel::query()->where('location_id', $order->location_id)->get()->keyBy('product_id');
         $list = FulfillmentPresenter::pickList($order, $shipment, $levels);
@@ -167,7 +167,7 @@ class FulfillmentController extends Controller
 
     public function ticket(Shipment $shipment): Response
     {
-        $shipment->load(['order' => fn ($q) => $q->with([...self::WITH, 'organizationLocation']), 'lines.orderLine.productUnit', 'lines.orderLine.product:id,weight_kg', 'picker:id,name']);
+        $shipment->load(['order' => fn ($q) => $q->with([...self::WITH, 'organizationLocation']), 'lines.orderLine.productUnit', 'lines.orderLine.product:id,weight_kg,track_lots', 'lines.lot', 'picker:id,name']);
         $order = $shipment->order;
         $levels = StockLevel::query()->where('location_id', $order->location_id)->get()->keyBy('product_id');
 
@@ -204,7 +204,7 @@ class FulfillmentController extends Controller
      */
     private function detail(Order $order, ?Shipment $shipment): array
     {
-        $order->loadMissing(['lines.productUnit', 'lines.product:id,weight_kg', 'organizationLocation:id,name,delivery_notes']);
+        $order->loadMissing(['lines.productUnit', 'lines.product:id,weight_kg,track_lots', 'organizationLocation:id,name,delivery_notes']);
         $levels = StockLevel::query()->where('location_id', $order->location_id)->get()->keyBy('product_id');
         $card = FulfillmentPresenter::orderCard($order, $shipment);
 

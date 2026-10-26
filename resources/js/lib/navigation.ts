@@ -9,6 +9,7 @@ import {
     LayoutGrid,
     MapPin,
     Package,
+    PackagePlus,
     Receipt,
     ShoppingCart,
     Undo2,
@@ -18,6 +19,7 @@ import {
     Wrench,
 } from 'lucide-react';
 import CounterController from '@/actions/App/Http/Controllers/CounterController';
+import PurchasingController from '@/actions/App/Http/Controllers/PurchasingController';
 import ReceivablesController from '@/actions/App/Http/Controllers/ReceivablesController';
 import ReturnController from '@/actions/App/Http/Controllers/ReturnController';
 import CustomerController from '@/actions/App/Http/Controllers/CustomerController';
@@ -67,9 +69,14 @@ export const navSections: NavSection[] = [
                 icon: Package,
             },
             {
-                title: 'Inventory',
+                title: 'Stock',
                 href: InventoryController.index(),
                 icon: Boxes,
+            },
+            {
+                title: 'Purchasing',
+                href: PurchasingController.index(),
+                icon: PackagePlus,
             },
             {
                 title: 'Returns',

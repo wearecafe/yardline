@@ -3,6 +3,7 @@
 use App\Http\Controllers\ContractPriceController;
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CycleCountController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\DemoLoginController;
@@ -22,11 +23,13 @@ use App\Http\Controllers\PriceListController;
 use App\Http\Controllers\PriceListItemController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductUnitController;
+use App\Http\Controllers\PurchasingController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\ReceivablesController;
 use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockLevelController;
+use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\Webhooks\ShopifyWebhookController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use App\Support\Demo;
@@ -97,6 +100,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Inventory
     Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
     Route::patch('stock-levels/{level}', [StockLevelController::class, 'update'])->name('stock-levels.update');
+    Route::post('stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
+    Route::post('cycle-counts', [CycleCountController::class, 'store'])->name('cycle-counts.store');
+    Route::get('cycle-counts/{cycleCount}', [CycleCountController::class, 'show'])->name('cycle-counts.show');
+    Route::put('cycle-counts/{cycleCount}', [CycleCountController::class, 'update'])->name('cycle-counts.update');
+    Route::post('cycle-counts/{cycleCount}/complete', [CycleCountController::class, 'complete'])->name('cycle-counts.complete');
+
+    Route::get('purchasing', [PurchasingController::class, 'index'])->name('purchasing.index');
+    Route::post('purchasing', [PurchasingController::class, 'store'])->name('purchasing.store');
+    Route::post('suppliers', [PurchasingController::class, 'storeSupplier'])->name('suppliers.store');
+    Route::get('purchasing/{purchaseOrder}', [PurchasingController::class, 'show'])->name('purchasing.show');
+    Route::put('purchasing/{purchaseOrder}', [PurchasingController::class, 'update'])->name('purchasing.update');
+    Route::post('purchasing/{purchaseOrder}/send', [PurchasingController::class, 'send'])->name('purchasing.send');
+    Route::post('purchasing/{purchaseOrder}/receive', [PurchasingController::class, 'receive'])->name('purchasing.receive');
+    Route::post('purchasing/{purchaseOrder}/cancel', [PurchasingController::class, 'cancel'])->name('purchasing.cancel');
 
     Route::get('queue', [FulfillmentController::class, 'queue'])->name('orders.queue');
     Route::post('orders/{order}/pick', [FulfillmentController::class, 'start'])->name('orders.pick');

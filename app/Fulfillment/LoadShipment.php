@@ -9,6 +9,7 @@ use App\Enums\StockMovementType;
 use App\Enums\StopStatus;
 use App\Inventory\InventoryLedger;
 use App\Models\Shipment;
+use App\Models\StockLot;
 use App\Models\User;
 use App\Orders\OrderRules;
 use App\Receivables\PalletLedger;
@@ -36,17 +37,24 @@ class LoadShipment
         }
 
         return DB::transaction(function () use ($shipment, $order, $user) {
-            $shipment->load('lines.orderLine.product', 'lines.orderLine.productUnit');
+            $shipment->load('lines.orderLine.product', 'lines.orderLine.productUnit', 'lines.lot');
             $weight = 0.0;
 
             foreach ($shipment->lines as $line) {
                 $orderLine = $line->orderLine;
                 $quantity = $line->loadedQuantity();
+
+                // Colour-run stock comes out of a run.
+                if ($line->stock_lot_id === null && $orderLine->product?->track_lots) {
+                    $lot = StockLot::bestFor((int) $orderLine->product_id, $order->location_id);
+                    $line->forceFill(['stock_lot_id' => $lot?->id])->save();
+                    $line->setRelation('lot', $lot);
+                }
                 $base = $quantity * (float) ($orderLine->unit_factor ?: 1);
                 $product = $orderLine->product;
 
                 if ($product?->track_inventory && $base > 0) {
-                    $this->ledger->record($product, $order->location, -1 * $base, StockMovementType::Sale, $shipment, $user);
+                    $this->ledger->record($product, $order->location, -1 * $base, StockMovementType::Sale, $shipment, $user, lot: $line->lot);
                 }
 
                 $weight += $base * (float) ($product->weight_kg ?? 0);

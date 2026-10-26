@@ -12,10 +12,12 @@ export function ProductForm({
     product,
     units,
     categories,
+    suppliers = [],
 }: {
     product?: Product;
     units: Option[];
     categories: string[];
+    suppliers?: { id: number; name: string }[];
 }) {
     const form = useForm({
         sku: product?.sku ?? '',
@@ -33,6 +35,8 @@ export function ProductForm({
         weight_kg: product?.weight_kg ? String(Number(product.weight_kg)) : '',
         supplier_name: product?.supplier_name ?? '',
         pallet_deposit: product?.pallet_deposit ?? false,
+        supplier_id: product?.supplier_id ? String(product.supplier_id) : '',
+        track_lots: product?.track_lots ?? false,
         per_pallet: product?.per_pallet
             ? String(Number(product.per_pallet))
             : '',
@@ -317,6 +321,38 @@ export function ProductForm({
                                 }
                             />
                         </Field>
+                    </div>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:items-end">
+                        <Field
+                            label="Buy from"
+                            htmlFor="supplier_id"
+                            error={form.errors.supplier_id}
+                            hint="Used for purchase orders."
+                        >
+                            <NativeSelect
+                                id="supplier_id"
+                                value={form.data.supplier_id}
+                                onChange={(e) =>
+                                    form.setData('supplier_id', e.target.value)
+                                }
+                            >
+                                <option value="">—</option>
+                                {suppliers.map((s) => (
+                                    <option key={s.id} value={s.id}>
+                                        {s.name}
+                                    </option>
+                                ))}
+                            </NativeSelect>
+                        </Field>
+                        <Checkbox
+                            id="track_lots"
+                            label="Tracked by colour run"
+                            hint="Each delivery is a run; orders ship from one run."
+                            checked={form.data.track_lots}
+                            onChange={(checked) =>
+                                form.setData('track_lots', checked)
+                            }
+                        />
                     </div>
                     <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:items-end">
                         <Checkbox

@@ -7,6 +7,7 @@ use App\Models\OrderLine;
 use App\Models\Shipment;
 use App\Models\ShipmentLine;
 use App\Models\StockLevel;
+use App\Models\StockLot;
 use App\Support\Money;
 use Illuminate\Support\Collection;
 
@@ -87,7 +88,7 @@ final class FulfillmentPresenter
                 'order_line_id' => $line->id,
                 'item' => $line->description,
                 'sku' => $line->sku,
-                'where' => trim(implode(' · ', array_filter([$level?->bin, $hint]))) ?: null,
+                'where' => trim(implode(' · ', array_filter([$level?->bin, self::lot($line, $sl, $levels), $hint]))) ?: null,
                 'quantity' => number_format($row['quantity'], 3, '.', ''),
                 'unit' => self::unit($line),
                 'weighed' => $weighed,
@@ -115,5 +116,21 @@ final class FulfillmentPresenter
     private static function qty(float $quantity): string
     {
         return rtrim(rtrim(number_format($quantity, 3, '.', ''), '0'), '.');
+    }
+
+    /**
+     * "run 2611-B only" for colour-run products.
+     *
+     * @param  Collection<int, StockLevel>  $levels
+     */
+    private static function lot(OrderLine $line, ?ShipmentLine $shipmentLine, Collection $levels): ?string
+    {
+        if (! $line->product?->track_lots) {
+            return null;
+        }
+
+        $lot = $shipmentLine->lot ?? ($levels->first() ? StockLot::bestFor((int) $line->product_id, (int) $levels->first()->location_id) : null);
+
+        return $lot ? "{$lot->code} only" : null;
     }
 }

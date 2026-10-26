@@ -28,11 +28,15 @@ use App\Models\Organization;
 use App\Models\OrganizationLocation;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
 use App\Models\Rental;
 use App\Models\RentalUnit;
+use App\Models\Sequence;
 use App\Models\StockLevel;
+use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\Stop;
+use App\Models\Supplier;
 use App\Models\Tenant;
 use App\Models\Truck;
 use App\Models\User;
@@ -42,6 +46,9 @@ use App\Orders\CreateOrder;
 use App\Orders\FulfillOrder;
 use App\Orders\SendQuote;
 use App\Payments\RecordPayment;
+use App\Purchasing\CycleCounting;
+use App\Purchasing\ReceivePurchaseOrder;
+use App\Purchasing\TransferStock;
 use App\Receivables\PalletLedger;
 use App\Receivables\ProcessReturn;
 use App\Receivables\UseCredit;
@@ -126,6 +133,9 @@ class DemoYardSeeder extends Seeder
     /** @var list<Truck> */
     private array $trucks = [];
 
+    /** @var array<string, Supplier> */
+    private array $suppliers = [];
+
     private Location $waterdown;
 
     private Location $stoneyCreek;
@@ -158,12 +168,15 @@ class DemoYardSeeder extends Seeder
                 $this->sellingUnits();
                 $this->accounts();
                 $this->accountDetails();
+                $this->purchasingSetup();
                 $this->openingStock();
+                $this->openingLots();
                 $this->deliverySetup($tenant);
                 $this->orders();
                 $this->quotes();
                 $this->fulfillmentToday();
                 $this->returnsAndCredits();
+                $this->purchasingActivity();
                 $this->rentals();
             });
         });
@@ -744,11 +757,132 @@ class DemoYardSeeder extends Seeder
         StockMovement::query()->update(['created_at' => $this->at(45, '07:30')]);
 
         // A delivery that came in last week, and a count that found breakage.
-        $receipt = $ledger->record($this->products['PAV-60CH'], $this->waterdown, 1800, StockMovementType::Receipt, user: $this->yardLead(), note: 'PO 4471, Unilock');
+        $receipt = $ledger->record($this->products['PAV-60CH'], $this->waterdown, 1800, StockMovementType::Receipt, user: $this->yardLead(), note: 'PO 4471, Ridgeline Concrete Products', lot: StockLot::query()->firstOrCreate(['product_id' => $this->products['PAV-60CH']->id, 'location_id' => $this->waterdown->id, 'code' => 'Run 2611-B'], ['received_on' => $this->at(5)->toDateString()]));
         $receipt->forceFill(['created_at' => $this->at(5, '08:15')])->saveQuietly();
 
         $count = $ledger->count($this->products['WAL-CAP'], $this->waterdown, 252, $this->yardLead(), 'Monthly count, 8 chipped');
         $count?->forceFill(['created_at' => $this->at(3, '16:40')])->saveQuietly();
+    }
+
+    /**
+     * Suppliers, and which products are tracked by colour run.
+     */
+    private function purchasingSetup(): void
+    {
+        $leads = ['Niagara Ridge Quarry' => 2, 'Grand River Aggregates' => 3, 'Flamborough Soils' => 2, 'Ridgeline Concrete Products' => 7, 'Escarpment Stone Co.' => 10, 'Lakeview Brick' => 14, 'Hamilton Building Supply' => 3];
+
+        foreach ($leads as $name => $days) {
+            $this->suppliers[$name] = Supplier::query()->create([
+                'name' => $name,
+                'email' => 'orders@'.Str::slug($name).'.example',
+                'phone' => '905-555-02'.str_pad((string) count($this->suppliers), 2, '0', STR_PAD_LEFT),
+                'lead_days' => $days,
+            ]);
+        }
+
+        foreach ($this->products as $product) {
+            if ($product->supplier_name !== null && isset($this->suppliers[$product->supplier_name])) {
+                $product->forceFill(['supplier_id' => $this->suppliers[$product->supplier_name]->id])->save();
+            }
+        }
+
+        foreach (['PAV-60CH', 'PAV-80NT', 'WAL-STD', 'WAL-CAP'] as $sku) {
+            $this->products[$sku]->forceFill(['track_lots' => true])->save();
+        }
+    }
+
+    /**
+     * Opening stock of colour-run products, split into runs. Whatever
+     * isn't in a named run is the newest run on the shelf.
+     */
+    private function openingLots(): void
+    {
+        $runs = ['PAV-60CH' => ['Run 2609-A' => 690], 'PAV-80NT' => [], 'WAL-STD' => [], 'WAL-CAP' => []];
+
+        foreach ($runs as $sku => $lots) {
+            $product = $this->products[$sku];
+            $total = (float) app(InventoryLedger::class)->onHand($product, $this->waterdown);
+
+            foreach ($lots as $code => $quantity) {
+                StockLot::query()->firstOrCreate(
+                    ['product_id' => $product->id, 'location_id' => $this->waterdown->id, 'code' => $code],
+                    ['received_on' => $this->at(45)->toDateString()],
+                )->forceFill(['on_hand' => $quantity])->save();
+            }
+
+            $inRuns = (float) StockLot::query()->where('product_id', $product->id)->where('location_id', $this->waterdown->id)->sum('on_hand');
+
+            if ($inRuns < $total) {
+                $newest = StockLot::query()->firstOrCreate(
+                    ['product_id' => $product->id, 'location_id' => $this->waterdown->id, 'code' => $sku === 'PAV-60CH' ? 'Run 2611-B' : 'Run 2604-C'],
+                    ['received_on' => $this->at(30)->toDateString()],
+                );
+                $newest->forceFill(['on_hand' => (float) $newest->on_hand + $total - $inRuns])->save();
+            }
+        }
+    }
+
+    /**
+     * Purchase orders in each state, a transfer between yards, and counts.
+     */
+    private function purchasingActivity(): void
+    {
+        $receive = app(ReceivePurchaseOrder::class);
+        $owner = $this->owner();
+        $po = function (string $supplier, array $lines, string $status, int $expectedInDays, int $createdDaysAgo) use ($owner): PurchaseOrder {
+            $order = PurchaseOrder::query()->create([
+                'number' => 'PO-'.Sequence::next('purchase_orders'),
+                'supplier_id' => $this->suppliers[$supplier]->id,
+                'location_id' => $this->waterdown->id,
+                'status' => $status,
+                'expected_on' => $this->at(-$expectedInDays)->toDateString(),
+                'created_by' => $owner->id,
+            ]);
+
+            foreach (array_values($lines) as $i => [$sku, $qty]) {
+                $order->lines()->create(['product_id' => $this->products[$sku]->id, 'quantity' => $qty, 'unit_cost_cents' => (int) $this->products[$sku]->cost_cents, 'position' => $i]);
+            }
+
+            $order->forceFill([
+                'total_cents' => (int) $order->lines()->get()->sum(fn ($l) => (int) round((float) $l->quantity * $l->unit_cost_cents)),
+                'sent_at' => $status === 'draft' ? null : $this->at($createdDaysAgo, '10:00'),
+                'created_at' => $this->at($createdDaysAgo, '09:30'),
+            ])->save();
+
+            return $order;
+        };
+
+        // Arriving this week.
+        $po('Hamilton Building Supply', [['MOR-S30', 120], ['SND-POLY', 80]], 'sent', 2, 1);
+        $po('Lakeview Brick', [['BRK-MOD', 12]], 'sent', 4, 10);
+
+        // Wall block came in short last week: the rest is still to come.
+        $order = $po('Ridgeline Concrete Products', [['WAL-STD', 480], ['WAL-CAP', 120]], 'sent', -3, 12);
+        $lines = $order->lines()->get();
+        $receive->handle($order, [
+            ['line_id' => $lines[0]->id, 'quantity' => 288, 'lot' => 'Run 2610-A'],
+            ['line_id' => $lines[1]->id, 'quantity' => 120, 'lot' => 'Run 2610-A'],
+        ], $this->yardLead());
+        StockMovement::query()->where('reference_type', 'purchase_order')->where('reference_id', $order->id)->update(['created_at' => $this->at(4, '08:40')]);
+
+        // A draft for screenings, now that the quarry's price went up.
+        $po('Niagara Ridge Quarry', [['AGG-SCR', 120]], 'draft', 3, 0);
+
+        // Screenings moved over from Stoney Creek.
+        $transfer = app(TransferStock::class)->handle($this->stoneyCreek, $this->waterdown, [['product_id' => $this->products['AGG-SCR']->id, 'quantity' => 20]], $this->yardLead(), 'Topping up Bay 4');
+        $transfer->forceFill(['created_at' => $this->at(5, '13:00')])->save();
+        StockMovement::query()->where('reference_type', 'stock_transfer')->where('reference_id', $transfer->id)->update(['created_at' => $this->at(5, '13:00')]);
+
+        // Last week's count of the bagged aisles, and one in progress.
+        $counting = app(CycleCounting::class);
+        $count = $counting->start($this->waterdown, $this->yardLead(), 'Aisle');
+        foreach ($count->lines as $line) {
+            $line->update(['counted' => max(0, round((float) $line->expected * 0.982))]);
+        }
+        $counting->complete($count, $this->yardLead());
+        $count->forceFill(['created_at' => $this->at(9, '16:00'), 'completed_at' => $this->at(9, '17:10')])->save();
+
+        $counting->start($this->waterdown, $this->yardLead(), 'Row C');
     }
 
     // -------------------------------------------------------------- orders

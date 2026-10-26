@@ -7,6 +7,7 @@ use App\Enums\RentalPeriod;
 use App\Enums\Unit;
 use App\Http\Presenters\ProductEditor;
 use App\Models\Product;
+use App\Models\Supplier;
 use App\Support\Money;
 use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
@@ -104,6 +105,8 @@ class ProductController extends Controller
             'weight_kg' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             'supplier_name' => ['nullable', 'string', 'max:255'],
             'pallet_deposit' => ['boolean'],
+            'supplier_id' => ['nullable', TenantRule::exists('suppliers')],
+            'track_lots' => ['boolean'],
             'per_pallet' => ['nullable', 'numeric', 'gt:0', 'max:1000000'],
             'track_inventory' => ['boolean'],
             'is_active' => ['boolean'],
@@ -145,6 +148,7 @@ class ProductController extends Controller
     {
         return [
             'units' => Unit::options(),
+            'suppliers' => Supplier::query()->orderBy('name')->get(['id', 'name']),
             'categories' => Product::query()->whereNotNull('category')->distinct()->orderBy('category')->pluck('category'),
         ];
     }

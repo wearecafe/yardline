@@ -7,16 +7,22 @@ import type { Option } from '@/types';
 export default function CreateProduct({
     units,
     categories,
+    suppliers,
 }: {
     units: Option[];
     categories: string[];
+    suppliers: { id: number; name: string }[];
 }) {
     return (
         <>
             <Head title="New product" />
             <PageBody>
                 <PageHeader title="New product" />
-                <ProductForm units={units} categories={categories} />
+                <ProductForm
+                    units={units}
+                    categories={categories}
+                    suppliers={suppliers}
+                />
             </PageBody>
         </>
     );

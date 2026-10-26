@@ -4,6 +4,7 @@ namespace App\Fulfillment;
 
 use App\Enums\ShipmentStatus;
 use App\Models\ShipmentLine;
+use App\Models\StockLot;
 use App\Orders\OrderRules;
 
 /**
@@ -32,7 +33,15 @@ class RecordPick
             $short = true;
         }
 
+        // A colour-run product ships from one run: the one with the most on hand.
+        $orderLine = $line->orderLine;
+        $lotId = $line->stock_lot_id;
+        if ($lotId === null && $orderLine->product?->track_lots) {
+            $lotId = StockLot::bestFor((int) $orderLine->product_id, $line->shipment->order->location_id)?->id;
+        }
+
         $line->forceFill([
+            'stock_lot_id' => $lotId,
             'picked_quantity' => $picked,
             'short' => $short,
             'note' => $note,
