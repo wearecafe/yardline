@@ -251,8 +251,9 @@ class QuickBooksSyncTest extends TestCase
 
     public function test_pallets_returned_credit_the_deposit_account(): void
     {
-        $this->order(['pavers' => 230]);
-        $this->post(route('pallet-returns.store'), ['organization_id' => $this->org->id, 'count' => 2, 'location_id' => $this->yard->id])->assertRedirect();
+        $order = $this->order(['pavers' => 230]);
+        $this->post(route('orders.fulfill', $order))->assertSessionHasNoErrors();
+        $this->post(route('pallet-returns.store'), ['organization_id' => $this->org->id, 'count' => 2, 'location_id' => $this->yard->id])->assertSessionHasNoErrors();
 
         $this->assertSame([], QuickBooksSync::query()->where('syncable_type', 'credit_note')->whereNotNull('message')->pluck('message')->all());
         $memo = $this->qbo->last('CreditMemo');
