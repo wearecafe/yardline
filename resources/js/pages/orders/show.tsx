@@ -3,6 +3,8 @@ import type { FormEvent } from 'react';
 import { useState } from 'react';
 import DeliveryController from '@/actions/App/Http/Controllers/DeliveryController';
 import FulfillmentController from '@/actions/App/Http/Controllers/FulfillmentController';
+import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
+import ReturnController from '@/actions/App/Http/Controllers/ReturnController';
 import OrderActionController from '@/actions/App/Http/Controllers/OrderActionController';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import OrderLineController from '@/actions/App/Http/Controllers/OrderLineController';
@@ -116,6 +118,30 @@ export default function ShowOrder(props: Props) {
 
                     <aside className="grid content-start gap-8">
                         <Totals order={order} />
+                        {(order.credit_notes?.length ?? 0) > 0 && (
+                            <Section title="Credits">
+                                <ul className="grid gap-1.5 text-sm">
+                                    {order.credit_notes!.map((c) => (
+                                        <li
+                                            key={c.id}
+                                            className="flex justify-between gap-3"
+                                        >
+                                            <Link
+                                                href={ReturnController.show.url(
+                                                    c.id,
+                                                )}
+                                                className="figure hover:underline"
+                                            >
+                                                {c.number}
+                                            </Link>
+                                            <span className="figure">
+                                                {formatMoney(c.total_cents)}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </Section>
+                        )}
                         {isDraft && !isRental && (
                             <QuotePanel order={order} quote={props.quote} />
                         )}
@@ -215,6 +241,33 @@ function HeaderActions({ order }: { order: Order }) {
                 }
             >
                 Check back in
+            </Button>,
+        );
+    }
+
+    if (order.invoice) {
+        actions.push(
+            <Button key="invoice" variant="ghost" asChild>
+                <Link href={InvoiceController.show.url(order.invoice.id)}>
+                    Invoice {order.invoice.number}
+                </Link>
+            </Button>,
+        );
+    }
+
+    if (
+        order.type !== 'rental' &&
+        order.lines.some(
+            (l) =>
+                Number(l.shipped_quantity ?? 0) >
+                Number(l.returned_quantity ?? 0),
+        )
+    ) {
+        actions.push(
+            <Button key="return" variant="ghost" asChild>
+                <Link href={ReturnController.create.url(order.id)}>
+                    Take a return
+                </Link>
             </Button>,
         );
     }

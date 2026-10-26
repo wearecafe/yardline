@@ -5,14 +5,17 @@ namespace App\Http\Controllers;
 use App\Credit\CreditCheck;
 use App\Enums\PaymentTerms;
 use App\Models\ContractPrice;
+use App\Models\CreditNote;
 use App\Models\Customer;
 use App\Models\CustomerMembership;
+use App\Models\Invoice;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\Organization;
 use App\Models\OrganizationLocation;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Receivables\PalletLedger;
 use App\Support\Money;
 use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
@@ -77,6 +80,11 @@ class OrganizationController extends Controller
                 ->get()
                 ->map(fn (Order $order) => OrderController::summary($order)),
             'paymentTerms' => PaymentTerms::options(),
+            'account' => [
+                'pallets_out' => app(PalletLedger::class)->outstanding($organization),
+                'credit_cents' => (int) CreditNote::query()->where('organization_id', $organization->id)->where('status', 'open')->get()->sum(fn ($c) => $c->remainingCents()),
+                'overdue_cents' => (int) Invoice::query()->with('order')->where('organization_id', $organization->id)->where('status', 'open')->whereDate('due_on', '<', now()->toDateString())->get()->sum(fn ($i) => $i->balanceCents()),
+            ],
             'contacts' => $organization->contacts->sortBy('first_name')->values()->map(fn (Customer $customer) => [
                 'id' => $customer->id,
                 'name' => $customer->full_name,

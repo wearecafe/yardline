@@ -9,6 +9,16 @@ enum PaymentTerms: string
     case Net30 = 'net_30';
     case Net60 = 'net_60';
 
+    public function days(): int
+    {
+        return match ($this) {
+            self::DueOnReceipt => 0,
+            self::Net15 => 15,
+            self::Net30 => 30,
+            self::Net60 => 60,
+        };
+    }
+
     public function label(): string
     {
         return match ($this) {

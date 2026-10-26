@@ -1,5 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import ReturnController from '@/actions/App/Http/Controllers/ReturnController';
 import DeliverySettingsController from '@/actions/App/Http/Controllers/Settings/DeliverySettingsController';
 import Heading from '@/components/heading';
 import { Checkbox, Field, NativeSelect } from '@/components/yard/field';
@@ -37,8 +38,115 @@ type Props = {
     methods: { value: Settings['method']; label: string }[];
     zones: Zone[];
     trucks: Truck[];
-    yards: { id: number; name: string }[];
+    yards: { id: number; name: string; pallet_deposits: boolean }[];
+    returns: {
+        restocking_percent: number;
+        pallet_deposits: boolean;
+        pallet_deposit_cents: number;
+        return_window_days: number;
+    };
 };
+
+function ReturnsForm({ returns, yards }: Pick<Props, 'returns' | 'yards'>) {
+    const form = useForm({
+        restocking_percent: String(returns.restocking_percent),
+        pallet_deposits: returns.pallet_deposits,
+        pallet_deposit: centsToInput(returns.pallet_deposit_cents),
+        return_window_days: String(returns.return_window_days),
+        yards: Object.fromEntries(
+            yards.map((y) => [String(y.id), y.pallet_deposits]),
+        ) as Record<string, boolean>,
+    });
+
+    return (
+        <form
+            className="space-y-4"
+            onSubmit={(e) => {
+                e.preventDefault();
+                form.put(ReturnController.settings.url(), {
+                    preserveScroll: true,
+                });
+            }}
+        >
+            <Heading
+                variant="small"
+                title="Returns and pallet deposits"
+                description="The restocking fee on returned material, and the deposit charged on each pallet."
+            />
+            <div className="grid gap-4 sm:grid-cols-3">
+                <Field
+                    label="Restocking fee (%)"
+                    htmlFor="restocking_percent"
+                    error={form.errors.restocking_percent}
+                >
+                    <Input
+                        id="restocking_percent"
+                        inputMode="decimal"
+                        value={form.data.restocking_percent}
+                        onChange={(e) =>
+                            form.setData('restocking_percent', e.target.value)
+                        }
+                    />
+                </Field>
+                <Field
+                    label="Returns within (days)"
+                    htmlFor="return_window_days"
+                    error={form.errors.return_window_days}
+                >
+                    <Input
+                        id="return_window_days"
+                        inputMode="numeric"
+                        value={form.data.return_window_days}
+                        onChange={(e) =>
+                            form.setData('return_window_days', e.target.value)
+                        }
+                    />
+                </Field>
+                <Field
+                    label="Pallet deposit"
+                    htmlFor="pallet_deposit"
+                    error={form.errors.pallet_deposit}
+                >
+                    <Input
+                        id="pallet_deposit"
+                        inputMode="decimal"
+                        value={form.data.pallet_deposit}
+                        onChange={(e) =>
+                            form.setData('pallet_deposit', e.target.value)
+                        }
+                    />
+                </Field>
+            </div>
+            <Checkbox
+                id="pallet_deposits"
+                label="Charge pallet deposits"
+                checked={form.data.pallet_deposits}
+                onChange={(v) => form.setData('pallet_deposits', v)}
+            />
+            {form.data.pallet_deposits && (
+                <div className="flex flex-wrap gap-5 pl-6">
+                    {yards.map((y) => (
+                        <Checkbox
+                            key={y.id}
+                            id={`yard-pallets-${y.id}`}
+                            label={y.name}
+                            checked={form.data.yards[String(y.id)] ?? true}
+                            onChange={(v) =>
+                                form.setData('yards', {
+                                    ...form.data.yards,
+                                    [String(y.id)]: v,
+                                })
+                            }
+                        />
+                    ))}
+                </div>
+            )}
+            <Button type="submit" variant="outline" disabled={form.processing}>
+                Save returns and deposits
+            </Button>
+        </form>
+    );
+}
 
 function TruckRow({ truck }: { truck: Truck | null }) {
     const id = truck?.id ?? 'new';
@@ -184,6 +292,8 @@ export default function DeliverySettingsPage({
     methods,
     zones,
     trucks,
+    yards,
+    returns,
 }: Props) {
     const form = useForm({
         method: settings.method,
@@ -336,6 +446,8 @@ export default function DeliverySettingsPage({
                     ))}
                     <ZoneRow zone={null} />
                 </section>
+
+                <ReturnsForm returns={returns} yards={yards} />
 
                 <section className="space-y-4">
                     <Heading

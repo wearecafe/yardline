@@ -9,11 +9,17 @@ import {
     LayoutGrid,
     MapPin,
     Package,
+    Receipt,
+    ShoppingCart,
+    Undo2,
     Route,
     Tags,
     Truck,
     Wrench,
 } from 'lucide-react';
+import CounterController from '@/actions/App/Http/Controllers/CounterController';
+import ReceivablesController from '@/actions/App/Http/Controllers/ReceivablesController';
+import ReturnController from '@/actions/App/Http/Controllers/ReturnController';
 import CustomerController from '@/actions/App/Http/Controllers/CustomerController';
 import InventoryController from '@/actions/App/Http/Controllers/InventoryController';
 import LocationController from '@/actions/App/Http/Controllers/LocationController';
@@ -41,6 +47,11 @@ export const navSections: NavSection[] = [
         items: [
             { title: 'Today', href: dashboard(), icon: LayoutGrid },
             {
+                title: 'Counter',
+                href: CounterController.show(),
+                icon: ShoppingCart,
+            },
+            {
                 title: 'Orders and picking',
                 href: FulfillmentController.queue(),
                 icon: ClipboardList,
@@ -59,6 +70,11 @@ export const navSections: NavSection[] = [
                 title: 'Inventory',
                 href: InventoryController.index(),
                 icon: Boxes,
+            },
+            {
+                title: 'Returns',
+                href: ReturnController.index(),
+                icon: Undo2,
             },
             { title: 'Yards', href: LocationController.index(), icon: MapPin },
         ],
@@ -101,6 +117,11 @@ export const navSections: NavSection[] = [
                 title: 'Customers',
                 href: CustomerController.index(),
                 icon: Contact,
+            },
+            {
+                title: 'Receivables',
+                href: ReceivablesController.index(),
+                icon: Receipt,
             },
             {
                 title: 'Price lists',

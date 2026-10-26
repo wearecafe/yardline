@@ -11,4 +11,5 @@ enum StockMovementType: string
     case RentalOut = 'rental_out';
     case RentalReturn = 'rental_return';
     case Damage = 'damage';
+    case CustomerReturn = 'return';
 }

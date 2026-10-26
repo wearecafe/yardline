@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DeliveryZone;
 use App\Models\Location;
 use App\Models\Truck;
+use App\Receivables\ReturnsSettings;
 use App\Support\Money;
 use App\Tenancy\CurrentTenant;
 use App\Tenancy\TenantRule;
@@ -34,7 +35,8 @@ class DeliverySettingsController extends Controller
                 'fee' => number_format($zone->fee_cents / 100, 2, '.', ''),
             ]),
             'trucks' => Truck::query()->orderBy('position')->orderBy('name')->get(),
-            'yards' => Location::query()->orderBy('name')->get(['id', 'name']),
+            'yards' => Location::query()->orderBy('name')->get(['id', 'name', 'pallet_deposits']),
+            'returns' => ReturnsSettings::current()->toArray(),
         ]);
     }
 

@@ -103,6 +103,8 @@ class ProductController extends Controller
             'taxable' => ['boolean'],
             'weight_kg' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             'supplier_name' => ['nullable', 'string', 'max:255'],
+            'pallet_deposit' => ['boolean'],
+            'per_pallet' => ['nullable', 'numeric', 'gt:0', 'max:1000000'],
             'track_inventory' => ['boolean'],
             'is_active' => ['boolean'],
             ...array_fill_keys(self::RENTAL_MONEY, ['nullable', 'numeric', 'min:0', 'max:9999999']),

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A yard or stocking point.
  *
+ * @property bool $pallet_deposits whether this yard charges pallet deposits
  * @property int $id
  * @property int $tenant_id
  * @property string $name
@@ -24,7 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $country
  * @property bool $is_default
  */
-#[Fillable(['name', 'code', 'address_line1', 'address_line2', 'city', 'region', 'postal_code', 'country', 'is_default'])]
+#[Fillable(['name', 'code', 'address_line1', 'address_line2', 'city', 'region', 'postal_code', 'country', 'is_default', 'pallet_deposits'])]
 class Location extends Model
 {
     /** @use HasFactory<LocationFactory> */
@@ -34,6 +35,7 @@ class Location extends Model
     {
         return [
             'is_default' => 'boolean',
+            'pallet_deposits' => 'boolean',
         ];
     }
 

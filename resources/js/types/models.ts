@@ -44,6 +44,8 @@ export type Product = {
     taxable?: boolean;
     weight_kg?: string | null;
     supplier_name?: string | null;
+    pallet_deposit?: boolean;
+    per_pallet?: string | null;
     previous_cost_cents?: number | null;
     cost_changed_at?: string | null;
 };
@@ -156,6 +158,9 @@ export type OrderLine = {
     price_source?: 'list' | 'price_list' | 'contract' | 'manual' | null;
     product_unit_id?: number | null;
     base_quantity?: string | null;
+    shipped_quantity?: string;
+    returned_quantity?: string;
+    pallets?: number;
     line_total_cents: number;
     tax_cents: number;
     deposit_cents: number;
@@ -230,6 +235,18 @@ export type Order = {
     load_weight_kg: string | null;
     needs_boom: boolean;
     delivery_zone?: { id: number; name: string } | null;
+    invoice?: {
+        id: number;
+        number: string;
+        status: string;
+        due_on: string;
+    } | null;
+    credit_notes?: {
+        id: number;
+        number: string;
+        total_cents: number;
+        issued_on: string;
+    }[];
     shipments?: {
         id: number;
         number: string;

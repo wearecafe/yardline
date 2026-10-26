@@ -91,6 +91,8 @@ class OrderController extends Controller
             'location',
             'organizationLocation',
             'deliveryZone:id,name',
+            'invoice:id,order_id,number,status,due_on',
+            'creditNotes:id,order_id,number,total_cents,issued_on',
             'shipments' => fn ($query) => $query->with(['lines', 'picker:id,name', 'stop.truck:id,name'])->latest('id'),
             'revisions.creator:id,name',
             'payments' => fn ($query) => $query->latest('id'),

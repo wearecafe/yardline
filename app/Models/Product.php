@@ -50,6 +50,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $previous_cost_cents
  * @property CarbonImmutable|null $cost_changed_at
  * @property bool $taxable
+ * @property bool $pallet_deposit
+ * @property string|null $per_pallet base units on one pallet
  * @property-read Collection<int, ProductUnit> $units
  * @property-read ProductUnit|null $baseUnit
  */
@@ -60,7 +62,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'rate_hour_cents', 'rate_half_day_cents', 'rate_week_cents', 'rate_month_cents',
     'rate_weekend_cents', 'minimum_charge_cents', 'fuel_charge_cents', 'cleaning_fee_cents',
     'service_interval_hours', 'service_interval_days', 'use_case', 'bookable_online',
-    'weight_kg', 'supplier_name', 'taxable',
+    'weight_kg', 'supplier_name', 'taxable', 'pallet_deposit', 'per_pallet',
 ])]
 class Product extends Model
 {
@@ -142,6 +144,8 @@ class Product extends Model
             'previous_cost_cents' => 'integer',
             'cost_changed_at' => 'immutable_datetime',
             'taxable' => 'boolean',
+            'pallet_deposit' => 'boolean',
+            'per_pallet' => 'decimal:3',
         ];
     }
 

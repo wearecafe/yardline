@@ -7,6 +7,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\Settlement;
 use App\Models\Order;
 use App\Orders\CommitOrderTax;
+use App\Receivables\IssueInvoice;
 
 /**
  * Re-totals an order's successful payments and updates its payment status.
@@ -26,6 +27,8 @@ class ApplyPayments
             default => PaymentStatus::Partial,
         };
         $order->save();
+
+        IssueInvoice::syncStatus($order);
 
         if ($order->settlement === Settlement::Prepaid && $order->payment_status === PaymentStatus::Paid) {
             $this->commitTax->handle($order);
