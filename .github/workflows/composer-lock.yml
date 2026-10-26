@@ -22,7 +22,7 @@ jobs:
 
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.3'
           tools: composer:v2
 
       - name: Update the lock if it's stale
@@ -36,6 +36,6 @@ jobs:
           if ! git diff --quiet composer.lock; then
             git config user.name "github-actions[bot]"
             git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-            git commit -m "Update composer.lock" composer.lock
-            git push
+            git commit -m "Update composer.lock" composer.lock || { echo "::error::commit failed"; exit 1; }
+            out=$(git push 2>&1) || { echo "::error::push failed: ${out//$'\n'/ | }"; exit 1; }
           fi
