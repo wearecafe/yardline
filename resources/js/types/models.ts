@@ -222,6 +222,39 @@ export type Order = {
         name: string;
         po_required: boolean;
     } | null;
+    fulfillment_status: string | null;
+    delivery_fee_cents: number;
+    delivery_fee_manual: boolean;
+    delivery_km: string | null;
+    delivery_loads: number | null;
+    load_weight_kg: string | null;
+    needs_boom: boolean;
+    delivery_zone?: { id: number; name: string } | null;
+    shipments?: {
+        id: number;
+        number: string;
+        method: 'pickup' | 'delivery';
+        status: string;
+        created_at: string;
+        loaded_at: string | null;
+        delivered_at: string | null;
+        pod_name: string | null;
+        weight_kg: string | null;
+        picker: { id: number; name: string } | null;
+        lines: {
+            id: number;
+            quantity: string;
+            picked_quantity: string | null;
+            short: boolean;
+        }[];
+        stop: {
+            id: number;
+            status: string;
+            date: string | null;
+            starts_at: string | null;
+            truck: { id: number; name: string } | null;
+        } | null;
+    }[];
     revisions?: {
         id: number;
         revision: number;

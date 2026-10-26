@@ -3,6 +3,7 @@
 namespace App\Rentals;
 
 use App\Enums\RentalStatus;
+use App\Fulfillment\RentalStops;
 use App\Models\Rental;
 use App\Models\User;
 use App\Rentals\Payments\RentalPayments;
@@ -22,6 +23,7 @@ class CancelRental
             $this->payments->refundAll($rental, $user);
 
             $rental->forceFill(['status' => RentalStatus::Cancelled, 'cancelled_at' => now()])->save();
+            app(RentalStops::class)->sync($rental);
 
             return $rental;
         });

@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $product_unit_id
  * @property string $unit_factor base units per unit sold
  * @property string|null $base_quantity
+ * @property string $shipped_quantity in the line's unit
  * @property string|null $price_source
  * @property int $unit_price_cents
  * @property int $periods
@@ -37,7 +38,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'order_id', 'product_id', 'product_unit_id', 'sku', 'description', 'quantity', 'unit',
-    'unit_factor', 'base_quantity', 'unit_price_cents', 'periods', 'period_unit', 'price_overridden',
+    'unit_factor', 'base_quantity', 'shipped_quantity', 'unit_price_cents', 'periods', 'period_unit', 'price_overridden',
     'price_source', 'line_total_cents', 'tax_cents', 'deposit_cents', 'position',
 ])]
 class OrderLine extends Model
@@ -50,6 +51,7 @@ class OrderLine extends Model
             'quantity' => 'decimal:3',
             'unit_factor' => 'decimal:6',
             'base_quantity' => 'decimal:3',
+            'shipped_quantity' => 'decimal:3',
             'unit_price_cents' => 'integer',
             'periods' => 'integer',
             'price_overridden' => 'boolean',
@@ -82,6 +84,14 @@ class OrderLine extends Model
     public function productUnit(): BelongsTo
     {
         return $this->belongsTo(ProductUnit::class);
+    }
+
+    /**
+     * Still to ship, in the line's unit.
+     */
+    public function remainingQuantity(): float
+    {
+        return max(0.0, round((float) $this->quantity - (float) $this->shipped_quantity, 3));
     }
 
     /**

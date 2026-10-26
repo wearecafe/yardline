@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * @property int $id
@@ -28,6 +29,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $organization_id
  * @property int|null $customer_id
  * @property int|null $organization_location_id
+ * @property string|null $fulfillment_status queued | picking | partly_shipped | shipped | delivered
+ * @property int|null $delivery_zone_id
+ * @property int $delivery_fee_cents
+ * @property bool $delivery_fee_manual
+ * @property string|null $delivery_km
+ * @property int|null $delivery_loads
+ * @property string|null $load_weight_kg
+ * @property bool $needs_boom
  * @property CarbonImmutable|null $quoted_at
  * @property CarbonImmutable|null $quote_expires_on
  * @property int $revision
@@ -63,12 +72,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Customer|null $customer
  * @property-read Location $location
  * @property-read OrganizationLocation|null $organizationLocation
+ * @property-read DeliveryZone|null $deliveryZone
+ * @property-read Collection<int, Shipment> $shipments
  * @property-read Collection<int, OrderRevision> $revisions
  * @property-read Collection<int, OrderLine> $lines
  */
 #[Fillable([
     'number', 'type', 'source', 'organization_id', 'customer_id', 'organization_location_id', 'location_id',
-    'fulfillment', 'delivery_address', 'requested_on', 'po_number',
+    'fulfillment', 'delivery_address', 'requested_on', 'po_number', 'delivery_zone_id', 'delivery_km', 'needs_boom',
     'rental_starts_at', 'rental_ends_at', 'notes', 'created_by',
 ])]
 class Order extends Model
@@ -91,6 +102,9 @@ class Order extends Model
         'deposit_cents' => 0,
         'amount_paid_cents' => 0,
         'revision' => 0,
+        'delivery_fee_cents' => 0,
+        'delivery_fee_manual' => false,
+        'needs_boom' => false,
     ];
 
     protected function casts(): array
@@ -118,6 +132,12 @@ class Order extends Model
             'quote_expires_on' => 'immutable_date',
             'quote_accepted_at' => 'immutable_datetime',
             'revision' => 'integer',
+            'delivery_fee_cents' => 'integer',
+            'delivery_fee_manual' => 'boolean',
+            'delivery_km' => 'decimal:1',
+            'delivery_loads' => 'integer',
+            'load_weight_kg' => 'decimal:1',
+            'needs_boom' => 'boolean',
         ];
     }
 
@@ -159,6 +179,32 @@ class Order extends Model
     public function organizationLocation(): BelongsTo
     {
         return $this->belongsTo(OrganizationLocation::class);
+    }
+
+    /**
+     * Delivery runs planned for this order before it's loaded.
+     *
+     * @return MorphMany<Stop, $this>
+     */
+    public function stops(): MorphMany
+    {
+        return $this->morphMany(Stop::class, 'stoppable');
+    }
+
+    /**
+     * @return HasMany<Shipment, $this>
+     */
+    public function shipments(): HasMany
+    {
+        return $this->hasMany(Shipment::class);
+    }
+
+    /**
+     * @return BelongsTo<DeliveryZone, $this>
+     */
+    public function deliveryZone(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryZone::class);
     }
 
     /**

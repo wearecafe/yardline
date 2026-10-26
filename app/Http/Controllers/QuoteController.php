@@ -58,6 +58,7 @@ class QuoteController extends Controller
                 'yard' => ['name' => $order->location->name, 'address' => trim(implode(', ', array_filter([$order->location->address_line1, $order->location->city])))],
                 'lines' => $order->lines->map(fn ($line) => $line->only('id', 'sku', 'description', 'quantity', 'unit', 'unit_price_cents', 'line_total_cents', 'deposit_cents'))->all(),
                 'subtotal_cents' => $order->subtotal_cents,
+                'delivery_fee_cents' => $order->delivery_fee_cents,
                 'tax_cents' => $order->tax_cents,
                 'deposit_cents' => $order->deposit_cents,
                 'total_cents' => $order->total_cents,

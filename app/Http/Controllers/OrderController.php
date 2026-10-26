@@ -7,6 +7,7 @@ use App\Enums\FulfillmentMethod;
 use App\Enums\OrderType;
 use App\Enums\PaymentTender;
 use App\Enums\ProductKind;
+use App\Fulfillment\DeliverySettings;
 use App\Models\Customer;
 use App\Models\Location;
 use App\Models\Order;
@@ -19,9 +20,11 @@ use App\Orders\CreateOrder;
 use App\Orders\OrderRules;
 use App\Orders\RecalculateOrder;
 use App\Pricing\PriceResolver;
+use App\Support\Money;
 use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -72,7 +75,7 @@ class OrderController extends Controller
 
     public function store(Request $request, CreateOrder $createOrder): RedirectResponse
     {
-        $order = $createOrder->handle($this->validatedHeader($request), $request->user());
+        $order = $createOrder->handle(Arr::except($this->validatedHeader($request), ['delivery_fee']), $request->user());
 
         return to_route('orders.show', $order);
     }
@@ -87,6 +90,8 @@ class OrderController extends Controller
             'customer',
             'location',
             'organizationLocation',
+            'deliveryZone:id,name',
+            'shipments' => fn ($query) => $query->with(['lines', 'picker:id,name', 'stop.truck:id,name'])->latest('id'),
             'revisions.creator:id,name',
             'payments' => fn ($query) => $query->latest('id'),
             'creditOverrideUser:id,name',
@@ -119,6 +124,7 @@ class OrderController extends Controller
                         'delivery_notes' => $site->delivery_notes,
                     ])
                 : [],
+            'deliveryMethod' => DeliverySettings::current()->method,
             'quote' => [
                 'is_quote' => $order->isQuote(),
                 'expired' => $order->quoteExpired(),
@@ -138,6 +144,16 @@ class OrderController extends Controller
 
         $data = $this->validatedHeader($request, $order);
         unset($data['type']);
+
+        // A typed delivery fee sticks; clearing it goes back to the yard's pricing.
+        if ($request->exists('delivery_fee')) {
+            $manual = isset($data['delivery_fee']) && $data['delivery_fee'] !== '';
+            $order->delivery_fee_manual = $manual;
+            if ($manual) {
+                $order->delivery_fee_cents = (int) Money::parse($data['delivery_fee']);
+            }
+        }
+        unset($data['delivery_fee']);
 
         $order->update($data);
 
@@ -208,6 +224,9 @@ class OrderController extends Controller
             'delivery_address.country' => ['nullable', 'string', 'size:2'],
             'requested_on' => ['nullable', 'date'],
             'po_number' => ['nullable', 'string', 'max:255'],
+            'delivery_km' => ['nullable', 'numeric', 'min:0', 'max:2000'],
+            'needs_boom' => ['boolean'],
+            'delivery_fee' => ['nullable', 'numeric', 'min:0', 'max:99999'],
             'rental_starts_at' => [$isRental ? 'required' : 'prohibited', 'nullable', 'date'],
             'rental_ends_at' => [$isRental ? 'required' : 'prohibited', 'nullable', 'date', 'after:rental_starts_at'],
             'notes' => ['nullable', 'string', 'max:5000'],

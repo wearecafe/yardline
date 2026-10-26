@@ -22,6 +22,8 @@ class CancelOrder
         $order->cancelled_at = now();
         $order->save();
 
+        $order->stops()->whereNotIn('status', ['done', 'cancelled'])->update(['status' => 'cancelled']);
+
         return $order;
     }
 }

@@ -1,6 +1,8 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
+import DeliveryController from '@/actions/App/Http/Controllers/DeliveryController';
+import FulfillmentController from '@/actions/App/Http/Controllers/FulfillmentController';
 import OrderActionController from '@/actions/App/Http/Controllers/OrderActionController';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import OrderLineController from '@/actions/App/Http/Controllers/OrderLineController';
@@ -53,6 +55,7 @@ type Props = {
     }[];
     locations: { id: number; name: string }[];
     sites: JobSite[];
+    deliveryMethod: 'zone' | 'distance' | 'truckload';
     quote: {
         is_quote: boolean;
         expired: boolean;
@@ -101,6 +104,9 @@ export default function ShowOrder(props: Props) {
                             products={props.products}
                             editable={isDraft}
                         />
+                        {(order.shipments?.length ?? 0) > 0 && (
+                            <Shipments order={order} />
+                        )}
                         {isDraft ? (
                             <DraftDetails {...props} />
                         ) : (
@@ -167,6 +173,18 @@ function post(url: string, data: Record<string, unknown> = {}) {
 function HeaderActions({ order }: { order: Order }) {
     const actions = [];
 
+    if (order.status === 'confirmed' && order.type !== 'rental') {
+        actions.push(
+            <Button
+                key="pick"
+                variant="outline"
+                onClick={() => post(FulfillmentController.start.url(order.id))}
+            >
+                Start picking
+            </Button>,
+        );
+    }
+
     if (order.status === 'confirmed') {
         const blocked =
             order.settlement === 'prepaid' && order.balance_cents > 0;
@@ -179,7 +197,11 @@ function HeaderActions({ order }: { order: Order }) {
                     post(OrderActionController.fulfill.url(order.id))
                 }
             >
-                {order.type === 'rental' ? 'Send out' : 'Release'}
+                {order.type === 'rental'
+                    ? 'Send out'
+                    : order.fulfillment === 'delivery'
+                      ? 'Load all'
+                      : 'Hand over all'}
             </Button>,
         );
     }
@@ -551,6 +573,24 @@ function AddLine({
 function Totals({ order }: { order: Order }) {
     const isDraft = order.status === 'draft';
     const rows: [string, string, string?][] = [
+        ...(order.delivery_fee_cents > 0 || order.fulfillment === 'delivery'
+            ? ([
+                  [
+                      'Items',
+                      formatMoney(
+                          order.subtotal_cents - order.delivery_fee_cents,
+                      ),
+                  ],
+                  [
+                      'Delivery',
+                      formatMoney(order.delivery_fee_cents),
+                      order.delivery_zone?.name ??
+                          (order.delivery_loads
+                              ? `${order.delivery_loads} ${order.delivery_loads === 1 ? 'load' : 'loads'}`
+                              : undefined),
+                  ],
+              ] as [string, string, string?][])
+            : []),
         ['Subtotal', formatMoney(order.subtotal_cents)],
         [
             'Tax',
@@ -962,6 +1002,7 @@ function DraftDetails({
     customers,
     locations,
     sites,
+    deliveryMethod,
 }: Props) {
     const isRental = order.type === 'rental';
     const form = useForm<OrderHeaderData>({
@@ -980,6 +1021,11 @@ function DraftDetails({
         rental_starts_at: toLocalInput(order.rental_starts_at),
         rental_ends_at: toLocalInput(order.rental_ends_at),
         notes: order.notes ?? '',
+        delivery_km: order.delivery_km ? String(Number(order.delivery_km)) : '',
+        delivery_fee: order.delivery_fee_manual
+            ? (order.delivery_fee_cents / 100).toFixed(2)
+            : '',
+        needs_boom: order.needs_boom,
     });
 
     function submit(event: FormEvent) {
@@ -1001,6 +1047,59 @@ function DraftDetails({
                     locations={locations}
                     sites={sites}
                 />
+                {form.data.fulfillment === 'delivery' && !isRental && (
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        {deliveryMethod === 'distance' && (
+                            <Field
+                                label="Distance from the yard (km)"
+                                htmlFor="delivery_km"
+                                error={form.errors.delivery_km}
+                            >
+                                <Input
+                                    id="delivery_km"
+                                    inputMode="decimal"
+                                    value={form.data.delivery_km ?? ''}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'delivery_km',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </Field>
+                        )}
+                        <Field
+                            label="Delivery fee"
+                            htmlFor="delivery_fee"
+                            error={form.errors.delivery_fee}
+                            hint={
+                                order.delivery_fee_manual
+                                    ? 'Set by hand. Clear it to use the yard’s pricing.'
+                                    : `Automatic: ${formatMoney(order.delivery_fee_cents)}${order.delivery_zone ? ` (${order.delivery_zone.name})` : ''}${order.delivery_loads ? ` (${order.delivery_loads} ${order.delivery_loads === 1 ? 'load' : 'loads'})` : ''}`
+                            }
+                        >
+                            <Input
+                                id="delivery_fee"
+                                inputMode="decimal"
+                                placeholder={(
+                                    order.delivery_fee_cents / 100
+                                ).toFixed(2)}
+                                value={form.data.delivery_fee ?? ''}
+                                onChange={(e) =>
+                                    form.setData('delivery_fee', e.target.value)
+                                }
+                            />
+                        </Field>
+                        <div className="sm:pt-7">
+                            <Checkbox
+                                id="needs_boom"
+                                label="Needs a boom truck"
+                                checked={Boolean(form.data.needs_boom)}
+                                onChange={(v) => form.setData('needs_boom', v)}
+                            />
+                        </div>
+                    </div>
+                )}
                 <div>
                     <Button
                         type="submit"
@@ -1141,6 +1240,131 @@ function QuotePanel({ order, quote }: { order: Order; quote: Props['quote'] }) {
                     ))}
                 </ul>
             )}
+        </Section>
+    );
+}
+
+const shipmentStatus: Record<
+    string,
+    [string, 'success' | 'info' | 'warning' | 'neutral']
+> = {
+    picking: ['Picking', 'warning'],
+    loaded: ['Loaded', 'info'],
+    ready: ['Ready for pickup', 'info'],
+    out: ['Out for delivery', 'info'],
+    delivered: ['Delivered', 'success'],
+    picked_up: ['Picked up', 'success'],
+    cancelled: ['Cancelled', 'neutral'],
+};
+
+/**
+ * Each load of the order: what was picked, where it is, and who signed.
+ */
+function Shipments({ order }: { order: Order }) {
+    return (
+        <Section
+            title="Shipments"
+            description={
+                order.fulfillment_status === 'partly_shipped'
+                    ? 'Part of this order has shipped. Start picking again for the rest.'
+                    : undefined
+            }
+        >
+            <ul className="grid gap-3 text-sm">
+                {order.shipments!.map((s) => {
+                    const [label, tone] = shipmentStatus[s.status] ?? [
+                        s.status,
+                        'neutral',
+                    ];
+                    const shorts = s.lines.filter((l) => l.short).length;
+
+                    return (
+                        <li
+                            key={s.id}
+                            className="flex flex-wrap items-start justify-between gap-3 border-b border-secondary pb-3 last:border-0 last:pb-0"
+                        >
+                            <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="figure font-medium">
+                                        {s.number}
+                                    </span>
+                                    <Chip tone={tone}>{label}</Chip>
+                                    {shorts > 0 && (
+                                        <Chip tone="warning">
+                                            {shorts} short
+                                        </Chip>
+                                    )}
+                                </div>
+                                <div className="mt-0.5 text-muted-foreground">
+                                    {[
+                                        `${s.lines.length} ${s.lines.length === 1 ? 'item' : 'items'}`,
+                                        s.weight_kg
+                                            ? `≈ ${(Number(s.weight_kg) / 1000).toFixed(1)} t`
+                                            : null,
+                                        s.picker?.name
+                                            ? `picked by ${s.picker.name}`
+                                            : null,
+                                        s.stop?.truck
+                                            ? `${s.stop.truck.name}${s.stop.date ? `, ${formatDate(s.stop.date)}` : ''}${s.stop.starts_at ? ` ${s.stop.starts_at.slice(0, 5)}` : ''}`
+                                            : null,
+                                        s.pod_name
+                                            ? `signed by ${s.pod_name} ${formatDate(s.delivered_at)}`
+                                            : null,
+                                    ]
+                                        .filter(Boolean)
+                                        .join(' · ')}
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                {s.status === 'picking' && (
+                                    <Button variant="outline" size="sm" asChild>
+                                        <Link
+                                            href={FulfillmentController.pick.url(
+                                                s.id,
+                                            )}
+                                        >
+                                            Picker
+                                        </Link>
+                                    </Button>
+                                )}
+                                {[
+                                    'loaded',
+                                    'out',
+                                    'ready',
+                                    'delivered',
+                                    'picked_up',
+                                ].includes(s.status) && (
+                                    <Button variant="outline" size="sm" asChild>
+                                        <Link
+                                            href={DeliveryController.show.url(
+                                                s.id,
+                                            )}
+                                        >
+                                            {s.status === 'delivered' ||
+                                            s.status === 'picked_up'
+                                                ? 'Proof'
+                                                : s.status === 'ready'
+                                                  ? 'Hand over'
+                                                  : 'Deliver'}
+                                        </Link>
+                                    </Button>
+                                )}
+                                <Button variant="ghost" size="sm" asChild>
+                                    <a
+                                        href={FulfillmentController.ticket.url(
+                                            s.id,
+                                        )}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        Ticket
+                                    </a>
+                                </Button>
+                            </div>
+                        </li>
+                    );
+                })}
+            </ul>
         </Section>
     );
 }

@@ -3,8 +3,11 @@
 use App\Http\Controllers\ContractPriceController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\DemoLoginController;
+use App\Http\Controllers\DispatchController;
 use App\Http\Controllers\FakeCheckoutController;
+use App\Http\Controllers\FulfillmentController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\OrderActionController;
@@ -19,6 +22,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductUnitController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\StockAdjustmentController;
+use App\Http\Controllers\StockLevelController;
 use App\Http\Controllers\Webhooks\ShopifyWebhookController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use App\Support\Demo;
@@ -88,6 +92,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Inventory
     Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::patch('stock-levels/{level}', [StockLevelController::class, 'update'])->name('stock-levels.update');
+
+    Route::get('queue', [FulfillmentController::class, 'queue'])->name('orders.queue');
+    Route::post('orders/{order}/pick', [FulfillmentController::class, 'start'])->name('orders.pick');
+    Route::patch('shipments/{shipment}', [FulfillmentController::class, 'assign'])->name('shipments.assign');
+    Route::get('pick/{shipment}', [FulfillmentController::class, 'pick'])->name('shipments.pick');
+    Route::post('shipments/{shipment}/lines/{line}', [FulfillmentController::class, 'record'])->scopeBindings()->name('shipments.lines.record');
+    Route::post('shipments/{shipment}/load', [FulfillmentController::class, 'load'])->name('shipments.load');
+    Route::post('shipments/{shipment}/cancel', [FulfillmentController::class, 'cancel'])->name('shipments.cancel');
+    Route::get('shipments/{shipment}/ticket', [FulfillmentController::class, 'ticket'])->name('shipments.ticket');
+    Route::get('deliver/{shipment}', [DeliveryController::class, 'show'])->name('shipments.deliver');
+    Route::post('deliver/{shipment}', [DeliveryController::class, 'complete'])->name('shipments.complete');
+
+    Route::get('dispatch', [DispatchController::class, 'board'])->name('dispatch.board');
+    Route::post('dispatch/etas', [DispatchController::class, 'etas'])->name('dispatch.etas');
+    Route::patch('stops/{stop}', [DispatchController::class, 'schedule'])->name('stops.schedule');
+    Route::post('stops/{stop}/en-route', [DispatchController::class, 'enRoute'])->name('stops.en-route');
+    Route::post('stops/{stop}/done', [DispatchController::class, 'done'])->name('stops.done');
     Route::post('inventory/adjustments', [StockAdjustmentController::class, 'store'])->name('inventory.adjustments.store');
     Route::resource('locations', LocationController::class)->only(['index', 'store', 'update']);
 

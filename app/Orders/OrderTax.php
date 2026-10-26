@@ -34,6 +34,10 @@ final class OrderTax
             $lines[] = new TaxLine('line_'.$line->id, $line->line_total_cents, $code);
         }
 
+        if ($order->delivery_fee_cents > 0) {
+            $lines[] = new TaxLine('delivery', $order->delivery_fee_cents, TaxLine::SHIPPING);
+        }
+
         return new TaxRequest(
             $order->tenant->currency,
             $address,

@@ -4,8 +4,10 @@ namespace App\Orders;
 
 use App\Credit\CreditAssessment;
 use App\Credit\CreditCheck;
+use App\Enums\FulfillmentMethod;
 use App\Enums\OrderStatus;
 use App\Enums\Settlement;
+use App\Enums\StopStatus;
 use App\Models\Order;
 use App\Models\User;
 use App\Tax\TaxCalculationFailed;
@@ -82,6 +84,16 @@ class ConfirmOrder
             $order->credit_override_reason = $overrideBy ? $overrideReason : null;
             $order->save();
         });
+
+        // Deliveries go on the dispatch board to plan a truck.
+        if ($order->fulfillment === FulfillmentMethod::Delivery && ! $order->isRental()) {
+            $order->stops()->firstOrCreate(['kind' => 'delivery'], [
+                'status' => StopStatus::Unscheduled,
+                'date' => $order->requested_on?->toDateString(),
+                'address' => $order->delivery_address,
+                'needs' => $order->needs_boom ? 'Needs boom truck' : null,
+            ]);
+        }
 
         // Account orders are a completed sale now. Prepaid orders commit tax
         // when they're paid in full (see ApplyPayments).

@@ -15,6 +15,9 @@ export type OrderHeaderData = {
     rental_starts_at: string;
     rental_ends_at: string;
     notes: string;
+    delivery_km?: string;
+    delivery_fee?: string;
+    needs_boom?: boolean;
 };
 
 type Org = { id: number; name: string };

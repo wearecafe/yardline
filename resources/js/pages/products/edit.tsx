@@ -1,4 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import StockLevelController from '@/actions/App/Http/Controllers/StockLevelController';
 import ProductController from '@/actions/App/Http/Controllers/ProductController';
 import OrganizationController from '@/actions/App/Http/Controllers/OrganizationController';
 import { Chip } from '@/components/yard/chip';
@@ -26,7 +27,12 @@ type Props = {
     stock: {
         on_hand: string;
         reorder_point: string | null;
-        by_location: { name: string; on_hand: string }[];
+        by_location: {
+            id: number;
+            name: string;
+            on_hand: string;
+            bin: string | null;
+        }[];
         committed: string;
         base_unit: string | null;
     };
@@ -157,10 +163,43 @@ export default function EditProduct(props: Props) {
                                     <ul className="grid gap-2 text-sm">
                                         {stock.by_location.map((l) => (
                                             <li
-                                                key={l.name}
-                                                className="flex justify-between gap-3"
+                                                key={l.id}
+                                                className="flex items-center justify-between gap-3"
                                             >
-                                                <span>{l.name}</span>
+                                                <span className="min-w-0">
+                                                    {l.name}
+                                                    <input
+                                                        aria-label={`Bin at ${l.name}`}
+                                                        defaultValue={
+                                                            l.bin ?? ''
+                                                        }
+                                                        placeholder="Bin"
+                                                        onBlur={(e) => {
+                                                            if (
+                                                                e.target
+                                                                    .value !==
+                                                                (l.bin ?? '')
+                                                            ) {
+                                                                router.patch(
+                                                                    StockLevelController.update.url(
+                                                                        l.id,
+                                                                    ),
+                                                                    {
+                                                                        bin:
+                                                                            e
+                                                                                .target
+                                                                                .value ||
+                                                                            null,
+                                                                    },
+                                                                    {
+                                                                        preserveScroll: true,
+                                                                    },
+                                                                );
+                                                            }
+                                                        }}
+                                                        className="ml-2 h-7 w-24 rounded border border-transparent bg-transparent px-1.5 text-xs text-muted-foreground hover:border-input focus:border-input"
+                                                    />
+                                                </span>
                                                 <span className="figure">
                                                     {formatQuantity(l.on_hand)}
                                                 </span>

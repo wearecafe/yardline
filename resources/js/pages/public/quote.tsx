@@ -39,6 +39,7 @@ type Props = {
             deposit_cents: number;
         }[];
         subtotal_cents: number;
+        delivery_fee_cents: number;
         tax_cents: number;
         deposit_cents: number;
         total_cents: number;
@@ -184,6 +185,14 @@ export default function PublicQuote({ quote, business, token }: Props) {
                             </table>
                         </div>
                         <dl className="ml-auto grid max-w-xs gap-1.5 p-4 text-sm">
+                            {quote.delivery_fee_cents > 0 && (
+                                <div className="flex justify-between">
+                                    <dt>Delivery (included below)</dt>
+                                    <dd className="figure">
+                                        {formatMoney(quote.delivery_fee_cents)}
+                                    </dd>
+                                </div>
+                            )}
                             <div className="flex justify-between">
                                 <dt>Subtotal</dt>
                                 <dd className="figure">
