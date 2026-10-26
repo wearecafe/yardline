@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Tenancy\CurrentTenant;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -40,7 +41,11 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'can' => [
+                    'manageBusiness' => (bool) $request->user()?->canManageBusiness(),
+                ],
             ],
+            'tenant' => fn () => CurrentTenant::get()?->only('id', 'name', 'currency'),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

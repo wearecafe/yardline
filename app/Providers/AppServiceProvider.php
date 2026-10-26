@@ -2,11 +2,30 @@
 
 namespace App\Providers;
 
+use App\Models\Customer;
+use App\Models\Location;
+use App\Models\Order;
+use App\Models\Organization;
+use App\Models\Payment;
+use App\Models\PriceList;
+use App\Models\Product;
+use App\Models\User;
+use App\Payments\CheckoutLinks;
+use App\Payments\FakeCheckoutLinks;
+use App\Payments\StripeCheckoutLinks;
+use App\Support\StripeGateway;
+use App\Tax\FlatRateTaxCalculator;
+use App\Tax\StripeTaxCalculator;
+use App\Tax\TaxCalculator;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use RuntimeException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -15,7 +34,27 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(StripeGateway::class, fn () => new StripeGateway(config('services.stripe.secret')));
+
+        $this->app->bind(TaxCalculator::class, fn (Application $app) => match (config('yardline.tax.driver')) {
+            'stripe' => $app->make(StripeTaxCalculator::class),
+            'flat' => new FlatRateTaxCalculator((float) config('yardline.tax.flat_rate')),
+            default => throw new RuntimeException('Unknown YARDLINE_TAX_DRIVER: '.config('yardline.tax.driver')),
+        });
+
+        $this->app->bind(CheckoutLinks::class, function (Application $app) {
+            $driver = config('yardline.payments.driver');
+
+            if ($driver === 'fake' && $app->isProduction()) {
+                throw new RuntimeException('The fake payments driver cannot be used in production.');
+            }
+
+            return match ($driver) {
+                'stripe' => $app->make(StripeCheckoutLinks::class),
+                'fake' => new FakeCheckoutLinks,
+                default => throw new RuntimeException("Unknown YARDLINE_PAYMENTS_DRIVER: {$driver}"),
+            };
+        });
     }
 
     /**
@@ -24,6 +63,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureModels();
+        $this->configureGates();
     }
 
     /**
@@ -46,5 +87,27 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    protected function configureModels(): void
+    {
+        // Stable names in polymorphic columns (stock movement references,
+        // external references) instead of PHP class names.
+        Relation::enforceMorphMap([
+            'customer' => Customer::class,
+            'location' => Location::class,
+            'order' => Order::class,
+            'organization' => Organization::class,
+            'payment' => Payment::class,
+            'price_list' => PriceList::class,
+            'product' => Product::class,
+            'user' => User::class,
+        ]);
+    }
+
+    protected function configureGates(): void
+    {
+        Gate::define('manage-business', fn (User $user) => $user->canManageBusiness());
+        Gate::define('override-credit', fn (User $user) => $user->canManageBusiness());
     }
 }

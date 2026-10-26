@@ -9,9 +9,14 @@
 
 @theme {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+        'Barlow', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display:
+        'Barlow Semi Condensed', 'Barlow', ui-sans-serif, system-ui, sans-serif;
+
+    --color-tag: var(--tag);
+    --color-moss: var(--moss);
+    --color-brick: var(--brick);
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -62,74 +67,83 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+    /* Yardline: concrete, basalt and pallet-tag yellow. */
+    --tag: #f2b705;
+    --moss: #3f6b2e;
+    --brick: #b23a26;
+
+    --background: #f5f6f4;
+    --foreground: #1f2624;
+    --card: #ffffff;
+    --card-foreground: #1f2624;
+    --popover: #ffffff;
+    --popover-foreground: #1f2624;
+    --primary: #f2b705;
+    --primary-foreground: #1f2624;
+    --secondary: #e6e9e6;
+    --secondary-foreground: #1f2624;
+    --muted: #e9ece9;
+    --muted-foreground: #56615d;
+    --accent: #e3e7e4;
+    --accent-foreground: #1f2624;
+    --destructive: #b23a26;
+    --destructive-foreground: #b23a26;
+    --border: #d5dad6;
+    --input: #c3cac5;
+    --ring: #1f2624;
+    --chart-1: #f2b705;
+    --chart-2: #3f6b2e;
+    --chart-3: #56615d;
+    --chart-4: #b23a26;
+    --chart-5: #8a9590;
+    --radius: 0.375rem;
+    --sidebar: #e9ece9;
+    --sidebar-foreground: #1f2624;
+    --sidebar-primary: #1f2624;
+    --sidebar-primary-foreground: #f2b705;
+    --sidebar-accent: #dbe0dc;
+    --sidebar-accent-foreground: #1f2624;
+    --sidebar-border: #d5dad6;
+    --sidebar-ring: #1f2624;
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
+    --tag: #f2b705;
+    --moss: #86b46f;
+    --brick: #e0634c;
+
+    --background: #161b1a;
+    --foreground: #e8ece9;
+    --card: #1c2321;
+    --card-foreground: #e8ece9;
+    --popover: #1c2321;
+    --popover-foreground: #e8ece9;
+    --primary: #f2b705;
+    --primary-foreground: #161b1a;
+    --secondary: #262e2c;
+    --secondary-foreground: #e8ece9;
+    --muted: #232b29;
+    --muted-foreground: #9aa6a1;
+    --accent: #2a3331;
+    --accent-foreground: #e8ece9;
+    --destructive: #e0634c;
+    --destructive-foreground: #e0634c;
+    --border: #303a37;
+    --input: #3d4844;
+    --ring: #f2b705;
+    --chart-1: #f2b705;
+    --chart-2: #86b46f;
+    --chart-3: #9aa6a1;
+    --chart-4: #e0634c;
+    --chart-5: #5b6662;
+    --sidebar: #1a201f;
+    --sidebar-foreground: #e8ece9;
+    --sidebar-primary: #f2b705;
+    --sidebar-primary-foreground: #161b1a;
+    --sidebar-accent: #262e2c;
+    --sidebar-accent-foreground: #e8ece9;
+    --sidebar-border: #303a37;
+    --sidebar-ring: #f2b705;
 }
 
 @layer base {
@@ -139,5 +153,34 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+@layer components {
+    /*
+     * The tape: a measuring-tape rule under page titles. Long ticks every
+     * 96px, short ticks every 12px. Yardline's one decorative element.
+     */
+    .tape-rule {
+        height: 9px;
+        border-bottom: 1px solid var(--foreground);
+        background-image:
+            linear-gradient(to right, var(--foreground) 1px, transparent 1px),
+            linear-gradient(
+                to right,
+                var(--muted-foreground) 1px,
+                transparent 1px
+            );
+        background-size:
+            96px 9px,
+            12px 4px;
+        background-repeat: repeat-x;
+        background-position:
+            0 100%,
+            0 100%;
+    }
+
+    .font-display {
+        font-family: var(--font-display);
     }
 }

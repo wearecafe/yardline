@@ -2,7 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Enums\UserRole;
+use App\Models\Tenant;
 use App\Models\User;
+use App\Tenancy\CurrentTenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -25,6 +28,8 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'tenant_id' => fn () => CurrentTenant::id() ?? Tenant::factory(),
+            'role' => UserRole::Owner,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
@@ -34,6 +39,11 @@ class UserFactory extends Factory
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
         ];
+    }
+
+    public function staff(): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => UserRole::Staff]);
     }
 
     /**

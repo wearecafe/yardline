@@ -1,7 +1,22 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import {
+    Boxes,
+    ClipboardList,
+    Contact,
+    Factory,
+    LayoutGrid,
+    MapPin,
+    Package,
+    Tags,
+} from 'lucide-react';
+import CustomerController from '@/actions/App/Http/Controllers/CustomerController';
+import InventoryController from '@/actions/App/Http/Controllers/InventoryController';
+import LocationController from '@/actions/App/Http/Controllers/LocationController';
+import OrderController from '@/actions/App/Http/Controllers/OrderController';
+import OrganizationController from '@/actions/App/Http/Controllers/OrganizationController';
+import PriceListController from '@/actions/App/Http/Controllers/PriceListController';
+import ProductController from '@/actions/App/Http/Controllers/ProductController';
 import AppLogo from '@/components/app-logo';
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -16,25 +31,22 @@ import {
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const counterItems: NavItem[] = [
+    { title: 'Today', href: dashboard(), icon: LayoutGrid },
+    { title: 'Orders', href: OrderController.index(), icon: ClipboardList },
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
+        title: 'Organizations',
+        href: OrganizationController.index(),
+        icon: Factory,
     },
+    { title: 'Customers', href: CustomerController.index(), icon: Contact },
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
+const yardItems: NavItem[] = [
+    { title: 'Products', href: ProductController.index(), icon: Package },
+    { title: 'Price lists', href: PriceListController.index(), icon: Tags },
+    { title: 'Inventory', href: InventoryController.index(), icon: Boxes },
+    { title: 'Yards', href: LocationController.index(), icon: MapPin },
 ];
 
 export function AppSidebar() {
@@ -53,11 +65,11 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain label="Counter" items={counterItems} />
+                <NavMain label="Catalog and stock" items={yardItems} />
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
