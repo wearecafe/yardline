@@ -19,7 +19,7 @@ class DemoLoginController extends Controller
 {
     public function show(): Response
     {
-        $tenant = Demo::enabled() ? Demo::tenant() : null;
+        $tenant = Demo::ensureTenant();
         abort_if($tenant === null, 404);
 
         $users = User::query()->where('tenant_id', $tenant->id)->orderBy('id')->get()->keyBy('email');
