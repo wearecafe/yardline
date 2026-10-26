@@ -96,6 +96,6 @@ controllers from `@/actions/...` (generated at build time, not committed).
 ## Not built yet
 
 - Shopify order import and two-way sync (products and stock push today)
-- QuickBooks Online sync for invoices, payments and rentals
+- QuickBooks: vendors, purchase orders and bills (left out pending a decision)
 - Inviting staff into an existing business (sign-up creates a new one)
 - Refunds and Stripe Tax reversals on cancellation

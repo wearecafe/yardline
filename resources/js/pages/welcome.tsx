@@ -231,7 +231,7 @@ const faqs: { q: string; a: string }[] = [
     },
     {
         q: 'Does it replace my accounting software?',
-        a: 'No. Yardline handles invoices, payments, aging and statements for your accounts. Your books stay in your accounting software. QuickBooks Online sync is on the way.',
+        a: 'No. Yardline handles invoices, payments, aging and statements for your accounts. Your books stay in QuickBooks Online: invoices, payments, credit memos and rental invoices are sent there as they happen, and payments you enter in QuickBooks come back to Yardline.',
     },
     {
         q: 'What hardware do I need?',
@@ -755,11 +755,11 @@ export default function Welcome({ demo, canRegister }: Props) {
                             </Integration>
                             <Integration
                                 name="QuickBooks Online"
-                                status="Coming soon"
-                                tone="neutral"
+                                status="Available"
+                                tone="success"
                             >
-                                Invoices, payments and rentals posted to your
-                                books.
+                                Invoices, payments, credits and rental invoices
+                                posted to your books as they happen.
                             </Integration>
                         </div>
                     </section>
