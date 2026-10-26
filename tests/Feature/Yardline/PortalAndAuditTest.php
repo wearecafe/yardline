@@ -109,7 +109,7 @@ class PortalAndAuditTest extends TestCase
         $this->assertSame($this->mike->id, $draft->customer_id);
 
         $this->post(route('portal.calculate'), ['area' => 400, 'lines' => [['product_id' => $this->mortar->id, 'quantity' => 6]]])->assertRedirect();
-        $this->assertSame(3, Order::query()->count());
+        $this->assertSame(4, Order::query()->count());
 
         $this->get(route('portal.statement'))->assertOk();
         $this->get(route('portal.statement.pdf'))->assertOk();
@@ -151,6 +151,7 @@ class PortalAndAuditTest extends TestCase
             ...$this->mortar->only('sku', 'name', 'kind', 'track_inventory', 'is_active'),
             'unit' => 'bag',
             'price' => '11.50',
-        ])->assertSessionHasNoErrors();
+        ])->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame(1_150, $this->mortar->refresh()->price_cents);
     }
 }
