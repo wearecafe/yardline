@@ -14,44 +14,76 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->decimal('weight_kg', 12, 3)->nullable()->after('unit'); // per base unit
-            $table->string('supplier_name')->nullable()->after('cost_cents');
-            $table->unsignedBigInteger('previous_cost_cents')->nullable()->after('supplier_name');
-            $table->timestamp('cost_changed_at')->nullable()->after('previous_cost_cents');
-            $table->boolean('taxable')->default(true)->after('tax_code');
-        });
+        // The first production run of this migration failed part-way (MySQL
+        // DDL is not transactional), so the steps up to and including
+        // price_list_items check what already exists before running.
+        if (! Schema::hasColumn('products', 'weight_kg')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->decimal('weight_kg', 12, 3)->nullable()->after('unit'); // per base unit
+                $table->string('supplier_name')->nullable()->after('cost_cents');
+                $table->unsignedBigInteger('previous_cost_cents')->nullable()->after('supplier_name');
+                $table->timestamp('cost_changed_at')->nullable()->after('previous_cost_cents');
+                $table->boolean('taxable')->default(true)->after('tax_code');
+            });
+        }
 
         // One product, many ways to sell it. Stock is always kept in the
         // base unit (factor 1); every sale converts back to it.
-        Schema::create('product_units', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->string('name', 60);
-            $table->string('code', 30)->nullable(); // a Unit enum value when it is one
-            $table->decimal('factor', 16, 6)->default(1); // base units in one of this unit
-            $table->boolean('is_base')->default(false);
-            $table->unsignedBigInteger('price_cents')->default(0); // retail
-            $table->string('variant_title', 100)->nullable(); // Shopify variant
-            $table->string('measured_by', 30)->nullable(); // scale | bucket | count | tape
-            $table->decimal('increment', 12, 3)->nullable(); // sold in steps of
-            $table->decimal('min_quantity', 12, 3)->nullable();
-            $table->unsignedBigInteger('deposit_cents')->default(0); // e.g. bulk bag deposit
-            $table->unsignedSmallInteger('position')->default(0);
-            $table->timestamps();
+        if (! Schema::hasTable('product_units')) {
+            Schema::create('product_units', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
+                $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+                $table->string('name', 60);
+                $table->string('code', 30)->nullable(); // a Unit enum value when it is one
+                $table->decimal('factor', 16, 6)->default(1); // base units in one of this unit
+                $table->boolean('is_base')->default(false);
+                $table->unsignedBigInteger('price_cents')->default(0); // retail
+                $table->string('variant_title', 100)->nullable(); // Shopify variant
+                $table->string('measured_by', 30)->nullable(); // scale | bucket | count | tape
+                $table->decimal('increment', 12, 3)->nullable(); // sold in steps of
+                $table->decimal('min_quantity', 12, 3)->nullable();
+                $table->unsignedBigInteger('deposit_cents')->default(0); // e.g. bulk bag deposit
+                $table->unsignedSmallInteger('position')->default(0);
+                $table->timestamps();
 
-            $table->unique(['product_id', 'name']);
-            $table->index(['tenant_id', 'product_id']);
-        });
+                $table->unique(['product_id', 'name']);
+                $table->index(['tenant_id', 'product_id']);
+            });
+        }
 
         Schema::table('price_list_items', function (Blueprint $table) {
-            $table->dropUnique(['price_list_id', 'product_id', 'min_quantity']);
-            $table->foreignId('product_unit_id')->nullable()->after('product_id')->constrained()->cascadeOnDelete();
-            $table->date('starts_on')->nullable()->after('price_cents');
-            $table->date('ends_on')->nullable()->after('starts_on');
-            $table->index(['price_list_id', 'product_id', 'product_unit_id']);
+            if (! Schema::hasColumn('price_list_items', 'product_unit_id')) {
+                $table->foreignId('product_unit_id')->nullable()->after('product_id');
+            }
+            if (! Schema::hasColumn('price_list_items', 'starts_on')) {
+                $table->date('starts_on')->nullable()->after('price_cents');
+            }
+            if (! Schema::hasColumn('price_list_items', 'ends_on')) {
+                $table->date('ends_on')->nullable()->after('starts_on');
+            }
         });
+
+        if (! $this->hasForeignKey('price_list_items', 'product_unit_id')) {
+            Schema::table('price_list_items', function (Blueprint $table) {
+                $table->foreign('product_unit_id')->references('id')->on('product_units')->cascadeOnDelete();
+            });
+        }
+
+        // MySQL is using the old unique as the index behind the price_list_id
+        // foreign key, so it can't be dropped until another index starting
+        // with price_list_id exists. Add the new one first, then drop.
+        if (! Schema::hasIndex('price_list_items', ['price_list_id', 'product_id', 'product_unit_id'])) {
+            Schema::table('price_list_items', function (Blueprint $table) {
+                $table->index(['price_list_id', 'product_id', 'product_unit_id']);
+            });
+        }
+
+        if (Schema::hasIndex('price_list_items', ['price_list_id', 'product_id', 'min_quantity'], 'unique')) {
+            Schema::table('price_list_items', function (Blueprint $table) {
+                $table->dropUnique(['price_list_id', 'product_id', 'min_quantity']);
+            });
+        }
 
         Schema::create('contract_prices', function (Blueprint $table) {
             $table->id();
@@ -169,6 +201,12 @@ return new class extends Migration
         DB::table('order_lines')->update(['base_quantity' => DB::raw('quantity')]);
     }
 
+    private function hasForeignKey(string $table, string $column): bool
+    {
+        return collect(Schema::getForeignKeys($table))
+            ->contains(fn (array $key) => $key['columns'] === [$column]);
+    }
+
     private static function label(string $unit): string
     {
         return match ($unit) {
@@ -196,11 +234,15 @@ return new class extends Migration
             $table->dropColumn(['unit_factor', 'base_quantity', 'price_source']);
         });
         Schema::dropIfExists('contract_prices');
+        // Restore the unique first so the price_list_id foreign key still has
+        // an index when the newer one is dropped.
         Schema::table('price_list_items', function (Blueprint $table) {
-            $table->dropIndex(['price_list_id', 'product_id', 'product_unit_id']);
-            $table->dropConstrainedForeignId('product_unit_id');
-            $table->dropColumn(['starts_on', 'ends_on']);
             $table->unique(['price_list_id', 'product_id', 'min_quantity']);
+        });
+        Schema::table('price_list_items', function (Blueprint $table) {
+            $table->dropForeign(['product_unit_id']);
+            $table->dropIndex(['price_list_id', 'product_id', 'product_unit_id']);
+            $table->dropColumn(['product_unit_id', 'starts_on', 'ends_on']);
         });
         Schema::dropIfExists('product_units');
         Schema::table('products', function (Blueprint $table) {
