@@ -56,7 +56,7 @@ class PortalController extends Controller
             ->latest('id')
             ->get()
             ->map(function (Shipment $s) use ($dispatch, $tz) {
-                $eta = $s->stop?->eta_at ?? ($s->stop ? $dispatch->plannedStart($s->stop) : null);
+                $eta = $s->stop->eta_at ?? ($s->stop ? $dispatch->plannedStart($s->stop) : null);
 
                 return [
                     'id' => $s->id,
@@ -130,7 +130,7 @@ class PortalController extends Controller
                     'number' => $s->number,
                     'status' => $s->status->label(),
                     'truck' => $s->stop?->truck?->name,
-                    'eta' => ($s->stop?->eta_at ?? ($s->stop ? $dispatch->plannedStart($s->stop) : null))?->setTimezone($tz)->format('D M j, g:i a'),
+                    'eta' => ($s->stop->eta_at ?? ($s->stop ? $dispatch->plannedStart($s->stop) : null))?->setTimezone($tz)->format('D M j, g:i a'),
                     'delivered_at' => $s->delivered_at?->setTimezone($tz)->format('D M j, g:i a'),
                     'pod_name' => $s->pod_name,
                 ])->values(),
@@ -143,11 +143,12 @@ class PortalController extends Controller
         $customer = $this->customer($request);
         abort_unless($this->owns($customer, $order), 404);
 
-        $lines = $order->lines()->with(['product', 'productUnit'])->get()
-            ->filter(fn (OrderLine $l) => $l->product !== null && $l->product->is_active)
-            ->map(fn (OrderLine $l) => ['product' => $l->product, 'unit' => $l->productUnit, 'quantity' => (string) $l->quantity])
-            ->values()
-            ->all();
+        $lines = [];
+        foreach ($order->lines()->with(['product', 'productUnit'])->get() as $l) {
+            if ($l->product !== null && $l->product->is_active) {
+                $lines[] = ['product' => $l->product, 'unit' => $l->productUnit, 'quantity' => (string) $l->quantity];
+            }
+        }
 
         $draft = $this->request($customer, $lines, "Reorder of {$order->number}", $order);
 
@@ -165,11 +166,11 @@ class PortalController extends Controller
             'area' => ['required', 'numeric', 'gt:0'],
         ]);
 
-        $lines = array_map(fn ($l) => [
+        $lines = array_values(array_map(fn ($l) => [
             'product' => Product::query()->findOrFail((int) $l['product_id']),
             'unit' => isset($l['product_unit_id']) ? ProductUnit::query()->find((int) $l['product_unit_id']) : null,
             'quantity' => (string) $l['quantity'],
-        ], $data['lines']);
+        ], $data['lines']));
 
         $draft = $this->request($customer, $lines, "From the patio calculator: {$data['area']} sq ft");
 
@@ -265,7 +266,7 @@ class PortalController extends Controller
      */
     private function recentOrders(Customer $customer, int $limit): array
     {
-        return Order::query()
+        return array_values(Order::query()
             ->with(['lines', 'organizationLocation:id,name'])
             ->where('type', 'sale')
             ->where(fn ($q) => $this->scope($q, $customer))
@@ -281,7 +282,7 @@ class PortalController extends Controller
                 'status' => $this->status($o),
                 'total_cents' => $o->amountDueCents(),
                 'created_at' => $o->created_at->toIso8601String(),
-            ])->values()->all();
+            ])->values()->all());
     }
 
     private function status(Order $order): string

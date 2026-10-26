@@ -52,7 +52,7 @@ class AuditController extends Controller
      */
     public static function historyFor(Model $subject, int $limit = 20): array
     {
-        return AuditEvent::query()
+        return array_values(AuditEvent::query()
             ->with(['user:id,name', 'customer:id,first_name,last_name'])
             ->where('subject_type', $subject->getMorphClass())
             ->where('subject_id', $subject->getKey())
@@ -61,7 +61,7 @@ class AuditController extends Controller
             ->get()
             ->map(fn (AuditEvent $e) => self::present($e))
             ->values()
-            ->all();
+            ->all());
     }
 
     /**

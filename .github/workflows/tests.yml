@@ -64,7 +64,7 @@ jobs:
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
         run: |
           php artisan config:clear --ansi || exit 1
-          php artisan test 2>&1 | tee "$RUNNER_TEMP/phpunit.log"; s=${PIPESTATUS[0]}; [ "$s" -eq 0 ] || touch "$RUNNER_TEMP/phpunit.failed"; exit $s
+          php artisan test --compact 2>&1 | tee "$RUNNER_TEMP/phpunit.log"; s=${PIPESTATUS[0]}; [ "$s" -eq 0 ] || touch "$RUNNER_TEMP/phpunit.failed"; exit $s
 
       - name: Report failures
         if: ${{ failure() }}

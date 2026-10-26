@@ -30,7 +30,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property array<string, string|null>|null $address
  * @property string|null $needs
  * @property-read Truck|null $truck
- * @property-read Shipment|Rental|Order $stoppable
+ * @property-read Shipment|Rental|Order|Organization $stoppable
  */
 #[Fillable(['stoppable_type', 'stoppable_id', 'kind', 'truck_id', 'date', 'starts_at', 'duration_minutes', 'status', 'eta_at', 'address', 'needs'])]
 class Stop extends Model

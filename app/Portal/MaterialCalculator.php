@@ -72,7 +72,7 @@ class MaterialCalculator
             'id' => $product->id,
             'name' => $product->name,
             'unit_id' => $unit?->id,
-            'unit' => $unit?->name ?? $product->unit->label(),
+            'unit' => $unit->name ?? $product->unit->label(),
             'factor' => (float) ($unit->factor ?? 1),
             'per_pallet' => $product->per_pallet !== null ? (float) $product->per_pallet : null,
             'price_cents' => $this->prices->unitPrice($product, $organization, 1, $unit)->cents,
