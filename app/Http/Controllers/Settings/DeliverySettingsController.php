@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Enums\UserRole;
 use App\Fulfillment\DeliverySettings;
 use App\Http\Controllers\Controller;
 use App\Models\DeliveryZone;
 use App\Models\Location;
-use App\Enums\UserRole;
 use App\Models\Truck;
 use App\Models\User;
 use App\Receivables\ReturnsSettings;

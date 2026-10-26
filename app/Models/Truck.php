@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Tenancy\BelongsToTenant;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -71,7 +71,7 @@ class Truck extends Model
      */
     public function driverLabel(): ?string
     {
-        return $this->driver?->name ?? $this->driver_name;
+        return $this->driver->name ?? $this->driver_name;
     }
 
     /**

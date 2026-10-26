@@ -37,7 +37,7 @@ class DriveDemoTruck extends Command
         // There and back, one point every five minutes.
         $route = DemoYardSeeder::DEMO_ROUTE;
         $legs = count($route) * 2 - 2;
-        $step = intdiv(now()->timestamp, 300) % $legs;
+        $step = intdiv((int) now()->timestamp, 300) % $legs;
         [$lat, $lng] = $route[$step < count($route) ? $step : $legs - $step];
 
         CurrentTenant::run($tenant, fn () => $run->locate($driver, $lat, $lng, 10, 35.0));

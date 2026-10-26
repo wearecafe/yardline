@@ -237,7 +237,7 @@ class DriverController extends Controller
             'kind' => $stop->kind,
             'kind_label' => $kindLabel,
             'title' => $title,
-            'reference' => $order?->number ?? ($s instanceof Rental ? $s->number : null),
+            'reference' => $order->number ?? ($s instanceof Rental ? $s->number : null),
             'address' => $stop->addressLine(),
             'address_full' => $mapQuery,
             'map_url' => $mapQuery !== '' ? 'https://www.google.com/maps/dir/?api=1&destination='.rawurlencode($mapQuery) : null,

@@ -41,7 +41,7 @@ class DriverRun
     /**
      * The scheduled stops on these trucks for the day, in running order.
      *
-     * @param  list<int>  $truckIds
+     * @param  array<int, int|string>  $truckIds
      * @return Collection<int, Stop>
      */
     public function stops(array $truckIds, CarbonImmutable $date): Collection
