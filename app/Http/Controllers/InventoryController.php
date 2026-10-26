@@ -15,7 +15,6 @@ use App\Models\StockMovement;
 use App\Purchasing\CycleCounting;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -44,7 +43,10 @@ class InventoryController extends Controller
         $committed = $this->committed();
         $lots = StockLot::query()->where('on_hand', '!=', 0)->get()->groupBy(fn (StockLot $l) => "{$l->product_id}:{$l->location_id}");
 
-        $rows = $levels->flatMap(function (StockLevel $level) use ($committed, $lots) {
+        /** @var list<array<string, mixed>> $rows */
+        $rows = [];
+
+        foreach ($levels as $level) {
             $key = "{$level->product_id}:{$level->location_id}";
             $held = (float) ($committed[$key] ?? 0);
             $low = $level->reorder_point !== null && (float) $level->on_hand - $held <= (float) $level->reorder_point;
@@ -63,21 +65,25 @@ class InventoryController extends Controller
             ];
             $productLots = $lots->get($key);
 
-            // Colour runs get a row each; committed sits against the yard total.
+            // Colour runs get a row each; committed sits against the biggest run.
             if ($level->product->track_lots && $productLots !== null && $productLots->isNotEmpty()) {
-                return $productLots->sortByDesc('on_hand')->values()->map(fn (StockLot $lot, int $i) => [
-                    ...$base,
-                    'key' => "{$key}:{$lot->id}",
-                    'lot' => $lot->code,
-                    'lot_id' => $lot->id,
-                    'on_hand' => $lot->on_hand,
-                    'committed' => $i === 0 ? number_format($held, 3, '.', '') : '0.000',
-                    'available' => number_format((float) $lot->on_hand - ($i === 0 ? $held : 0), 3, '.', ''),
-                    'low' => $i === 0 && $low,
-                ]);
+                foreach ($productLots->sortByDesc(fn (StockLot $l) => (float) $l->on_hand)->values() as $i => $lot) {
+                    $rows[] = [
+                        ...$base,
+                        'key' => "{$key}:{$lot->id}",
+                        'lot' => $lot->code,
+                        'lot_id' => $lot->id,
+                        'on_hand' => $lot->on_hand,
+                        'committed' => $i === 0 ? number_format($held, 3, '.', '') : '0.000',
+                        'available' => number_format((float) $lot->on_hand - ($i === 0 ? $held : 0), 3, '.', ''),
+                        'low' => $i === 0 && $low,
+                    ];
+                }
+
+                continue;
             }
 
-            return [[
+            $rows[] = [
                 ...$base,
                 'key' => $key,
                 'lot' => null,
@@ -85,11 +91,14 @@ class InventoryController extends Controller
                 'on_hand' => $level->on_hand,
                 'committed' => number_format($held, 3, '.', ''),
                 'available' => number_format((float) $level->on_hand - $held, 3, '.', ''),
-            ]];
-        })
-            ->when($lowOnly, fn (Collection $c) => $c->where('low', true))
-            ->sortBy(fn ($r) => [$r['low'] ? 0 : 1, $r['name'], $r['yard']])
-            ->values();
+            ];
+        }
+
+        if ($lowOnly) {
+            $rows = array_values(array_filter($rows, fn (array $r) => (bool) $r['low']));
+        }
+
+        usort($rows, fn (array $a, array $b) => [$a['low'] ? 0 : 1, $a['name'], $a['yard']] <=> [$b['low'] ? 0 : 1, $b['name'], $b['yard']]);
 
         $since = CarbonImmutable::now()->subDays(30);
 
