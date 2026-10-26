@@ -4,18 +4,26 @@ namespace App\Orders;
 
 use App\Enums\OrderStatus;
 use App\Enums\Settlement;
-use App\Enums\StockMovementType;
-use App\Inventory\InventoryLedger;
+use App\Enums\ShipmentStatus;
+use App\Fulfillment\CompleteShipment;
+use App\Fulfillment\LoadShipment;
+use App\Fulfillment\StartPicking;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Material leaves the yard (picked up, loaded for delivery, or rented out).
+ * Releases everything left on an order in one step, for the counter: a
+ * pick list for what's left, loaded at once. Pickups are handed over;
+ * deliveries go to the dispatch board.
  */
 class FulfillOrder
 {
-    public function __construct(private readonly InventoryLedger $ledger) {}
+    public function __construct(
+        private readonly StartPicking $startPicking,
+        private readonly LoadShipment $load,
+        private readonly CompleteShipment $complete,
+    ) {}
 
     public function handle(Order $order, User $user): Order
     {
@@ -28,19 +36,16 @@ class FulfillOrder
         }
 
         return DB::transaction(function () use ($order, $user) {
-            $type = $order->isRental() ? StockMovementType::RentalOut : StockMovementType::Sale;
+            $shipment = $order->shipments()->where('status', ShipmentStatus::Picking->value)->first()
+                ?? $this->startPicking->handle($order, $user, $user);
 
-            foreach ($order->lines()->with('product')->get() as $line) {
-                if ($line->product?->track_inventory) {
-                    $this->ledger->record($line->product, $order->location, -1 * $line->baseQuantity(), $type, $order, $user);
-                }
+            $this->load->handle($shipment, $user);
+
+            if (! $shipment->isDelivery()) {
+                $this->complete->handle($shipment->refresh(), $order->customer->full_name ?? 'Counter');
             }
 
-            $order->status = OrderStatus::Fulfilled;
-            $order->fulfilled_at = now();
-            $order->save();
-
-            return $order;
+            return $order->refresh();
         });
     }
 }

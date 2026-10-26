@@ -11,6 +11,7 @@ use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\Rental;
 use App\Models\RentalUnit;
+use App\Models\Shipment;
 use App\Models\User;
 use App\Payments\CheckoutLinks;
 use App\Payments\FakeCheckoutLinks;
@@ -132,6 +133,7 @@ class AppServiceProvider extends ServiceProvider
             'product' => Product::class,
             'rental' => Rental::class,
             'rental_unit' => RentalUnit::class,
+            'shipment' => Shipment::class,
             'user' => User::class,
         ]);
     }

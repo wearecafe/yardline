@@ -71,7 +71,7 @@ final class ProductEditor
             'stock' => [
                 'on_hand' => number_format((float) $levels->sum('on_hand'), 3, '.', ''),
                 'reorder_point' => $levels->whereNotNull('reorder_point')->isNotEmpty() ? number_format((float) $levels->sum('reorder_point'), 3, '.', '') : null,
-                'by_location' => $levels->map(fn (StockLevel $level) => ['name' => $level->location->name, 'on_hand' => $level->on_hand])->values(),
+                'by_location' => $levels->map(fn (StockLevel $level) => ['id' => $level->id, 'name' => $level->location->name, 'on_hand' => $level->on_hand, 'bin' => $level->bin])->values(),
                 'committed' => number_format($committed, 3, '.', ''),
                 'base_unit' => $base?->name,
             ],

@@ -3,6 +3,7 @@
 namespace App\Rentals;
 
 use App\Enums\RentalStatus;
+use App\Fulfillment\RentalStops;
 use App\Models\Rental;
 use App\Rentals\Notifications\RentalNotifier;
 use Carbon\CarbonImmutable;
@@ -31,6 +32,8 @@ class ReserveRental
 
         $rental->status = RentalStatus::Reserved;
         $rental->save();
+
+        app(RentalStops::class)->sync($rental);
 
         $this->notifier->send($rental, 'confirmation');
 

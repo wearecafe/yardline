@@ -2,6 +2,8 @@
 
 namespace App\Orders;
 
+use App\Enums\FulfillmentMethod;
+use App\Fulfillment\DeliveryPricer;
 use App\Models\Order;
 use App\Pricing\PriceResolver;
 use App\Support\Money;
@@ -17,6 +19,7 @@ class RecalculateOrder
     public function __construct(
         private readonly PriceResolver $prices,
         private readonly TaxCalculator $tax,
+        private readonly DeliveryPricer $delivery,
     ) {}
 
     public function handle(Order $order, bool $withTax = false): Order
@@ -58,6 +61,19 @@ class RecalculateOrder
             $line->tax_cents = 0;
         }
 
+        // Delivery: priced by zone, distance or truckload unless set by hand.
+        $delivery = $this->delivery->forOrder($order);
+        $order->load_weight_kg = number_format($delivery->weightKg, 1, '.', '');
+        $order->delivery_loads = $delivery->loads;
+        $order->delivery_zone_id = $delivery->zoneId;
+
+        if ($order->fulfillment !== FulfillmentMethod::Delivery) {
+            $order->delivery_fee_cents = 0;
+            $order->delivery_fee_manual = false;
+        } elseif (! $order->delivery_fee_manual && ! $order->pricesLocked() && $order->isDraft()) {
+            $order->delivery_fee_cents = $delivery->feeCents;
+        }
+
         $order->tax_cents = 0;
         $order->tax_calculation_ref = null;
 
@@ -74,7 +90,7 @@ class RecalculateOrder
 
         $order->lines->each->save();
 
-        $order->subtotal_cents = (int) $order->lines->sum('line_total_cents');
+        $order->subtotal_cents = (int) $order->lines->sum('line_total_cents') + $order->delivery_fee_cents;
         $order->deposit_cents = (int) $order->lines->sum('deposit_cents');
         $order->total_cents = $order->subtotal_cents + $order->tax_cents;
         $order->save();

@@ -9,6 +9,7 @@ import {
     LayoutGrid,
     MapPin,
     Package,
+    Route,
     Tags,
     Truck,
     Wrench,
@@ -16,7 +17,8 @@ import {
 import CustomerController from '@/actions/App/Http/Controllers/CustomerController';
 import InventoryController from '@/actions/App/Http/Controllers/InventoryController';
 import LocationController from '@/actions/App/Http/Controllers/LocationController';
-import OrderController from '@/actions/App/Http/Controllers/OrderController';
+import DispatchController from '@/actions/App/Http/Controllers/DispatchController';
+import FulfillmentController from '@/actions/App/Http/Controllers/FulfillmentController';
 import OrganizationController from '@/actions/App/Http/Controllers/OrganizationController';
 import CalendarController from '@/actions/App/Http/Controllers/Rentals/CalendarController';
 import FleetController from '@/actions/App/Http/Controllers/Rentals/FleetController';
@@ -40,8 +42,13 @@ export const navSections: NavSection[] = [
             { title: 'Today', href: dashboard(), icon: LayoutGrid },
             {
                 title: 'Orders and picking',
-                href: OrderController.index(),
+                href: FulfillmentController.queue(),
                 icon: ClipboardList,
+            },
+            {
+                title: 'Dispatch',
+                href: DispatchController.board(),
+                icon: Route,
             },
             {
                 title: 'Products',

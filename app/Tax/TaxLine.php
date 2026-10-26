@@ -7,6 +7,9 @@ final readonly class TaxLine
     /** Stripe Tax's code for items that aren't taxed. */
     public const NONTAXABLE = 'txcd_00000000';
 
+    /** Stripe Tax's code for delivery charges. */
+    public const SHIPPING = 'txcd_92010001';
+
     public function __construct(
         public string $reference,
         public int $amountCents,

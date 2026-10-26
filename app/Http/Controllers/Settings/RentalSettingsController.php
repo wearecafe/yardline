@@ -24,12 +24,6 @@ class RentalSettingsController extends Controller
 
         return Inertia::render('settings/rentals', [
             'settings' => RentalSettings::for($tenant)->toArray(),
-            'zones' => DeliveryZone::query()->orderBy('position')->get()->map(fn (DeliveryZone $zone) => [
-                'id' => $zone->id,
-                'name' => $zone->name,
-                'postal_prefixes' => implode(', ', $zone->postal_prefixes ?? []),
-                'fee' => number_format($zone->fee_cents / 100, 2, '.', ''),
-            ]),
             'bookingUrl' => $tenant ? route('book.show', $tenant->slug) : null,
         ]);
     }

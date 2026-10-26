@@ -13,6 +13,11 @@ use App\Enums\Settlement;
 use App\Enums\StockMovementType;
 use App\Enums\Unit;
 use App\Enums\UserRole;
+use App\Fulfillment\CompleteShipment;
+use App\Fulfillment\Dispatch;
+use App\Fulfillment\LoadShipment;
+use App\Fulfillment\RecordPick;
+use App\Fulfillment\StartPicking;
 use App\Inventory\InventoryLedger;
 use App\Models\ContractPrice;
 use App\Models\Customer;
@@ -27,7 +32,9 @@ use App\Models\Rental;
 use App\Models\RentalUnit;
 use App\Models\StockLevel;
 use App\Models\StockMovement;
+use App\Models\Stop;
 use App\Models\Tenant;
+use App\Models\Truck;
 use App\Models\User;
 use App\Orders\AddOrderLine;
 use App\Orders\ConfirmOrder;
@@ -113,6 +120,9 @@ class DemoYardSeeder extends Seeder
     /** @var array<string, Customer> */
     private array $people = [];
 
+    /** @var list<Truck> */
+    private array $trucks = [];
+
     private Location $waterdown;
 
     private Location $stoneyCreek;
@@ -146,8 +156,10 @@ class DemoYardSeeder extends Seeder
                 $this->accounts();
                 $this->accountDetails();
                 $this->openingStock();
+                $this->deliverySetup($tenant);
                 $this->orders();
                 $this->quotes();
+                $this->fulfillmentToday();
                 $this->rentals();
             });
         });
@@ -208,9 +220,9 @@ class DemoYardSeeder extends Seeder
         return $order->refresh();
     }
 
-    private function confirm(Order $order, Settlement $settlement, CarbonImmutable $at): Order
+    private function confirm(Order $order, Settlement $settlement, CarbonImmutable $at, ?string $override = null): Order
     {
-        app(ConfirmOrder::class)->handle($order, $settlement, $this->owner());
+        app(ConfirmOrder::class)->handle($order, $settlement, $this->owner(), $override);
 
         $order->forceFill(['confirmed_at' => $at, 'updated_at' => $at])->saveQuietly();
 
@@ -232,10 +244,24 @@ class DemoYardSeeder extends Seeder
         return $order->refresh();
     }
 
+    /**
+     * Picked, loaded and delivered (or handed over) in the past, with proof
+     * of delivery and the truck run done.
+     */
     private function release(Order $order, CarbonImmutable $at): Order
     {
         app(FulfillOrder::class)->handle($order, $this->yardLead());
+        $shipment = $order->shipments()->latest('id')->firstOrFail();
+        $delivered = $at->addMinutes(95);
 
+        if ($shipment->isDelivery()) {
+            $stop = $shipment->stop()->firstOrFail();
+            $stop->forceFill(['truck_id' => $this->trucks[0]->id, 'date' => $at->toDateString(), 'starts_at' => $at->setTimezone(self::TZ)->addHour()->format('H:00'), 'status' => 'scheduled'])->save();
+            app(CompleteShipment::class)->handle($shipment->refresh(), $order->customer->full_name ?? 'Site foreman', self::SIGNATURE, null, null);
+            $stop->forceFill(['completed_at' => $delivered])->save();
+        }
+
+        $shipment->forceFill(['created_at' => $at->subMinutes(30), 'picked_at' => $at->subMinutes(10), 'loaded_at' => $at, 'delivered_at' => $shipment->isDelivery() ? $delivered : $at, 'updated_at' => $at])->saveQuietly();
         $order->forceFill(['fulfilled_at' => $at, 'updated_at' => $at])->saveQuietly();
         $this->backdateMovements($order, $at, [StockMovementType::Sale, StockMovementType::RentalOut]);
 
@@ -248,8 +274,9 @@ class DemoYardSeeder extends Seeder
     private function backdateMovements(Order $order, CarbonImmutable $at, array $types): void
     {
         StockMovement::query()
-            ->where('reference_type', $order->getMorphClass())
-            ->where('reference_id', $order->id)
+            ->where(fn ($q) => $q
+                ->where(fn ($q) => $q->where('reference_type', $order->getMorphClass())->where('reference_id', $order->id))
+                ->orWhere(fn ($q) => $q->where('reference_type', 'shipment')->whereIn('reference_id', $order->shipments()->pluck('id'))))
             ->whereIn('type', array_map(fn (StockMovementType $type) => $type->value, $types))
             ->update(['created_at' => $at]);
     }
@@ -842,6 +869,87 @@ class DemoYardSeeder extends Seeder
         }
     }
 
+    // --------------------------------------------------------- fulfillment
+
+    /**
+     * Today's yard: something in every column of the order queue and on
+     * the dispatch board.
+     */
+    private function fulfillmentToday(): void
+    {
+        $owen = $this->yardLead();
+        $start = app(StartPicking::class);
+        $pick = app(RecordPick::class);
+        $load = app(LoadShipment::class);
+        $dispatch = app(Dispatch::class);
+        $today = CarbonImmutable::today(self::TZ);
+
+        // Delivered first thing on Truck 1.
+        $depot = OrganizationLocation::query()->where('name', 'Greenline depot')->firstOrFail();
+        $order = $this->draft([
+            'organization_id' => $this->orgs['greenline']->id,
+            'customer_id' => $this->people['ali']->id,
+            'organization_location_id' => $depot->id,
+            'fulfillment' => 'delivery',
+            'delivery_address' => $depot->address(),
+            'po_number' => 'GL-0190',
+        ], ['SOIL-3MX' => 8], $this->at(1, '15:00'));
+        $this->confirm($order, Settlement::Account, $this->at(1, '15:05'));
+        $this->release($order, $this->at(0, '07:20'));
+
+        // On Truck 2 now, ETA texted.
+        $order = $this->draft([
+            'organization_id' => $this->orgs['brantwood']->id,
+            'customer_id' => $this->people['jen']->id,
+            'fulfillment' => 'delivery',
+            'delivery_address' => ['line1' => '251 Hamilton St N', 'city' => 'Waterdown', 'region' => 'ON', 'postal_code' => 'L8B 1B4', 'country' => 'CA'],
+            'po_number' => 'BW-HAMILTON-2',
+            'needs_boom' => true,
+        ], ['PAV-60CH@Pallet (115 sq ft)' => 6, 'AGG-SCR' => 4, 'SND-POLY' => 12], $this->at(1, '16:30'));
+        $this->confirm($order, Settlement::Account, $this->at(1, '16:35'));
+        $shipment = $start->handle($order->refresh(), $this->owner(), $owen);
+        foreach ($shipment->lines()->with('orderLine')->get() as $line) {
+            $pick->handle($line, $line->orderLine->sku === 'AGG-SCR' ? '4.12' : $line->quantity);
+        }
+        $load->handle($shipment->refresh(), $owen);
+        $stop = $shipment->stop()->firstOrFail();
+        $dispatch->schedule($stop, $this->trucks[1], $today, '09:00', 120);
+        $dispatch->enRoute($stop->refresh(), $today->setTimeFromTimeString('10:40'));
+        $stop->forceFill(['eta_sent_at' => $this->at(0, '08:55')])->save();
+
+        // Greenline's pickup is being picked: mulch done, soil to go.
+        $greenline = Order::query()->where('po_number', 'GL-0193')->firstOrFail();
+        $shipment = $start->handle($greenline, $this->owner(), $owen);
+        $mulch = $shipment->lines()->whereHas('orderLine', fn ($q) => $q->where('sku', 'MUL-BCD'))->firstOrFail();
+        $pick->handle($mulch, $mulch->quantity);
+
+        // Halton's delivery for tomorrow is planned on Truck 3.
+        $halton = Order::query()->where('po_number', 'HM-TOWNSEND')->firstOrFail();
+        $dispatch->schedule($halton->stops()->firstOrFail(), $this->trucks[2], $today->addDay(), '08:00', 90);
+
+        // A walk-in's sand, picked and waiting at the counter.
+        $ross = Customer::query()->create(['first_name' => 'Jordan', 'last_name' => 'Ross', 'phone' => '905-555-0188']);
+        $order = $this->draft(['customer_id' => $ross->id], ['SND-POLY' => 20], $this->at(0, '07:40'));
+        $this->confirm($order, Settlement::Prepaid, $this->at(0, '07:42'));
+        $this->pay($order, PaymentTender::CardTerminal, $this->at(0, '07:43'), reference: 'Auth 552210');
+        $shipment = $start->handle($order->refresh(), $this->counter(), $owen);
+        foreach ($shipment->lines as $line) {
+            $pick->handle($line, $line->quantity);
+        }
+        $load->handle($shipment->refresh(), $owen);
+
+        // Something new with a boom-truck delivery today, not yet planned.
+        $order = $this->draft([
+            'organization_id' => $this->orgs['halton']->id,
+            'customer_id' => $this->people['priya']->id,
+            ...['fulfillment' => 'delivery', 'delivery_address' => ['line1' => '18 Ridgeview Dr', 'city' => 'Waterdown', 'region' => 'ON', 'postal_code' => 'L8B 1J2', 'country' => 'CA']],
+            'requested_on' => $today->toDateString(),
+            'needs_boom' => true,
+            'po_number' => 'HM-RIDGEVIEW',
+        ], ['WAL-STD@Pallet (48 blocks)' => 3, 'WAL-CAP' => 40, 'AGG-34C' => 6], $this->at(0, '09:20'));
+        $this->confirm($order, Settlement::Account, $this->at(0, '09:25'), override: 'Good for it: cheque for HM-TOWNSEND came in today. (Gord)');
+    }
+
     // -------------------------------------------------------------- quotes
 
     private function quotes(): void
@@ -895,7 +1003,6 @@ class DemoYardSeeder extends Seeder
 
     private function rentals(): void
     {
-        $this->rentalSetup();
         $this->fleet();
 
         $tz = self::TZ;
@@ -918,6 +1025,8 @@ class DemoYardSeeder extends Seeder
             'organization_id' => $this->orgs['halton']->id,
             'customer_id' => $this->people['priya']->id,
             'payment_method' => 'counter',
+            'fulfillment' => 'delivery',
+            'delivery_address' => ['line1' => '47 Townsend Ave', 'city' => 'Burlington', 'region' => 'ON', 'postal_code' => 'L7T 1Y8', 'country' => 'CA'],
         ], $day(-2, '07:30'), $day(0, '17:00'), ['PC-01']);
         $this->goOut($rental, $day(-2, '07:40'), ['PC-01' => 61.5], RentalTender::CardTerminal);
 
@@ -976,8 +1085,47 @@ class DemoYardSeeder extends Seeder
         $this->maintenanceHistory();
     }
 
-    private function rentalSetup(): void
+    /**
+     * Delivery zones, delivery pricing, trucks, and where things sit in
+     * the Waterdown yard.
+     */
+    private function deliverySetup(Tenant $tenant): void
     {
+        $tenant->update(['settings' => [...($tenant->settings ?? []), 'delivery' => [
+            'method' => 'zone',
+            'out_of_zone_cents' => 14500,
+            'eta_texts' => true,
+        ]]]);
+
+        foreach ([
+            ['Truck 1 · tandem', 'material', 'Dave Kowalchuk', 14000, false],
+            ['Truck 2 · boom', 'material', 'Sam Rinaldi', 12000, true],
+            ['Truck 3 · tri-axle', 'material', 'Luis Moreno', 20000, false],
+            ['Float · equipment', 'equipment', 'Mike Tremblay', null, false],
+        ] as $position => [$name, $kind, $driver, $capacity, $boom]) {
+            $this->trucks[] = Truck::query()->create([
+                'name' => $name,
+                'kind' => $kind,
+                'driver_name' => $driver,
+                'driver_phone' => '905-555-01'.(70 + $position),
+                'capacity_kg' => $capacity,
+                'has_boom' => $boom,
+                'location_id' => $this->waterdown->id,
+                'position' => $position,
+            ]);
+        }
+
+        $bins = [
+            'AGG-SCR' => 'Bay 4', 'AGG-34C' => 'Bay 5', 'AGG-RVR' => 'Bay 6', 'SOIL-3MX' => 'Bay 1', 'SOIL-GDN' => 'Bay 1B',
+            'MUL-BCD' => 'Bay 2', 'PAV-60CH' => 'Row C', 'PAV-80NT' => 'Row C', 'FLG-ARM' => 'Row G', 'ARM-23' => 'North yard',
+            'WAL-STD' => 'Row F', 'WAL-CAP' => 'Row F', 'BRK-MOD' => 'Row E', 'BLK-8IN' => 'Row D', 'MOR-S30' => 'Aisle A',
+            'CEM-GU30' => 'Aisle A', 'SND-POLY' => 'Aisle B', 'FAB-GEO' => 'Aisle C',
+        ];
+
+        foreach ($bins as $sku => $bin) {
+            StockLevel::query()->where('product_id', $this->products[$sku]->id)->where('location_id', $this->waterdown->id)->update(['bin' => $bin]);
+        }
+
         foreach ([
             ['Zone 1 · Waterdown and Flamborough', ['L8B', 'L9H', 'L0R'], 6500],
             ['Zone 2 · Hamilton and Stoney Creek', ['L8', 'L9'], 8500],
@@ -1089,6 +1237,15 @@ class DemoYardSeeder extends Seeder
 
         app(CheckOutRental::class)->handle($rental->refresh(), $inspections, $this->yardLead(), $tender);
         $rental->forceFill(['checked_out_at' => $at])->save();
+
+        // Delivered rentals: the drop-off run is done.
+        Stop::query()->where('stoppable_type', 'rental')->where('stoppable_id', $rental->id)->where('kind', 'rental_drop')->update([
+            'status' => 'done',
+            'truck_id' => $this->trucks[3]->id,
+            'date' => $at->toDateString(),
+            'starts_at' => $at->setTimezone(self::TZ)->format('H:00'),
+            'completed_at' => $at->addHour(),
+        ]);
         $this->backdate($rental, $at);
     }
 

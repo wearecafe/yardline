@@ -17,10 +17,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $location_id
  * @property string $on_hand
  * @property string|null $reorder_point
+ * @property string|null $bin
  * @property-read Product $product
  * @property-read Location $location
  */
-#[Fillable(['product_id', 'location_id', 'reorder_point'])]
+#[Fillable(['product_id', 'location_id', 'reorder_point', 'bin'])]
 class StockLevel extends Model
 {
     use BelongsToTenant;

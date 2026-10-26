@@ -4,6 +4,7 @@ namespace App\Rentals;
 
 use App\Enums\ProductKind;
 use App\Enums\RentalStatus;
+use App\Fulfillment\RentalStops;
 use App\Models\Customer;
 use App\Models\DeliveryZone;
 use App\Models\Product;
@@ -74,7 +75,13 @@ class SaveRental
                 $rental->save();
             }
 
-            return $this->recalculate->handle($rental);
+            $rental = $this->recalculate->handle($rental);
+
+            if (! $isNew) {
+                app(RentalStops::class)->sync($rental);
+            }
+
+            return $rental;
         });
     }
 
