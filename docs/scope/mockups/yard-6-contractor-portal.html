@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Contractor portal</title>
+        <script src="./support.js"></script>
+    </head>
+    <body>
+        <x-dc>
+            <helmet>
+                <link
+                    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap"
+                    rel="stylesheet"
+                />
+                <style>
+                    body {
+                        margin: 0;
+                    }
+                    a {
+                        color: #c2410c;
+                    }
+                    a:hover {
+                        color: #9a3412;
+                    }
+                </style>
+            </helmet>
+            <div
+                style="
+                    min-height: 960px;
+                    background: #f5f3ef;
+                    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+                    color: #1c1917;
+                    font-size: 14px;
+                "
+            >
+                <header
+                    style="
+                        background: #ffffff;
+                        border-bottom: 1px solid #e7e5e4;
+                    "
+                >
+                    <div
+                        style="
+                            max-width: 1200px;
+                            margin: 0 auto;
+                            padding: 14px 24px;
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 16px;
+                            align-items: center;
+                            justify-content: space-between;
+                        "
+                    >
+                        <div style="font-weight: 700; font-size: 18px">
+                            [YARD NAME]
+                            <span style="font-weight: 400; color: #57534e"
+                                >· Contractor account</span
+                            >
+                        </div>
+                        <nav
+                            aria-label="Portal"
+                            style="display: flex; flex-wrap: wrap; gap: 4px"
+                        >
+                            <a
+                                href="#"
+                                style="
+                                    padding: 10px 12px;
+                                    border-radius: 6px;
+                                    background: #f5f3ef;
+                                    color: #1c1917;
+                                    text-decoration: none;
+                                    font-weight: 600;
+                                "
+                                >Home</a
+                            >
+                            <a
+                                href="#"
+                                style="
+                                    padding: 10px 12px;
+                                    color: #44403c;
+                                    text-decoration: none;
+                                "
+                                >Orders</a
+                            >
+                            <a
+                                href="Booking.dc.html"
+                                style="
+                                    padding: 10px 12px;
+                                    color: #44403c;
+                                    text-decoration: none;
+                                "
+                                >Rent equipment</a
+                            >
+                            <a
+                                href="#"
+                                style="
+                                    padding: 10px 12px;
+                                    color: #44403c;
+                                    text-decoration: none;
+                                "
+                                >Statements</a
+                            >
+                        </nav>
+                        <div style="color: #57534e">
+                            Brick &amp; Stone Contracting
+                        </div>
+                    </div>
+                </header>
+                <main
+                    style="
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        padding: 28px 24px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 20px;
+                    "
+                >
+                    <h1 style="margin: 0; font-size: 26px">
+                        Good morning, Tony
+                    </h1>
+                    <section
+                        style="
+                            background: #1c1917;
+                            color: #fafaf9;
+                            border-radius: 12px;
+                            padding: 20px;
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 20px;
+                            align-items: center;
+                            justify-content: space-between;
+                        "
+                    >
+                        <div
+                            style="
+                                display: flex;
+                                flex-direction: column;
+                                gap: 4px;
+                            "
+                        >
+                            <div
+                                style="
+                                    font-size: 12px;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.06em;
+                                    color: #fdba74;
+                                "
+                            >
+                                On its way
+                            </div>
+                            <div style="font-size: 20px; font-weight: 600">
+                                Order #4017 · 9 pallets wall block and caps
+                            </div>
+                            <div style="color: #d6d3d1">
+                                Truck 2 with boom · to 210 Highland Rd, Stoney
+                                Creek
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                display: flex;
+                                gap: 24px;
+                                align-items: center;
+                            "
+                        >
+                            <div>
+                                <div style="font-size: 12px; color: #d6d3d1">
+                                    ETA
+                                </div>
+                                <div
+                                    style="
+                                        font-family: 'IBM Plex Mono', monospace;
+                                        font-size: 28px;
+                                    "
+                                >
+                                    10:40
+                                </div>
+                            </div>
+                            <a
+                                href="#"
+                                style="
+                                    height: 44px;
+                                    padding: 0 16px;
+                                    border-radius: 8px;
+                                    background: #fafaf9;
+                                    color: #1c1917;
+                                    text-decoration: none;
+                                    font-weight: 600;
+                                    display: flex;
+                                    align-items: center;
+                                "
+                                >Track live</a
+                            >
+                        </div>
+                    </section>
+                    <div
+                        style="
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 20px;
+                            align-items: flex-start;
+                        "
+                    >
+                        <section
+                            style="
+                                flex: 999 1 560px;
+                                min-width: 0;
+                                background: #ffffff;
+                                border: 1px solid #e7e5e4;
+                                border-radius: 10px;
+                                padding: 20px;
+                            "
+                        >
+                            <div
+                                style="
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    margin-bottom: 12px;
+                                "
+                            >
+                                <h2 style="margin: 0; font-size: 16px">
+                                    Recent orders
+                                </h2>
+                                <a href="#">See all</a>
+                            </div>
+                            <div style="overflow-x: auto">
+                                <table
+                                    style="
+                                        width: 100%;
+                                        border-collapse: collapse;
+                                        min-width: 560px;
+                                    "
+                                >
+                                    <thead>
+                                        <tr
+                                            style="
+                                                text-align: left;
+                                                color: #57534e;
+                                                font-size: 12px;
+                                                text-transform: uppercase;
+                                                letter-spacing: 0.04em;
+                                            "
+                                        >
+                                            <th
+                                                style="
+                                                    padding: 8px 10px;
+                                                    border-bottom: 1px solid
+                                                        #e7e5e4;
+                                                "
+                                            >
+                                                Order
+                                            </th>
+                                            <th
+                                                style="
+                                                    padding: 8px 10px;
+                                                    border-bottom: 1px solid
+                                                        #e7e5e4;
+                                                "
+                                            >
+                                                Job site
+                                            </th>
+                                            <th
+                                                style="
+                                                    padding: 8px 10px;
+                                                    border-bottom: 1px solid
+                                                        #e7e5e4;
+                                                "
+                                            >
+                                                Items
+                                            </th>
+                                            <th
+                                                style="
+                                                    padding: 8px 10px;
+                                                    border-bottom: 1px solid
+                                                        #e7e5e4;
+                                                "
+                                            >
+                                                Status
+                                            </th>
+                                            <th
+                                                style="
+                                                    padding: 8px 10px;
+                                                    border-bottom: 1px solid
+                                                        #e7e5e4;
+                                                "
+                                            >
+                                                <span
+                                                    style="
+                                                        position: absolute;
+                                                        left: -9999px;
+                                                    "
+                                                    >Action</span
+                                                >
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <sc-for
+                                            list="{{orders}}"
+                                            as="o"
+                                            hint-placeholder-count="4"
+                                        >
+                                            <tr>
+                                                <td
+                                                    style="
+                                                        padding: 12px 10px;
+                                                        border-bottom: 1px solid
+                                                            #f5f5f4;
+                                                        font-family:
+                                                            'IBM Plex Mono',
+                                                            monospace;
+                                                    "
+                                                >
+                                                    {{o.id}}
+                                                </td>
+                                                <td
+                                                    style="
+                                                        padding: 12px 10px;
+                                                        border-bottom: 1px solid
+                                                            #f5f5f4;
+                                                    "
+                                                >
+                                                    {{o.site}}
+                                                </td>
+                                                <td
+                                                    style="
+                                                        padding: 12px 10px;
+                                                        border-bottom: 1px solid
+                                                            #f5f5f4;
+                                                        color: #57534e;
+                                                    "
+                                                >
+                                                    {{o.items}}
+                                                </td>
+                                                <td
+                                                    style="
+                                                        padding: 12px 10px;
+                                                        border-bottom: 1px solid
+                                                            #f5f5f4;
+                                                    "
+                                                >
+                                                    {{o.status}}
+                                                </td>
+                                                <td
+                                                    style="
+                                                        padding: 12px 10px;
+                                                        border-bottom: 1px solid
+                                                            #f5f5f4;
+                                                        text-align: right;
+                                                    "
+                                                >
+                                                    <a
+                                                        href="#"
+                                                        style="
+                                                            display: inline-flex;
+                                                            min-height: 44px;
+                                                            align-items: center;
+                                                        "
+                                                        >Reorder</a
+                                                    >
+                                                </td>
+                                            </tr>
+                                        </sc-for>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <aside
+                            style="
+                                flex: 1 1 320px;
+                                min-width: 0;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 20px;
+                            "
+                        >
+                            <section
+                                style="
+                                    background: #ffffff;
+                                    border: 1px solid #e7e5e4;
+                                    border-radius: 10px;
+                                    padding: 20px;
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 12px;
+                                "
+                            >
+                                <h2 style="margin: 0; font-size: 16px">
+                                    Material calculator
+                                </h2>
+                                <div
+                                    style="
+                                        display: grid;
+                                        grid-template-columns: repeat(
+                                            2,
+                                            minmax(0, 1fr)
+                                        );
+                                        gap: 10px;
+                                    "
+                                >
+                                    <label
+                                        style="
+                                            display: flex;
+                                            flex-direction: column;
+                                            gap: 4px;
+                                        "
+                                        ><span
+                                            style="
+                                                font-size: 12px;
+                                                color: #57534e;
+                                            "
+                                            >Patio area (sq ft)</span
+                                        ><input
+                                            type="text"
+                                            value="420"
+                                            style="
+                                                height: 40px;
+                                                padding: 0 10px;
+                                                border: 1px solid #d6d3d1;
+                                                border-radius: 8px;
+                                                font: inherit;
+                                            "
+                                    /></label>
+                                    <label
+                                        style="
+                                            display: flex;
+                                            flex-direction: column;
+                                            gap: 4px;
+                                        "
+                                        ><span
+                                            style="
+                                                font-size: 12px;
+                                                color: #57534e;
+                                            "
+                                            >Base depth (in)</span
+                                        ><input
+                                            type="text"
+                                            value="6"
+                                            style="
+                                                height: 40px;
+                                                padding: 0 10px;
+                                                border: 1px solid #d6d3d1;
+                                                border-radius: 8px;
+                                                font: inherit;
+                                            "
+                                    /></label>
+                                </div>
+                                <div
+                                    style="
+                                        background: #f5f3ef;
+                                        border-radius: 8px;
+                                        padding: 12px;
+                                        display: flex;
+                                        flex-direction: column;
+                                        gap: 6px;
+                                    "
+                                >
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                        "
+                                    >
+                                        <span>Pavers, 60 mm (+5% waste)</span
+                                        ><span
+                                            style="
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                            "
+                                            >5 pallets</span
+                                        >
+                                    </div>
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                        "
+                                    >
+                                        <span>Granular A base</span
+                                        ><span
+                                            style="
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                            "
+                                            >13 t</span
+                                        >
+                                    </div>
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                        "
+                                    >
+                                        <span>Bedding sand</span
+                                        ><span
+                                            style="
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                            "
+                                            >2 t</span
+                                        >
+                                    </div>
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                        "
+                                    >
+                                        <span>Polymeric sand</span
+                                        ><span
+                                            style="
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                            "
+                                            >7 bags</span
+                                        >
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    style="
+                                        height: 44px;
+                                        border-radius: 8px;
+                                        border: none;
+                                        background: #c2410c;
+                                        color: #ffffff;
+                                        font: inherit;
+                                        font-weight: 600;
+                                    "
+                                >
+                                    Add to order at your price
+                                </button>
+                            </section>
+                            <section
+                                style="
+                                    background: #ffffff;
+                                    border: 1px solid #e7e5e4;
+                                    border-radius: 10px;
+                                    padding: 20px;
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 10px;
+                                "
+                            >
+                                <h2 style="margin: 0; font-size: 16px">
+                                    Your account
+                                </h2>
+                                <div
+                                    style="
+                                        display: flex;
+                                        justify-content: space-between;
+                                    "
+                                >
+                                    <span style="color: #57534e"
+                                        >Pallets on deposit</span
+                                    ><span
+                                        style="
+                                            font-family:
+                                                'IBM Plex Mono', monospace;
+                                        "
+                                        >22 · $550</span
+                                    >
+                                </div>
+                                <div
+                                    style="
+                                        display: flex;
+                                        justify-content: space-between;
+                                    "
+                                >
+                                    <span style="color: #57534e"
+                                        >Rentals out</span
+                                    ><span>Skid steer, due Oct 30</span>
+                                </div>
+                                <div
+                                    style="
+                                        display: flex;
+                                        justify-content: space-between;
+                                    "
+                                >
+                                    <span style="color: #57534e">Statement</span
+                                    ><a href="#">October (QuickBooks)</a>
+                                </div>
+                                <a href="#" style="margin-top: 4px"
+                                    >Book a pallet return pickup</a
+                                >
+                            </section>
+                        </aside>
+                    </div>
+                </main>
+            </div>
+        </x-dc>
+        <script
+            type="text/x-dc"
+            data-dc-script
+            data-props='{"$preview":{"width":1440,"height":960}}'
+        >
+            class Component extends DCLogic {
+            renderVals() {
+            return {
+            orders: [
+            { id: '#4021', site: '18 Ridgeview Dr, Waterdown', items: '6 plt pavers, 4 t screenings, 2 bulk bags', status: 'Scheduling' },
+            { id: '#4017', site: '210 Highland Rd, Stoney Creek', items: '9 plt wall block, caps', status: 'Out for delivery' },
+            { id: '#3988', site: '18 Ridgeview Dr, Waterdown', items: '12 t Granular A', status: 'Delivered Oct 22' },
+            { id: '#3951', site: '77 Mill St, Carlisle', items: '40 bags Type S, 2 plt brick', status: 'Delivered Oct 19' }
+            ]
+            };
+            }
+            }
+        </script>
+    </body>
+</html>

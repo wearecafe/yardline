@@ -53,10 +53,10 @@ class RecalculateOrder
         $order->tax_calculation_ref = null;
 
         if ($withTax && $order->lines->isNotEmpty()) {
-            $result = $this->tax->calculate($order);
+            $result = $this->tax->calculate(OrderTax::request($order));
 
             foreach ($order->lines as $line) {
-                $line->tax_cents = $result->lineTaxCents[$line->id] ?? 0;
+                $line->tax_cents = $result->forLine('line_'.$line->id);
             }
 
             $order->tax_cents = $result->totalCents;

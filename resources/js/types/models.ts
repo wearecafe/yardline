@@ -29,6 +29,18 @@ export type Product = {
     track_inventory: boolean;
     is_active: boolean;
     on_hand?: string | null;
+    rate_hour_cents?: number | null;
+    rate_half_day_cents?: number | null;
+    rate_weekend_cents?: number | null;
+    rate_week_cents?: number | null;
+    rate_month_cents?: number | null;
+    minimum_charge_cents?: number;
+    fuel_charge_cents?: number;
+    cleaning_fee_cents?: number;
+    service_interval_hours?: number | null;
+    service_interval_days?: number | null;
+    use_case?: string | null;
+    bookable_online?: boolean;
 };
 
 export type PriceListSummary = {

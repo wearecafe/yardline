@@ -1,0 +1,321 @@
+import { Head, router, useForm } from '@inertiajs/react';
+import { useState } from 'react';
+import RentalSettingsController from '@/actions/App/Http/Controllers/Settings/RentalSettingsController';
+import Heading from '@/components/heading';
+import { Checkbox, Field } from '@/components/yard/field';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+type Settings = {
+    damage_waiver_percent: number;
+    free_sunday_with_saturday: boolean;
+    late_grace_minutes: number;
+    late_fee_policy: string;
+    terms: string;
+    reminder_hours_before_return: number;
+    opening_time: string;
+    closing_time: string;
+};
+
+type Zone = { id: number; name: string; postal_prefixes: string; fee: string };
+
+function ZoneRow({ zone }: { zone: Zone | null }) {
+    const form = useForm({
+        name: zone?.name ?? '',
+        postal_prefixes: zone?.postal_prefixes ?? '',
+        fee: zone?.fee ?? '',
+    });
+    const [removing, setRemoving] = useState(false);
+
+    return (
+        <form
+            className="grid gap-2 sm:grid-cols-[1fr_2fr_7rem_auto] sm:items-start"
+            onSubmit={(e) => {
+                e.preventDefault();
+
+                if (zone) {
+                    form.put(RentalSettingsController.updateZone.url(zone.id), {
+                        preserveScroll: true,
+                    });
+                } else {
+                    form.post(RentalSettingsController.storeZone.url(), {
+                        preserveScroll: true,
+                        onSuccess: () => form.reset(),
+                    });
+                }
+            }}
+        >
+            <Field
+                label="Zone"
+                htmlFor={`zone-name-${zone?.id ?? 'new'}`}
+                error={form.errors.name}
+            >
+                <Input
+                    id={`zone-name-${zone?.id ?? 'new'}`}
+                    required
+                    value={form.data.name}
+                    onChange={(e) => form.setData('name', e.target.value)}
+                    placeholder="Zone 1, in town"
+                />
+            </Field>
+            <Field
+                label="Postal code prefixes"
+                htmlFor={`zone-prefixes-${zone?.id ?? 'new'}`}
+                error={form.errors.postal_prefixes}
+            >
+                <Input
+                    id={`zone-prefixes-${zone?.id ?? 'new'}`}
+                    value={form.data.postal_prefixes}
+                    onChange={(e) =>
+                        form.setData('postal_prefixes', e.target.value)
+                    }
+                    placeholder="L8P, L8S, L9H"
+                    className="figure"
+                />
+            </Field>
+            <Field
+                label="Fee each way"
+                htmlFor={`zone-fee-${zone?.id ?? 'new'}`}
+                error={form.errors.fee}
+            >
+                <Input
+                    id={`zone-fee-${zone?.id ?? 'new'}`}
+                    required
+                    inputMode="decimal"
+                    value={form.data.fee}
+                    onChange={(e) => form.setData('fee', e.target.value)}
+                />
+            </Field>
+            <div className="flex gap-2 sm:pt-6">
+                <Button
+                    type="submit"
+                    variant={zone ? 'outline' : 'default'}
+                    disabled={form.processing}
+                >
+                    {zone ? 'Save' : 'Add zone'}
+                </Button>
+                {zone && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={removing}
+                        onClick={() => {
+                            setRemoving(true);
+                            router.delete(
+                                RentalSettingsController.destroyZone.url(
+                                    zone.id,
+                                ),
+                                {
+                                    preserveScroll: true,
+                                    onFinish: () => setRemoving(false),
+                                },
+                            );
+                        }}
+                    >
+                        Remove
+                    </Button>
+                )}
+            </div>
+        </form>
+    );
+}
+
+export default function RentalSettingsPage({
+    settings,
+    zones,
+    bookingUrl,
+}: {
+    settings: Settings;
+    zones: Zone[];
+    bookingUrl: string | null;
+}) {
+    const form = useForm({
+        ...settings,
+        damage_waiver_percent: String(settings.damage_waiver_percent),
+        late_grace_minutes: String(settings.late_grace_minutes),
+        reminder_hours_before_return: String(
+            settings.reminder_hours_before_return,
+        ),
+    });
+
+    return (
+        <>
+            <Head title="Rental settings" />
+            <h1 className="sr-only">Rental settings</h1>
+
+            <div className="space-y-10">
+                <form
+                    className="space-y-6"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        form.put(RentalSettingsController.update.url(), {
+                            preserveScroll: true,
+                        });
+                    }}
+                >
+                    <Heading
+                        variant="small"
+                        title="Rental policy"
+                        description="Pricing rules, hours and the terms customers sign."
+                    />
+
+                    {bookingUrl && (
+                        <p className="text-sm text-muted-foreground">
+                            Your public booking page is{' '}
+                            <a
+                                href={bookingUrl}
+                                className="font-medium text-foreground underline underline-offset-4"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                {bookingUrl}
+                            </a>
+                            . Equipment shows there when it's marked bookable
+                            online.
+                        </p>
+                    )}
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Field
+                            label="Damage waiver (%)"
+                            htmlFor="waiver"
+                            error={form.errors.damage_waiver_percent}
+                            hint="Of the rental charge. Customers can decline it."
+                        >
+                            <Input
+                                id="waiver"
+                                inputMode="decimal"
+                                value={form.data.damage_waiver_percent}
+                                onChange={(e) =>
+                                    form.setData(
+                                        'damage_waiver_percent',
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                        </Field>
+                        <Field
+                            label="Late grace (minutes)"
+                            htmlFor="grace"
+                            error={form.errors.late_grace_minutes}
+                        >
+                            <Input
+                                id="grace"
+                                inputMode="numeric"
+                                value={form.data.late_grace_minutes}
+                                onChange={(e) =>
+                                    form.setData(
+                                        'late_grace_minutes',
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                        </Field>
+                        <Field
+                            label="Opens"
+                            htmlFor="opening"
+                            error={form.errors.opening_time}
+                        >
+                            <Input
+                                id="opening"
+                                type="time"
+                                value={form.data.opening_time}
+                                onChange={(e) =>
+                                    form.setData('opening_time', e.target.value)
+                                }
+                            />
+                        </Field>
+                        <Field
+                            label="Closes"
+                            htmlFor="closing"
+                            error={form.errors.closing_time}
+                        >
+                            <Input
+                                id="closing"
+                                type="time"
+                                value={form.data.closing_time}
+                                onChange={(e) =>
+                                    form.setData('closing_time', e.target.value)
+                                }
+                            />
+                        </Field>
+                        <Field
+                            label="Return reminder (hours before)"
+                            htmlFor="reminder"
+                            error={form.errors.reminder_hours_before_return}
+                        >
+                            <Input
+                                id="reminder"
+                                inputMode="numeric"
+                                value={form.data.reminder_hours_before_return}
+                                onChange={(e) =>
+                                    form.setData(
+                                        'reminder_hours_before_return',
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                        </Field>
+                    </div>
+
+                    <Checkbox
+                        id="free_sunday"
+                        checked={form.data.free_sunday_with_saturday}
+                        onChange={(checked) =>
+                            form.setData('free_sunday_with_saturday', checked)
+                        }
+                        label="Sunday is free when picked up Saturday and returned Monday morning"
+                    />
+
+                    <Field
+                        label="Late fee policy"
+                        htmlFor="late_policy"
+                        error={form.errors.late_fee_policy}
+                        hint="Shown on the agreement."
+                    >
+                        <Input
+                            id="late_policy"
+                            value={form.data.late_fee_policy}
+                            onChange={(e) =>
+                                form.setData('late_fee_policy', e.target.value)
+                            }
+                        />
+                    </Field>
+
+                    <Field
+                        label="Rental terms"
+                        htmlFor="terms"
+                        error={form.errors.terms}
+                        hint="Customers sign these on the agreement. Have them reviewed by your lawyer."
+                    >
+                        <textarea
+                            id="terms"
+                            rows={12}
+                            value={form.data.terms}
+                            onChange={(e) =>
+                                form.setData('terms', e.target.value)
+                            }
+                            className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+                        />
+                    </Field>
+
+                    <Button type="submit" disabled={form.processing}>
+                        Save rental settings
+                    </Button>
+                </form>
+
+                <section className="space-y-4">
+                    <Heading
+                        variant="small"
+                        title="Delivery zones"
+                        description="Delivery and pickup fees for rentals, matched on the longest postal code prefix."
+                    />
+                    {zones.map((zone) => (
+                        <ZoneRow key={zone.id} zone={zone} />
+                    ))}
+                    <ZoneRow zone={null} />
+                </section>
+            </div>
+        </>
+    );
+}

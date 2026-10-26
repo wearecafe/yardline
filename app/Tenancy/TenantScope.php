@@ -7,9 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
 /**
- * @template TModel of Model
- *
- * @implements Scope<TModel>
+ * @implements Scope<Model>
  *
  * Restricts every query to the current tenant. With no tenant set, the scope
  * matches nothing rather than everything, so a missing tenant fails closed.
@@ -17,8 +15,7 @@ use Illuminate\Database\Eloquent\Scope;
 class TenantScope implements Scope
 {
     /**
-     * @param  Builder<TModel>  $builder
-     * @param  TModel  $model
+     * @param  Builder<covariant Model>  $builder
      */
     public function apply(Builder $builder, Model $model): void
     {

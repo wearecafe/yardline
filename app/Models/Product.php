@@ -24,6 +24,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ProductKind $kind
  * @property Unit $unit
  * @property int $price_cents
+ * @property int|null $rate_hour_cents
+ * @property int|null $rate_half_day_cents
+ * @property int|null $rate_week_cents
+ * @property int|null $rate_month_cents
+ * @property int|null $rate_weekend_cents
+ * @property int $minimum_charge_cents
+ * @property int $fuel_charge_cents
+ * @property int $cleaning_fee_cents
+ * @property int|null $service_interval_hours
+ * @property int|null $service_interval_days
+ * @property string|null $use_case
+ * @property bool $bookable_online
  * @property int|null $cost_cents
  * @property RentalPeriod|null $rental_period
  * @property int $deposit_cents
@@ -35,6 +47,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'sku', 'name', 'description', 'category', 'kind', 'unit',
     'price_cents', 'cost_cents', 'rental_period', 'deposit_cents',
     'tax_code', 'track_inventory', 'is_active',
+    'rate_hour_cents', 'rate_half_day_cents', 'rate_week_cents', 'rate_month_cents',
+    'rate_weekend_cents', 'minimum_charge_cents', 'fuel_charge_cents', 'cleaning_fee_cents',
+    'service_interval_hours', 'service_interval_days', 'use_case', 'bookable_online',
 ])]
 class Product extends Model
 {
@@ -50,6 +65,10 @@ class Product extends Model
         'deposit_cents' => 0,
         'track_inventory' => true,
         'is_active' => true,
+        'minimum_charge_cents' => 0,
+        'fuel_charge_cents' => 0,
+        'cleaning_fee_cents' => 0,
+        'bookable_online' => false,
     ];
 
     protected function casts(): array
@@ -63,6 +82,17 @@ class Product extends Model
             'deposit_cents' => 'integer',
             'track_inventory' => 'boolean',
             'is_active' => 'boolean',
+            'rate_hour_cents' => 'integer',
+            'rate_half_day_cents' => 'integer',
+            'rate_week_cents' => 'integer',
+            'rate_month_cents' => 'integer',
+            'rate_weekend_cents' => 'integer',
+            'minimum_charge_cents' => 'integer',
+            'fuel_charge_cents' => 'integer',
+            'cleaning_fee_cents' => 'integer',
+            'service_interval_hours' => 'integer',
+            'service_interval_days' => 'integer',
+            'bookable_online' => 'boolean',
         ];
     }
 
@@ -72,6 +102,16 @@ class Product extends Model
     public function stockLevels(): HasMany
     {
         return $this->hasMany(StockLevel::class);
+    }
+
+    /**
+     * Serialized machines of this rental model.
+     *
+     * @return HasMany<RentalUnit, $this>
+     */
+    public function rentalUnits(): HasMany
+    {
+        return $this->hasMany(RentalUnit::class);
     }
 
     /**

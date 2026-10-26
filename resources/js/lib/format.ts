@@ -60,3 +60,51 @@ const unitLabels: Record<string, string> = {
 export function unitLabel(unit: string): string {
     return unitLabels[unit] ?? unit;
 }
+
+/** "Thu Oct 29, 7:00 am" in the yard's time zone. */
+export function formatDateTime(
+    value: string | null,
+    timeZone?: string,
+): string {
+    if (!value) {
+        return '';
+    }
+
+    const date = new Date(value);
+    const day = date.toLocaleDateString('en-CA', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        timeZone,
+    });
+    const time = date
+        .toLocaleTimeString('en-CA', {
+            hour: 'numeric',
+            minute: '2-digit',
+            timeZone,
+        })
+        .replace('a.m.', 'am')
+        .replace('p.m.', 'pm');
+
+    return `${day}, ${time}`;
+}
+
+/** A datetime-local input value ("2026-10-29T07:00") in a time zone. */
+export function toLocalInputIn(value: string | null, timeZone: string): string {
+    if (!value) {
+        return '';
+    }
+
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+    }).formatToParts(new Date(value));
+    const get = (type: string) => parts.find((p) => p.type === type)?.value;
+
+    return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
+}

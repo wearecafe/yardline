@@ -53,7 +53,8 @@ class OrderController extends Controller
     public function create(Request $request): Response
     {
         return Inertia::render('orders/create', [
-            'type' => $request->input('type') === 'rental' ? 'rental' : 'sale',
+            // Rentals have their own module; goods orders are always sales.
+            'type' => 'sale',
             'organizationId' => $request->integer('organization_id') ?: null,
             'organizations' => Organization::query()->orderBy('name')->get(['id', 'name', 'account_number']),
             'customers' => Customer::query()->orderBy('first_name')->get(['id', 'organization_id', 'first_name', 'last_name', 'phone']),
@@ -161,7 +162,7 @@ class OrderController extends Controller
         $isRental = $type === OrderType::Rental;
 
         $data = $request->validate([
-            'type' => [$order ? 'prohibited' : 'required', Rule::enum(OrderType::class)],
+            'type' => [$order ? 'prohibited' : 'required', Rule::in([OrderType::Sale->value])],
             'organization_id' => ['nullable', TenantRule::exists('organizations')],
             'customer_id' => ['nullable', TenantRule::exists('customers')],
             'location_id' => ['required', TenantRule::exists('locations')],

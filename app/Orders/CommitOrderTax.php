@@ -11,11 +11,11 @@ class CommitOrderTax
 
     public function handle(Order $order): void
     {
-        if ($order->tax_transaction_ref !== null) {
+        if ($order->tax_transaction_ref !== null || $order->tax_calculation_ref === null) {
             return;
         }
 
-        $reference = $this->tax->commit($order);
+        $reference = $this->tax->commit($order->tax_calculation_ref, $order->number);
 
         if ($reference !== null) {
             $order->forceFill(['tax_transaction_ref' => $reference])->save();

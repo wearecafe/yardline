@@ -45,6 +45,25 @@ return [
         'driver' => env('YARDLINE_PAYMENTS_DRIVER', 'fake'),
     ],
 
+    /*
+    | Private files: inspection photos, signatures, ID and insurance scans,
+    | agreement PDFs. On Laravel Cloud, attach a bucket and this follows it.
+    */
+    'files_disk' => env('YARDLINE_FILES_DISK', env('FILESYSTEM_DISK', 'local')),
+
+    /*
+    | Text messages for rental reminders and signing links. "log" writes them
+    | to the log; "twilio" sends them.
+    */
+    'sms' => [
+        'driver' => env('YARDLINE_SMS_DRIVER', 'log'),
+        'twilio' => [
+            'sid' => env('TWILIO_SID'),
+            'token' => env('TWILIO_TOKEN'),
+            'from' => env('TWILIO_FROM'),
+        ],
+    ],
+
     'shopify' => [
         'api_version' => env('SHOPIFY_API_VERSION', '2026-07'),
     ],

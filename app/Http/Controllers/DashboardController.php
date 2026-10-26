@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
+use App\Enums\RentalStatus;
 use App\Models\Order;
+use App\Models\Rental;
 use App\Models\StockLevel;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,7 +20,7 @@ class DashboardController extends Controller
             'stats' => [
                 'drafts' => Order::query()->where('status', OrderStatus::Draft->value)->count(),
                 'to_release' => Order::query()->where('status', OrderStatus::Confirmed->value)->count(),
-                'rentals_out' => Order::query()->where('type', 'rental')->where('status', OrderStatus::Fulfilled->value)->count(),
+                'rentals_out' => Rental::query()->where('status', RentalStatus::Out->value)->count(),
                 'sales_today_cents' => (int) Order::query()
                     ->whereIn('status', [OrderStatus::Confirmed->value, OrderStatus::Fulfilled->value])
                     ->where('confirmed_at', '>=', $today)

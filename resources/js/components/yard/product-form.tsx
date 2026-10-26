@@ -31,7 +31,52 @@ export function ProductForm({
         tax_code: product?.tax_code ?? '',
         track_inventory: product?.track_inventory ?? true,
         is_active: product?.is_active ?? true,
+        rate_hour: centsToInput(product?.rate_hour_cents),
+        rate_half_day: centsToInput(product?.rate_half_day_cents),
+        rate_weekend: centsToInput(product?.rate_weekend_cents),
+        rate_week: centsToInput(product?.rate_week_cents),
+        rate_month: centsToInput(product?.rate_month_cents),
+        minimum_charge: centsToInput(product?.minimum_charge_cents || null),
+        fuel_charge: centsToInput(product?.fuel_charge_cents || null),
+        cleaning_fee: centsToInput(product?.cleaning_fee_cents || null),
+        service_interval_hours: product?.service_interval_hours
+            ? String(product.service_interval_hours)
+            : '',
+        service_interval_days: product?.service_interval_days
+            ? String(product.service_interval_days)
+            : '',
+        use_case: product?.use_case ?? '',
+        bookable_online: product?.bookable_online ?? false,
     });
+
+    type MoneyKey =
+        | 'rate_hour'
+        | 'rate_half_day'
+        | 'rate_weekend'
+        | 'rate_week'
+        | 'rate_month'
+        | 'minimum_charge'
+        | 'fuel_charge'
+        | 'cleaning_fee'
+        | 'service_interval_hours'
+        | 'service_interval_days';
+
+    const moneyField = (key: MoneyKey, label: string, hint?: string) => (
+        <Field
+            key={key}
+            label={label}
+            htmlFor={key}
+            error={form.errors[key]}
+            hint={hint}
+        >
+            <Input
+                id={key}
+                inputMode="decimal"
+                value={form.data[key]}
+                onChange={(e) => form.setData(key, e.target.value)}
+            />
+        </Field>
+    );
 
     const isRental = form.data.kind === 'rental';
 
@@ -149,7 +194,7 @@ export function ProductForm({
             <Section title="Price">
                 <div className="grid gap-4 sm:grid-cols-3">
                     <Field
-                        label={isRental ? 'Rate' : 'List price'}
+                        label={isRental ? 'Day rate' : 'List price'}
                         htmlFor="price"
                         error={form.errors.price}
                         hint={
@@ -170,25 +215,6 @@ export function ProductForm({
                     </Field>
                     {isRental ? (
                         <>
-                            <Field
-                                label="Per"
-                                htmlFor="rental_period"
-                                error={form.errors.rental_period}
-                            >
-                                <NativeSelect
-                                    id="rental_period"
-                                    value={form.data.rental_period}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'rental_period',
-                                            e.target.value as 'day' | 'week',
-                                        )
-                                    }
-                                >
-                                    <option value="day">Day</option>
-                                    <option value="week">Week</option>
-                                </NativeSelect>
-                            </Field>
                             <Field
                                 label="Deposit"
                                 htmlFor="deposit"
@@ -240,6 +266,76 @@ export function ProductForm({
                     />
                 </Field>
             </Section>
+
+            {isRental && (
+                <Section title="Rental rates and fleet">
+                    <p className="mb-4 text-sm text-muted-foreground">
+                        Leave a rate blank if you don't offer it. Rentals are
+                        priced at the cheapest mix of the rates you set, so a
+                        week beats seven days.
+                    </p>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        {moneyField('rate_hour', 'Hourly')}
+                        {moneyField(
+                            'rate_half_day',
+                            'Half day',
+                            'Up to 4 hours.',
+                        )}
+                        {moneyField(
+                            'rate_weekend',
+                            'Weekend',
+                            'Saturday pickup to Monday morning.',
+                        )}
+                        {moneyField('rate_week', 'Week')}
+                        {moneyField('rate_month', 'Month', '28 days.')}
+                        {moneyField('minimum_charge', 'Minimum charge')}
+                        {moneyField(
+                            'fuel_charge',
+                            'Refuel charge',
+                            'If it comes back low.',
+                        )}
+                        {moneyField(
+                            'cleaning_fee',
+                            'Cleaning fee',
+                            'If it comes back dirty.',
+                        )}
+                    </div>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                        {moneyField(
+                            'service_interval_hours',
+                            'Service every (hours)',
+                        )}
+                        {moneyField('service_interval_days', 'or every (days)')}
+                    </div>
+                    <Field
+                        label="What it's for"
+                        htmlFor="use_case"
+                        error={form.errors.use_case}
+                        hint="One line on the public booking page."
+                        className="mt-4"
+                    >
+                        <Input
+                            id="use_case"
+                            value={form.data.use_case}
+                            placeholder="Compacting base for patios and walkways"
+                            onChange={(e) =>
+                                form.setData('use_case', e.target.value)
+                            }
+                        />
+                    </Field>
+                    <div className="mt-4">
+                        <Checkbox
+                            id="bookable_online"
+                            label="Bookable online"
+                            hint="Show it on your public booking page."
+                            checked={form.data.bookable_online}
+                            onChange={(checked) =>
+                                form.setData('bookable_online', checked)
+                            }
+                        />
+                    </div>
+                </Section>
+            )}
 
             <Section title="Stock and selling">
                 <div className="grid gap-4">

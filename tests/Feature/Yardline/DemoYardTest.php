@@ -4,6 +4,7 @@ namespace Tests\Feature\Yardline;
 
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Rental;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Payments\CheckoutLinks;
@@ -139,6 +140,10 @@ class DemoYardTest extends TestCase
         $this->assertDatabaseMissing('tenants', ['id' => $oldDemoId]);
         $this->assertSame(0, Order::query()->withoutGlobalScopes()->where('tenant_id', $oldDemoId)->count());
         $this->assertGreaterThan(0, Order::query()->withoutGlobalScopes()->where('tenant_id', $newDemoId)->count());
+        $this->assertSame(
+            ['out', 'quote', 'reserved', 'returned'],
+            Rental::query()->withoutGlobalScopes()->where('tenant_id', $newDemoId)->distinct()->orderBy('status')->pluck('status')->map(fn ($status) => $status->value)->all(),
+        );
 
         $this->assertDatabaseHas('products', ['id' => $realProduct->id, 'tenant_id' => $other->id]);
     }

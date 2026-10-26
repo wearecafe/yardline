@@ -2,18 +2,18 @@
 
 namespace App\Tax;
 
-use App\Models\Order;
-
 interface TaxCalculator
 {
     /**
-     * Calculate tax for an order's lines. The order must have lines loaded.
+     * @throws TaxCalculationFailed
      */
-    public function calculate(Order $order): TaxResult;
+    public function calculate(TaxRequest $request): TaxResult;
 
     /**
-     * Record the calculated tax as a reportable transaction (point of sale).
-     * Returns the provider's transaction reference, if any.
+     * Record a calculation as a reportable sale. Returns the provider's
+     * transaction reference, if any.
+     *
+     * @throws TaxCalculationFailed
      */
-    public function commit(Order $order): ?string;
+    public function commit(string $calculationReference, string $saleReference): ?string;
 }

@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Stock overview</title>
+        <script src="./support.js"></script>
+    </head>
+    <body>
+        <x-dc>
+            <helmet>
+                <link
+                    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap"
+                    rel="stylesheet"
+                />
+                <style>
+                    body {
+                        margin: 0;
+                    }
+                    a {
+                        color: #c2410c;
+                    }
+                    a:hover {
+                        color: #9a3412;
+                    }
+                </style>
+            </helmet>
+            <div
+                style="
+                    min-height: 900px;
+                    display: flex;
+                    flex-wrap: wrap;
+                    background: #f5f3ef;
+                    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+                    color: #1c1917;
+                    font-size: 14px;
+                "
+            >
+                <nav
+                    aria-label="Main"
+                    style="
+                        flex: 0 1 232px;
+                        background: #1c1917;
+                        color: #d6d3d1;
+                        padding: 20px 14px;
+                        box-sizing: border-box;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                    "
+                >
+                    <div
+                        style="
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                            padding: 4px 10px 20px;
+                        "
+                    >
+                        <div
+                            style="
+                                width: 28px;
+                                height: 28px;
+                                border-radius: 6px;
+                                background: #c2410c;
+                            "
+                        ></div>
+                        <div
+                            style="
+                                font-weight: 700;
+                                font-size: 17px;
+                                color: #fafaf9;
+                            "
+                        >
+                            Yardline
+                        </div>
+                    </div>
+                    <div
+                        style="
+                            font-size: 11px;
+                            letter-spacing: 0.08em;
+                            text-transform: uppercase;
+                            color: #a8a29e;
+                            padding: 8px 10px 4px;
+                        "
+                    >
+                        Supply yard
+                    </div>
+                    <a
+                        href="Main.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Products</a
+                    >
+                    <a
+                        href="Stock.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            background: #292524;
+                            color: #fafaf9;
+                            text-decoration: none;
+                            font-weight: 600;
+                        "
+                        >Stock</a
+                    >
+                    <a
+                        href="Orders.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Orders and picking</a
+                    >
+                    <a
+                        href="Dispatch.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Dispatch</a
+                    >
+                    <a
+                        href="#"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Purchasing</a
+                    >
+                    <div
+                        style="
+                            font-size: 11px;
+                            letter-spacing: 0.08em;
+                            text-transform: uppercase;
+                            color: #a8a29e;
+                            padding: 16px 10px 4px;
+                        "
+                    >
+                        Rental
+                    </div>
+                    <a
+                        href="Fleet.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Fleet</a
+                    >
+                    <a
+                        href="Calendar.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Calendar</a
+                    >
+                </nav>
+                <main
+                    style="
+                        flex: 999 1 560px;
+                        min-width: 0;
+                        padding: 28px 32px;
+                        box-sizing: border-box;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 20px;
+                    "
+                >
+                    <div
+                        style="
+                            display: flex;
+                            flex-wrap: wrap;
+                            align-items: flex-end;
+                            justify-content: space-between;
+                            gap: 16px;
+                        "
+                    >
+                        <h1
+                            style="margin: 0; font-size: 28px; font-weight: 700"
+                        >
+                            Stock
+                        </h1>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px">
+                            <button
+                                type="button"
+                                style="
+                                    height: 44px;
+                                    padding: 0 16px;
+                                    border-radius: 8px;
+                                    border: 1px solid #d6d3d1;
+                                    background: #ffffff;
+                                    font: inherit;
+                                    font-weight: 500;
+                                    color: #1c1917;
+                                "
+                            >
+                                Start cycle count
+                            </button>
+                            <button
+                                type="button"
+                                style="
+                                    height: 44px;
+                                    padding: 0 16px;
+                                    border-radius: 8px;
+                                    border: none;
+                                    background: #c2410c;
+                                    color: #ffffff;
+                                    font: inherit;
+                                    font-weight: 600;
+                                "
+                            >
+                                Receive delivery
+                            </button>
+                        </div>
+                    </div>
+                    <div
+                        style="
+                            display: grid;
+                            grid-template-columns: repeat(
+                                auto-fit,
+                                minmax(200px, 1fr)
+                            );
+                            gap: 16px;
+                        "
+                    >
+                        <div
+                            style="
+                                background: #ffffff;
+                                border: 1px solid #e7e5e4;
+                                border-radius: 10px;
+                                padding: 16px;
+                            "
+                        >
+                            <div style="color: #57534e">
+                                Products below reorder point
+                            </div>
+                            <div
+                                style="
+                                    font-family: 'IBM Plex Mono', monospace;
+                                    font-size: 28px;
+                                    margin-top: 6px;
+                                    color: #b91c1c;
+                                "
+                            >
+                                7
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                background: #ffffff;
+                                border: 1px solid #e7e5e4;
+                                border-radius: 10px;
+                                padding: 16px;
+                            "
+                        >
+                            <div style="color: #57534e">
+                                Pallets out on deposit
+                            </div>
+                            <div
+                                style="
+                                    font-family: 'IBM Plex Mono', monospace;
+                                    font-size: 28px;
+                                    margin-top: 6px;
+                                "
+                            >
+                                312
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                background: #ffffff;
+                                border: 1px solid #e7e5e4;
+                                border-radius: 10px;
+                                padding: 16px;
+                            "
+                        >
+                            <div style="color: #57534e">
+                                Purchase orders arriving this week
+                            </div>
+                            <div
+                                style="
+                                    font-family: 'IBM Plex Mono', monospace;
+                                    font-size: 28px;
+                                    margin-top: 6px;
+                                "
+                            >
+                                5
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                background: #ffffff;
+                                border: 1px solid #e7e5e4;
+                                border-radius: 10px;
+                                padding: 16px;
+                            "
+                        >
+                            <div style="color: #57534e">
+                                Count variance, last 30 days
+                            </div>
+                            <div
+                                style="
+                                    font-family: 'IBM Plex Mono', monospace;
+                                    font-size: 28px;
+                                    margin-top: 6px;
+                                "
+                            >
+                                −1.8%
+                            </div>
+                        </div>
+                    </div>
+                    <section
+                        style="
+                            background: #ffffff;
+                            border: 1px solid #e7e5e4;
+                            border-radius: 10px;
+                        "
+                    >
+                        <div
+                            style="
+                                display: flex;
+                                flex-wrap: wrap;
+                                gap: 10px;
+                                padding: 16px;
+                                border-bottom: 1px solid #e7e5e4;
+                                align-items: center;
+                            "
+                        >
+                            <label
+                                style="
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 4px;
+                                    flex: 1 1 240px;
+                                "
+                            >
+                                <span style="font-size: 12px; color: #57534e"
+                                    >Search</span
+                                >
+                                <input
+                                    type="search"
+                                    placeholder="Product, SKU or colour"
+                                    style="
+                                        height: 40px;
+                                        padding: 0 12px;
+                                        border: 1px solid #d6d3d1;
+                                        border-radius: 8px;
+                                        font: inherit;
+                                    "
+                                />
+                            </label>
+                            <label
+                                style="
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 4px;
+                                "
+                            >
+                                <span style="font-size: 12px; color: #57534e"
+                                    >Location</span
+                                >
+                                <select
+                                    style="
+                                        height: 40px;
+                                        padding: 0 10px;
+                                        border: 1px solid #d6d3d1;
+                                        border-radius: 8px;
+                                        font: inherit;
+                                        background: #ffffff;
+                                    "
+                                >
+                                    <option>All yard locations</option>
+                                </select>
+                            </label>
+                            <label
+                                style="
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 4px;
+                                "
+                            >
+                                <span style="font-size: 12px; color: #57534e"
+                                    >Category</span
+                                >
+                                <select
+                                    style="
+                                        height: 40px;
+                                        padding: 0 10px;
+                                        border: 1px solid #d6d3d1;
+                                        border-radius: 8px;
+                                        font: inherit;
+                                        background: #ffffff;
+                                    "
+                                >
+                                    <option>All categories</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div style="overflow-x: auto">
+                            <table
+                                style="
+                                    width: 100%;
+                                    border-collapse: collapse;
+                                    min-width: 860px;
+                                "
+                            >
+                                <thead>
+                                    <tr
+                                        style="
+                                            text-align: left;
+                                            color: #57534e;
+                                            font-size: 12px;
+                                            text-transform: uppercase;
+                                            letter-spacing: 0.04em;
+                                        "
+                                    >
+                                        <th
+                                            style="
+                                                padding: 10px 16px;
+                                                border-bottom: 1px solid #e7e5e4;
+                                            "
+                                        >
+                                            Product
+                                        </th>
+                                        <th
+                                            style="
+                                                padding: 10px 16px;
+                                                border-bottom: 1px solid #e7e5e4;
+                                            "
+                                        >
+                                            Location
+                                        </th>
+                                        <th
+                                            style="
+                                                padding: 10px 16px;
+                                                border-bottom: 1px solid #e7e5e4;
+                                            "
+                                        >
+                                            Lot / colour run
+                                        </th>
+                                        <th
+                                            style="
+                                                padding: 10px 16px;
+                                                border-bottom: 1px solid #e7e5e4;
+                                                text-align: right;
+                                            "
+                                        >
+                                            On hand
+                                        </th>
+                                        <th
+                                            style="
+                                                padding: 10px 16px;
+                                                border-bottom: 1px solid #e7e5e4;
+                                                text-align: right;
+                                            "
+                                        >
+                                            Committed
+                                        </th>
+                                        <th
+                                            style="
+                                                padding: 10px 16px;
+                                                border-bottom: 1px solid #e7e5e4;
+                                                text-align: right;
+                                            "
+                                        >
+                                            Available
+                                        </th>
+                                        <th
+                                            style="
+                                                padding: 10px 16px;
+                                                border-bottom: 1px solid #e7e5e4;
+                                            "
+                                        >
+                                            Status
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <sc-for
+                                        list="{{rows}}"
+                                        as="r"
+                                        hint-placeholder-count="8"
+                                    >
+                                        <tr>
+                                            <td
+                                                style="
+                                                    padding: 12px 16px;
+                                                    border-bottom: 1px solid
+                                                        #f5f5f4;
+                                                    font-weight: 600;
+                                                "
+                                            >
+                                                {{r.name}}
+                                            </td>
+                                            <td
+                                                style="
+                                                    padding: 12px 16px;
+                                                    border-bottom: 1px solid
+                                                        #f5f5f4;
+                                                    color: #57534e;
+                                                "
+                                            >
+                                                {{r.loc}}
+                                            </td>
+                                            <td
+                                                style="
+                                                    padding: 12px 16px;
+                                                    border-bottom: 1px solid
+                                                        #f5f5f4;
+                                                    color: #57534e;
+                                                "
+                                            >
+                                                {{r.lot}}
+                                            </td>
+                                            <td
+                                                style="
+                                                    padding: 12px 16px;
+                                                    border-bottom: 1px solid
+                                                        #f5f5f4;
+                                                    text-align: right;
+                                                    font-family:
+                                                        'IBM Plex Mono',
+                                                        monospace;
+                                                "
+                                            >
+                                                {{r.onhand}}
+                                            </td>
+                                            <td
+                                                style="
+                                                    padding: 12px 16px;
+                                                    border-bottom: 1px solid
+                                                        #f5f5f4;
+                                                    text-align: right;
+                                                    font-family:
+                                                        'IBM Plex Mono',
+                                                        monospace;
+                                                    color: #57534e;
+                                                "
+                                            >
+                                                {{r.committed}}
+                                            </td>
+                                            <td
+                                                style="
+                                                    padding: 12px 16px;
+                                                    border-bottom: 1px solid
+                                                        #f5f5f4;
+                                                    text-align: right;
+                                                    font-family:
+                                                        'IBM Plex Mono',
+                                                        monospace;
+                                                "
+                                            >
+                                                {{r.avail}}
+                                            </td>
+                                            <td
+                                                style="
+                                                    padding: 12px 16px;
+                                                    border-bottom: 1px solid
+                                                        #f5f5f4;
+                                                "
+                                            >
+                                                <sc-if
+                                                    value="{{r.low}}"
+                                                    hint-placeholder-val="{{false}}"
+                                                    ><span
+                                                        style="
+                                                            padding: 4px 8px;
+                                                            border-radius: 999px;
+                                                            background: #fee2e2;
+                                                            color: #991b1b;
+                                                            font-size: 12px;
+                                                            font-weight: 600;
+                                                        "
+                                                        >Reorder</span
+                                                    ></sc-if
+                                                >
+                                                <sc-if
+                                                    value="{{r.ok}}"
+                                                    hint-placeholder-val="{{true}}"
+                                                    ><span
+                                                        style="
+                                                            padding: 4px 8px;
+                                                            border-radius: 999px;
+                                                            background: #f5f5f4;
+                                                            color: #44403c;
+                                                            font-size: 12px;
+                                                            font-weight: 600;
+                                                        "
+                                                        >OK</span
+                                                    ></sc-if
+                                                >
+                                            </td>
+                                        </tr>
+                                    </sc-for>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </main>
+            </div>
+        </x-dc>
+        <script
+            type="text/x-dc"
+            data-dc-script
+            data-props='{"$preview":{"width":1440,"height":900}}'
+        >
+            class Component extends DCLogic {
+            renderVals() {
+            const rows = [
+            { name: 'Limestone screenings', loc: 'Bay 4', lot: '—', onhand: '184.6 t', committed: '21.5 t', avail: '163.1 t', low: false },
+            { name: 'Triple mix soil', loc: 'Bay 1', lot: '—', onhand: '42.0 yd', committed: '18.0 yd', avail: '24.0 yd', low: true },
+            { name: 'Black mulch', loc: 'Bay 2', lot: '—', onhand: '96.0 yd', committed: '12.5 yd', avail: '83.5 yd', low: false },
+            { name: 'Paver 60 mm, Charcoal', loc: 'Row C', lot: 'Run 2611-B', onhand: '38 pallets', committed: '14 pallets', avail: '24 pallets', low: false },
+            { name: 'Paver 60 mm, Charcoal', loc: 'Row C', lot: 'Run 2609-A', onhand: '6 pallets', committed: '0', avail: '6 pallets', low: false },
+            { name: 'Retaining wall block, Sandstone', loc: 'Row F', lot: 'Run 2604-C', onhand: '9 pallets', committed: '8 pallets', avail: '1 pallet', low: true },
+            { name: 'Polymeric sand, grey', loc: 'Aisle B', lot: '—', onhand: '220 bags', committed: '40 bags', avail: '180 bags', low: false },
+            { name: 'Type S mortar', loc: 'Aisle A', lot: '—', onhand: '64 bags', committed: '30 bags', avail: '34 bags', low: true }
+            ];
+            return { rows: rows.map(r => ({ ...r, ok: !r.low })) };
+            }
+            }
+        </script>
+    </body>
+</html>

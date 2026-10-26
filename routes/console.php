@@ -10,3 +10,6 @@ Schedule::command('yardline:demo:reset --force')
     ->timezone('America/Toronto')
     ->when(fn () => Demo::enabled())
     ->withoutOverlapping();
+
+// Rental pickup, return and overdue reminders, by email and text.
+Schedule::command('yardline:rentals:remind')->everyFifteenMinutes()->withoutOverlapping();

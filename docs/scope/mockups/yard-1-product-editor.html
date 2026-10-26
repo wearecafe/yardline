@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Product editor</title>
+        <script src="./support.js"></script>
+    </head>
+    <body>
+        <x-dc>
+            <helmet>
+                <link
+                    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap"
+                    rel="stylesheet"
+                />
+                <style>
+                    body {
+                        margin: 0;
+                    }
+                    a {
+                        color: #c2410c;
+                    }
+                    a:hover {
+                        color: #9a3412;
+                    }
+                </style>
+            </helmet>
+            <div
+                style="
+                    min-height: 960px;
+                    display: flex;
+                    flex-wrap: wrap;
+                    background: #f5f3ef;
+                    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+                    color: #1c1917;
+                    font-size: 14px;
+                "
+            >
+                <nav
+                    aria-label="Main"
+                    style="
+                        flex: 0 1 232px;
+                        background: #1c1917;
+                        color: #d6d3d1;
+                        padding: 20px 14px;
+                        box-sizing: border-box;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                    "
+                >
+                    <div
+                        style="
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                            padding: 4px 10px 20px;
+                        "
+                    >
+                        <div
+                            style="
+                                width: 28px;
+                                height: 28px;
+                                border-radius: 6px;
+                                background: #c2410c;
+                            "
+                        ></div>
+                        <div
+                            style="
+                                font-weight: 700;
+                                font-size: 17px;
+                                color: #fafaf9;
+                            "
+                        >
+                            Yardline
+                        </div>
+                    </div>
+                    <div
+                        style="
+                            font-size: 11px;
+                            letter-spacing: 0.08em;
+                            text-transform: uppercase;
+                            color: #a8a29e;
+                            padding: 8px 10px 4px;
+                        "
+                    >
+                        Supply yard
+                    </div>
+                    <a
+                        href="Main.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            background: #292524;
+                            color: #fafaf9;
+                            text-decoration: none;
+                            font-weight: 600;
+                        "
+                        >Products</a
+                    >
+                    <a
+                        href="Stock.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Stock</a
+                    >
+                    <a
+                        href="Orders.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Orders and picking</a
+                    >
+                    <a
+                        href="Dispatch.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Dispatch</a
+                    >
+                    <a
+                        href="#"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Purchasing</a
+                    >
+                    <div
+                        style="
+                            font-size: 11px;
+                            letter-spacing: 0.08em;
+                            text-transform: uppercase;
+                            color: #a8a29e;
+                            padding: 16px 10px 4px;
+                        "
+                    >
+                        Rental
+                    </div>
+                    <a
+                        href="Fleet.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Fleet</a
+                    >
+                    <a
+                        href="Calendar.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Calendar</a
+                    >
+                    <div
+                        style="
+                            margin-top: auto;
+                            padding: 12px 10px;
+                            border-top: 1px solid #44403c;
+                            font-size: 12px;
+                            color: #a8a29e;
+                        "
+                    >
+                        Shopify and QuickBooks Online connected
+                    </div>
+                </nav>
+                <main
+                    style="
+                        flex: 999 1 560px;
+                        min-width: 0;
+                        padding: 28px 32px;
+                        box-sizing: border-box;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 20px;
+                    "
+                >
+                    <div
+                        style="
+                            display: flex;
+                            flex-wrap: wrap;
+                            align-items: flex-end;
+                            justify-content: space-between;
+                            gap: 16px;
+                        "
+                    >
+                        <div>
+                            <div style="font-size: 13px; color: #57534e">
+                                Products / Aggregates
+                            </div>
+                            <h1
+                                style="
+                                    margin: 4px 0 0;
+                                    font-size: 28px;
+                                    font-weight: 700;
+                                "
+                            >
+                                Limestone screenings
+                            </h1>
+                        </div>
+                        <div style="display: flex; gap: 10px">
+                            <button
+                                type="button"
+                                style="
+                                    height: 44px;
+                                    padding: 0 18px;
+                                    border-radius: 8px;
+                                    border: 1px solid #d6d3d1;
+                                    background: #ffffff;
+                                    font: inherit;
+                                    font-weight: 500;
+                                    color: #1c1917;
+                                "
+                            >
+                                Discard
+                            </button>
+                            <button
+                                type="button"
+                                style="
+                                    height: 44px;
+                                    padding: 0 18px;
+                                    border-radius: 8px;
+                                    border: none;
+                                    background: #c2410c;
+                                    color: #ffffff;
+                                    font: inherit;
+                                    font-weight: 600;
+                                "
+                            >
+                                Save and sync to Shopify
+                            </button>
+                        </div>
+                    </div>
+                    <div
+                        style="
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 20px;
+                            align-items: flex-start;
+                        "
+                    >
+                        <div
+                            style="
+                                flex: 999 1 560px;
+                                min-width: 0;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 20px;
+                            "
+                        >
+                            <section
+                                style="
+                                    background: #ffffff;
+                                    border: 1px solid #e7e5e4;
+                                    border-radius: 10px;
+                                    padding: 20px;
+                                "
+                            >
+                                <h2 style="margin: 0 0 4px; font-size: 16px">
+                                    Selling units
+                                </h2>
+                                <p style="margin: 0 0 16px; color: #57534e">
+                                    One product, many ways to sell it. Stock is
+                                    counted in the base unit; every sale
+                                    converts back to it.
+                                </p>
+                                <div style="overflow-x: auto">
+                                    <table
+                                        style="
+                                            width: 100%;
+                                            border-collapse: collapse;
+                                            min-width: 560px;
+                                        "
+                                    >
+                                        <thead>
+                                            <tr
+                                                style="
+                                                    text-align: left;
+                                                    color: #57534e;
+                                                    font-size: 12px;
+                                                    text-transform: uppercase;
+                                                    letter-spacing: 0.04em;
+                                                "
+                                            >
+                                                <th
+                                                    style="
+                                                        padding: 8px 10px;
+                                                        border-bottom: 1px solid
+                                                            #e7e5e4;
+                                                    "
+                                                >
+                                                    Unit
+                                                </th>
+                                                <th
+                                                    style="
+                                                        padding: 8px 10px;
+                                                        border-bottom: 1px solid
+                                                            #e7e5e4;
+                                                    "
+                                                >
+                                                    Equals
+                                                </th>
+                                                <th
+                                                    style="
+                                                        padding: 8px 10px;
+                                                        border-bottom: 1px solid
+                                                            #e7e5e4;
+                                                    "
+                                                >
+                                                    Shopify variant
+                                                </th>
+                                                <th
+                                                    style="
+                                                        padding: 8px 10px;
+                                                        border-bottom: 1px solid
+                                                            #e7e5e4;
+                                                    "
+                                                >
+                                                    How it's measured
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <sc-for
+                                                list="{{units}}"
+                                                as="u"
+                                                hint-placeholder-count="5"
+                                            >
+                                                <tr>
+                                                    <td
+                                                        style="
+                                                            padding: 12px 10px;
+                                                            border-bottom: 1px
+                                                                solid #f5f5f4;
+                                                            font-weight: 600;
+                                                        "
+                                                    >
+                                                        {{u.name}}
+                                                    </td>
+                                                    <td
+                                                        style="
+                                                            padding: 12px 10px;
+                                                            border-bottom: 1px
+                                                                solid #f5f5f4;
+                                                            font-family:
+                                                                'IBM Plex Mono',
+                                                                monospace;
+                                                        "
+                                                    >
+                                                        {{u.equals}}
+                                                    </td>
+                                                    <td
+                                                        style="
+                                                            padding: 12px 10px;
+                                                            border-bottom: 1px
+                                                                solid #f5f5f4;
+                                                            color: #57534e;
+                                                        "
+                                                    >
+                                                        {{u.variant}}
+                                                    </td>
+                                                    <td
+                                                        style="
+                                                            padding: 12px 10px;
+                                                            border-bottom: 1px
+                                                                solid #f5f5f4;
+                                                            color: #57534e;
+                                                        "
+                                                    >
+                                                        {{u.measure}}
+                                                    </td>
+                                                </tr>
+                                            </sc-for>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button
+                                    type="button"
+                                    style="
+                                        margin-top: 12px;
+                                        height: 44px;
+                                        padding: 0 14px;
+                                        border-radius: 8px;
+                                        border: 1px dashed #a8a29e;
+                                        background: transparent;
+                                        font: inherit;
+                                        color: #44403c;
+                                    "
+                                >
+                                    Add selling unit
+                                </button>
+                            </section>
+                            <section
+                                style="
+                                    background: #ffffff;
+                                    border: 1px solid #e7e5e4;
+                                    border-radius: 10px;
+                                    padding: 20px;
+                                "
+                            >
+                                <div
+                                    style="
+                                        display: flex;
+                                        flex-wrap: wrap;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                        gap: 12px;
+                                        margin-bottom: 16px;
+                                    "
+                                >
+                                    <div>
+                                        <h2
+                                            style="
+                                                margin: 0 0 4px;
+                                                font-size: 16px;
+                                            "
+                                        >
+                                            Price tiers
+                                        </h2>
+                                        <p style="margin: 0; color: #57534e">
+                                            Pushed to Shopify B2B catalogues, so
+                                            the till charges each customer their
+                                            price.
+                                        </p>
+                                    </div>
+                                    <span
+                                        style="
+                                            padding: 6px 10px;
+                                            border-radius: 999px;
+                                            background: #dcfce7;
+                                            color: #166534;
+                                            font-size: 12px;
+                                            font-weight: 600;
+                                        "
+                                        >In sync · 2 min ago</span
+                                    >
+                                </div>
+                                <div style="overflow-x: auto">
+                                    <table
+                                        style="
+                                            width: 100%;
+                                            border-collapse: collapse;
+                                            min-width: 560px;
+                                        "
+                                    >
+                                        <thead>
+                                            <tr
+                                                style="
+                                                    text-align: left;
+                                                    color: #57534e;
+                                                    font-size: 12px;
+                                                    text-transform: uppercase;
+                                                    letter-spacing: 0.04em;
+                                                "
+                                            >
+                                                <th
+                                                    style="
+                                                        padding: 8px 10px;
+                                                        border-bottom: 1px solid
+                                                            #e7e5e4;
+                                                    "
+                                                >
+                                                    Unit
+                                                </th>
+                                                <th
+                                                    style="
+                                                        padding: 8px 10px;
+                                                        border-bottom: 1px solid
+                                                            #e7e5e4;
+                                                    "
+                                                >
+                                                    Retail
+                                                </th>
+                                                <th
+                                                    style="
+                                                        padding: 8px 10px;
+                                                        border-bottom: 1px solid
+                                                            #e7e5e4;
+                                                    "
+                                                >
+                                                    Contractor
+                                                </th>
+                                                <th
+                                                    style="
+                                                        padding: 8px 10px;
+                                                        border-bottom: 1px solid
+                                                            #e7e5e4;
+                                                    "
+                                                >
+                                                    Wholesale
+                                                </th>
+                                                <th
+                                                    style="
+                                                        padding: 8px 10px;
+                                                        border-bottom: 1px solid
+                                                            #e7e5e4;
+                                                    "
+                                                >
+                                                    Margin at contractor
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <sc-for
+                                                list="{{prices}}"
+                                                as="p"
+                                                hint-placeholder-count="4"
+                                            >
+                                                <tr>
+                                                    <td
+                                                        style="
+                                                            padding: 12px 10px;
+                                                            border-bottom: 1px
+                                                                solid #f5f5f4;
+                                                            font-weight: 600;
+                                                        "
+                                                    >
+                                                        {{p.unit}}
+                                                    </td>
+                                                    <td
+                                                        style="
+                                                            padding: 12px 10px;
+                                                            border-bottom: 1px
+                                                                solid #f5f5f4;
+                                                            font-family:
+                                                                'IBM Plex Mono',
+                                                                monospace;
+                                                        "
+                                                    >
+                                                        {{p.retail}}
+                                                    </td>
+                                                    <td
+                                                        style="
+                                                            padding: 12px 10px;
+                                                            border-bottom: 1px
+                                                                solid #f5f5f4;
+                                                            font-family:
+                                                                'IBM Plex Mono',
+                                                                monospace;
+                                                        "
+                                                    >
+                                                        {{p.contractor}}
+                                                    </td>
+                                                    <td
+                                                        style="
+                                                            padding: 12px 10px;
+                                                            border-bottom: 1px
+                                                                solid #f5f5f4;
+                                                            font-family:
+                                                                'IBM Plex Mono',
+                                                                monospace;
+                                                        "
+                                                    >
+                                                        {{p.wholesale}}
+                                                    </td>
+                                                    <td
+                                                        style="
+                                                            padding: 12px 10px;
+                                                            border-bottom: 1px
+                                                                solid #f5f5f4;
+                                                            color: #57534e;
+                                                        "
+                                                    >
+                                                        {{p.margin}}
+                                                    </td>
+                                                </tr>
+                                            </sc-for>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p
+                                    style="
+                                        margin: 12px 0 0;
+                                        color: #57534e;
+                                        font-size: 13px;
+                                    "
+                                >
+                                    Customer-specific prices: 3 contractors have
+                                    their own price on this product.
+                                    <a href="#">View overrides</a>
+                                </p>
+                            </section>
+                        </div>
+                        <aside
+                            style="
+                                flex: 1 1 300px;
+                                min-width: 0;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 20px;
+                            "
+                        >
+                            <section
+                                style="
+                                    background: #ffffff;
+                                    border: 1px solid #e7e5e4;
+                                    border-radius: 10px;
+                                    padding: 20px;
+                                "
+                            >
+                                <h2 style="margin: 0 0 12px; font-size: 16px">
+                                    On hand
+                                </h2>
+                                <div
+                                    style="
+                                        font-family: 'IBM Plex Mono', monospace;
+                                        font-size: 32px;
+                                        font-weight: 500;
+                                    "
+                                >
+                                    184.6 t
+                                </div>
+                                <div
+                                    style="color: #57534e; margin-bottom: 16px"
+                                >
+                                    about 137 cu yd · reorder at 60 t
+                                </div>
+                                <div
+                                    style="
+                                        display: flex;
+                                        flex-direction: column;
+                                        gap: 10px;
+                                    "
+                                >
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                        "
+                                    >
+                                        <span>Bay 4 (main pile)</span
+                                        ><span
+                                            style="
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                            "
+                                            >152.0 t</span
+                                        >
+                                    </div>
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                        "
+                                    >
+                                        <span>Bagged, aisle B</span
+                                        ><span
+                                            style="
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                            "
+                                            >32.6 t</span
+                                        >
+                                    </div>
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                            color: #a16207;
+                                        "
+                                    >
+                                        <span>Committed to open orders</span
+                                        ><span
+                                            style="
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                            "
+                                            >−21.5 t</span
+                                        >
+                                    </div>
+                                </div>
+                            </section>
+                            <section
+                                style="
+                                    background: #ffffff;
+                                    border: 1px solid #e7e5e4;
+                                    border-radius: 10px;
+                                    padding: 20px;
+                                "
+                            >
+                                <h2 style="margin: 0 0 12px; font-size: 16px">
+                                    Cost and supplier
+                                </h2>
+                                <div
+                                    style="
+                                        display: flex;
+                                        flex-direction: column;
+                                        gap: 10px;
+                                    "
+                                >
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                        "
+                                    >
+                                        <span style="color: #57534e"
+                                            >Supplier</span
+                                        ><span>[QUARRY NAME]</span>
+                                    </div>
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                        "
+                                    >
+                                        <span style="color: #57534e"
+                                            >Landed cost</span
+                                        ><span
+                                            style="
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                            "
+                                            >$31.40 / t</span
+                                        >
+                                    </div>
+                                    <div
+                                        style="
+                                            display: flex;
+                                            justify-content: space-between;
+                                        "
+                                    >
+                                        <span style="color: #57534e">Tax</span
+                                        ><span>HST 13%</span>
+                                    </div>
+                                </div>
+                                <div
+                                    style="
+                                        margin-top: 14px;
+                                        padding: 12px;
+                                        border-radius: 8px;
+                                        background: #fff7ed;
+                                        color: #9a3412;
+                                        font-size: 13px;
+                                    "
+                                >
+                                    Supplier raised cost 4% on Nov 1. Contractor
+                                    margin drops to 33%.
+                                    <a href="#">Review prices</a>
+                                </div>
+                            </section>
+                        </aside>
+                    </div>
+                </main>
+            </div>
+        </x-dc>
+        <script
+            type="text/x-dc"
+            data-dc-script
+            data-props='{"$preview":{"width":1440,"height":960}}'
+        >
+            class Component extends DCLogic {
+            renderVals() {
+            return {
+            units: [
+            { name: 'Tonne (base)', equals: '1 t', variant: 'Per tonne', measure: 'Truck scale weight' },
+            { name: 'Cubic yard', equals: '1.35 t', variant: 'Per yard', measure: 'Loader bucket count' },
+            { name: 'Half yard', equals: '0.675 t', variant: 'Half yard', measure: 'Loader bucket count' },
+            { name: 'Bulk bag', equals: '1 t', variant: 'Bulk bag', measure: 'Count, plus $25 bag deposit' },
+            { name: '25 kg bag', equals: '0.025 t', variant: '25 kg bag', measure: 'Count' }
+            ],
+            prices: [
+            { unit: 'Tonne', retail: '$58.00', contractor: '$49.00', wholesale: '$44.00', margin: '36%' },
+            { unit: 'Cubic yard', retail: '$76.00', contractor: '$64.00', wholesale: '$57.00', margin: '34%' },
+            { unit: 'Bulk bag', retail: '$89.00', contractor: '$79.00', wholesale: '$72.00', margin: '60%' },
+            { unit: '25 kg bag', retail: '$6.49', contractor: '$5.49', wholesale: '$4.99', margin: '86%' }
+            ]
+            };
+            }
+            }
+        </script>
+    </body>
+</html>

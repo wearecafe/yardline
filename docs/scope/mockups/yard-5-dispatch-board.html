@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Dispatch board</title>
+        <script src="./support.js"></script>
+    </head>
+    <body>
+        <x-dc>
+            <helmet>
+                <link
+                    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap"
+                    rel="stylesheet"
+                />
+                <style>
+                    body {
+                        margin: 0;
+                    }
+                    a {
+                        color: #c2410c;
+                    }
+                    a:hover {
+                        color: #9a3412;
+                    }
+                </style>
+            </helmet>
+            <div
+                style="
+                    min-height: 900px;
+                    display: flex;
+                    flex-wrap: wrap;
+                    background: #f5f3ef;
+                    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+                    color: #1c1917;
+                    font-size: 14px;
+                "
+            >
+                <nav
+                    aria-label="Main"
+                    style="
+                        flex: 0 1 232px;
+                        background: #1c1917;
+                        color: #d6d3d1;
+                        padding: 20px 14px;
+                        box-sizing: border-box;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                    "
+                >
+                    <div
+                        style="
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                            padding: 4px 10px 20px;
+                        "
+                    >
+                        <div
+                            style="
+                                width: 28px;
+                                height: 28px;
+                                border-radius: 6px;
+                                background: #c2410c;
+                            "
+                        ></div>
+                        <div
+                            style="
+                                font-weight: 700;
+                                font-size: 17px;
+                                color: #fafaf9;
+                            "
+                        >
+                            Yardline
+                        </div>
+                    </div>
+                    <div
+                        style="
+                            font-size: 11px;
+                            letter-spacing: 0.08em;
+                            text-transform: uppercase;
+                            color: #a8a29e;
+                            padding: 8px 10px 4px;
+                        "
+                    >
+                        Supply yard
+                    </div>
+                    <a
+                        href="Main.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Products</a
+                    >
+                    <a
+                        href="Stock.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Stock</a
+                    >
+                    <a
+                        href="Orders.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Orders and picking</a
+                    >
+                    <a
+                        href="Dispatch.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            background: #292524;
+                            color: #fafaf9;
+                            text-decoration: none;
+                            font-weight: 600;
+                        "
+                        >Dispatch</a
+                    >
+                    <a
+                        href="#"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Purchasing</a
+                    >
+                    <div
+                        style="
+                            font-size: 11px;
+                            letter-spacing: 0.08em;
+                            text-transform: uppercase;
+                            color: #a8a29e;
+                            padding: 16px 10px 4px;
+                        "
+                    >
+                        Rental
+                    </div>
+                    <a
+                        href="Fleet.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Fleet</a
+                    >
+                    <a
+                        href="Calendar.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Calendar</a
+                    >
+                </nav>
+                <main
+                    style="
+                        flex: 999 1 560px;
+                        min-width: 0;
+                        padding: 28px 32px;
+                        box-sizing: border-box;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 20px;
+                    "
+                >
+                    <div
+                        style="
+                            display: flex;
+                            flex-wrap: wrap;
+                            align-items: flex-end;
+                            justify-content: space-between;
+                            gap: 16px;
+                        "
+                    >
+                        <div>
+                            <h1
+                                style="
+                                    margin: 0;
+                                    font-size: 28px;
+                                    font-weight: 700;
+                                "
+                            >
+                                Dispatch
+                            </h1>
+                            <p style="margin: 4px 0 0; color: #57534e">
+                                Monday, October 26 · 4 trucks · 11 stops
+                            </p>
+                        </div>
+                        <div
+                            style="
+                                display: flex;
+                                flex-wrap: wrap;
+                                gap: 10px;
+                                align-items: center;
+                            "
+                        >
+                            <span
+                                style="
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 6px;
+                                    font-size: 13px;
+                                "
+                                ><span
+                                    style="
+                                        width: 12px;
+                                        height: 12px;
+                                        border-radius: 3px;
+                                        background: #fed7aa;
+                                    "
+                                ></span
+                                >Material delivery</span
+                            >
+                            <span
+                                style="
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 6px;
+                                    font-size: 13px;
+                                "
+                                ><span
+                                    style="
+                                        width: 12px;
+                                        height: 12px;
+                                        border-radius: 3px;
+                                        background: #bfdbfe;
+                                    "
+                                ></span
+                                >Rental drop-off or pickup</span
+                            >
+                            <button
+                                type="button"
+                                style="
+                                    height: 44px;
+                                    padding: 0 16px;
+                                    border-radius: 8px;
+                                    border: 1px solid #d6d3d1;
+                                    background: #ffffff;
+                                    font: inherit;
+                                    font-weight: 500;
+                                "
+                            >
+                                Send ETA texts
+                            </button>
+                        </div>
+                    </div>
+                    <div
+                        style="
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 20px;
+                            align-items: flex-start;
+                        "
+                    >
+                        <aside
+                            style="
+                                flex: 1 1 240px;
+                                min-width: 0;
+                                background: #ffffff;
+                                border: 1px solid #e7e5e4;
+                                border-radius: 10px;
+                                padding: 16px;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 10px;
+                            "
+                        >
+                            <h2
+                                style="
+                                    margin: 0;
+                                    font-size: 13px;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.05em;
+                                    color: #57534e;
+                                "
+                            >
+                                Unscheduled · 3
+                            </h2>
+                            <sc-for
+                                list="{{unscheduled}}"
+                                as="u"
+                                hint-placeholder-count="3"
+                            >
+                                <article
+                                    style="
+                                        border: 1px dashed #a8a29e;
+                                        border-radius: 8px;
+                                        padding: 10px;
+                                        display: flex;
+                                        flex-direction: column;
+                                        gap: 4px;
+                                    "
+                                >
+                                    <div style="font-weight: 600">
+                                        {{u.name}}
+                                    </div>
+                                    <div
+                                        style="color: #57534e; font-size: 13px"
+                                    >
+                                        {{u.detail}}
+                                    </div>
+                                    <div
+                                        style="
+                                            font-size: 12px;
+                                            color: #9a3412;
+                                            font-weight: 600;
+                                        "
+                                    >
+                                        {{u.need}}
+                                    </div>
+                                </article>
+                            </sc-for>
+                        </aside>
+                        <section
+                            style="
+                                flex: 999 1 640px;
+                                min-width: 0;
+                                background: #ffffff;
+                                border: 1px solid #e7e5e4;
+                                border-radius: 10px;
+                                overflow-x: auto;
+                            "
+                        >
+                            <div style="min-width: 860px">
+                                <div
+                                    style="
+                                        display: grid;
+                                        grid-template-columns: 170px repeat(
+                                                10,
+                                                minmax(0, 1fr)
+                                            );
+                                        border-bottom: 1px solid #e7e5e4;
+                                        color: #57534e;
+                                        font-size: 12px;
+                                    "
+                                >
+                                    <div style="padding: 10px 14px">Truck</div>
+                                    <sc-for
+                                        list="{{hours}}"
+                                        as="h"
+                                        hint-placeholder-count="10"
+                                        ><div
+                                            style="
+                                                padding: 10px 6px;
+                                                border-left: 1px solid #f5f5f4;
+                                            "
+                                        >
+                                            {{h}}
+                                        </div></sc-for
+                                    >
+                                </div>
+                                <sc-for
+                                    list="{{trucks}}"
+                                    as="t"
+                                    hint-placeholder-count="4"
+                                >
+                                    <div
+                                        style="
+                                            display: grid;
+                                            grid-template-columns: 170px repeat(
+                                                    10,
+                                                    minmax(0, 1fr)
+                                                );
+                                            border-bottom: 1px solid #f5f5f4;
+                                            min-height: 92px;
+                                            align-items: stretch;
+                                        "
+                                    >
+                                        <div
+                                            style="
+                                                padding: 12px 14px;
+                                                grid-column: 1;
+                                                grid-row: 1;
+                                            "
+                                        >
+                                            <div style="font-weight: 600">
+                                                {{t.name}}
+                                            </div>
+                                            <div
+                                                style="
+                                                    font-size: 12px;
+                                                    color: #57534e;
+                                                "
+                                            >
+                                                {{t.driver}}
+                                            </div>
+                                            <div
+                                                style="
+                                                    font-size: 12px;
+                                                    color: #57534e;
+                                                "
+                                            >
+                                                {{t.cap}}
+                                            </div>
+                                        </div>
+                                        <sc-for
+                                            list="{{t.stops}}"
+                                            as="s"
+                                            hint-placeholder-count="2"
+                                        >
+                                            <div
+                                                style="grid-row: 1; grid-column: {{s.col}}; margin: 8px 3px; border-radius: 8px; padding: 8px; background: {{s.bg}}; display: flex; flex-direction: column; gap: 2px; min-width: 0"
+                                            >
+                                                <div
+                                                    style="
+                                                        font-weight: 600;
+                                                        font-size: 13px;
+                                                        overflow: hidden;
+                                                        text-overflow: ellipsis;
+                                                        white-space: nowrap;
+                                                    "
+                                                >
+                                                    {{s.title}}
+                                                </div>
+                                                <div
+                                                    style="
+                                                        font-size: 12px;
+                                                        color: #44403c;
+                                                        overflow: hidden;
+                                                        text-overflow: ellipsis;
+                                                        white-space: nowrap;
+                                                    "
+                                                >
+                                                    {{s.where}}
+                                                </div>
+                                                <div
+                                                    style="
+                                                        font-size: 12px;
+                                                        font-weight: 600;
+                                                        color: #44403c;
+                                                    "
+                                                >
+                                                    {{s.status}}
+                                                </div>
+                                            </div>
+                                        </sc-for>
+                                    </div>
+                                </sc-for>
+                            </div>
+                        </section>
+                    </div>
+                </main>
+            </div>
+        </x-dc>
+        <script
+            type="text/x-dc"
+            data-dc-script
+            data-props='{"$preview":{"width":1440,"height":900}}'
+        >
+            class Component extends DCLogic {
+            renderVals() {
+            const mat = '#FED7AA', rent = '#BFDBFE';
+            return {
+            hours: ['7', '8', '9', '10', '11', '12', '1', '2', '3', '4'],
+            unscheduled: [
+            { name: '#4021 Brick & Stone', detail: '≈ 13.8 t · 18 Ridgeview Dr, Waterdown', need: 'Needs boom truck' },
+            { name: '#4023 Lakeview Homes', detail: '12 yd mulch · Burlington', need: 'Before noon' },
+            { name: 'Rental R-1188 pickup', detail: 'Plate compactor · Ancaster', need: 'Due back 3 pm' }
+            ],
+            trucks: [
+            { name: 'Truck 1 · tandem', driver: 'Dave K.', cap: '14 t', stops: [
+            { col: '2 / span 2', bg: mat, title: '#4018 Greenway', where: 'Dundas', status: 'Delivered 8:52' },
+            { col: '5 / span 2', bg: mat, title: '#4022 Oak Ridge', where: 'Grimsby', status: 'Loading' }
+            ]},
+            { name: 'Truck 2 · boom', driver: 'Sam R.', cap: '12 t · boom', stops: [
+            { col: '3 / span 3', bg: mat, title: '#4017 Hamilton Hardscape', where: 'Stoney Creek', status: 'En route · ETA 10:40' }
+            ]},
+            { name: 'Truck 3 · tri-axle', driver: 'Luis M.', cap: '20 t', stops: [
+            { col: '2 / span 2', bg: mat, title: '#4015 Northshore', where: 'Burlington', status: 'En route · ETA 9:55' },
+            { col: '6 / span 2', bg: mat, title: '#4019 Walk-in', where: 'Flamborough', status: 'Scheduled' }
+            ]},
+            { name: 'Float · equipment', driver: 'Mike T.', cap: 'Rental moves', stops: [
+            { col: '2 / span 2', bg: rent, title: 'R-1190 skid steer drop', where: 'Waterdown', status: 'Signed 8:40' },
+            { col: '7 / span 2', bg: rent, title: 'R-1176 mini ex pickup', where: 'Ancaster', status: 'Scheduled' }
+            ]}
+            ]
+            };
+            }
+            }
+        </script>
+    </body>
+</html>
