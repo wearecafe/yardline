@@ -1,5 +1,7 @@
 import { Link } from '@inertiajs/react';
+import { LifeBuoy } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
+import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -44,6 +46,9 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
+                <NavFooter
+                    items={[{ title: 'Help', href: '/help', icon: LifeBuoy }]}
+                />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
