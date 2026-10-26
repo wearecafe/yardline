@@ -5,10 +5,10 @@ namespace App\Models;
 use App\Enums\IntegrationProvider;
 use App\Enums\IntegrationStatus;
 use App\Tenancy\BelongsToTenant;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 
 /**
  * A tenant's connection to an outside system (Shopify).
@@ -20,7 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $external_account
  * @property array<string, mixed>|null $credentials
  * @property array<string, mixed>|null $settings
- * @property Carbon|null $last_synced_at
+ * @property CarbonImmutable|null $last_synced_at
  * @property string|null $last_error
  */
 #[Fillable(['provider', 'status', 'external_account', 'credentials', 'settings', 'last_synced_at', 'last_error'])]

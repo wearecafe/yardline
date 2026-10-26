@@ -11,6 +11,7 @@ use App\Support\Money;
 use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -123,7 +124,7 @@ class OrganizationController extends Controller
         ]);
 
         return [
-            ...collect($data)->except('credit_limit')->all(),
+            ...Arr::except($data, ['credit_limit']),
             'country' => strtoupper($data['country']),
             'credit_limit_cents' => Money::parse($data['credit_limit']) ?? 0,
         ];

@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * A supply-yard business using Yardline.
@@ -19,8 +19,8 @@ use Illuminate\Support\Carbon;
  * @property string $timezone
  * @property string|null $stripe_account_id
  * @property array<string, mixed>|null $settings
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['name', 'slug', 'currency', 'timezone', 'stripe_account_id', 'settings'])]
 class Tenant extends Model

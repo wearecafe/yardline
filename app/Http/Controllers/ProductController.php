@@ -10,6 +10,7 @@ use App\Support\Money;
 use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -87,7 +88,7 @@ class ProductController extends Controller
         $isRental = $data['kind'] === ProductKind::Rental->value;
 
         return [
-            ...collect($data)->except(['price', 'cost', 'deposit'])->all(),
+            ...Arr::except($data, ['price', 'cost', 'deposit']),
             'price_cents' => Money::parse($data['price']),
             'cost_cents' => Money::parse($data['cost'] ?? null),
             'deposit_cents' => $isRental ? (Money::parse($data['deposit'] ?? null) ?? 0) : 0,

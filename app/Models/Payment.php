@@ -5,10 +5,10 @@ namespace App\Models;
 use App\Enums\PaymentState;
 use App\Enums\PaymentTender;
 use App\Tenancy\BelongsToTenant;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -22,7 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $stripe_payment_intent_id
  * @property string|null $checkout_url
  * @property int|null $recorded_by
- * @property Carbon|null $succeeded_at
+ * @property CarbonImmutable|null $succeeded_at
  * @property-read Order $order
  */
 #[Fillable([

@@ -8,6 +8,7 @@ use App\Enums\OrderType;
 use App\Enums\PaymentStatus;
 use App\Enums\Settlement;
 use App\Tenancy\BelongsToTenant;
+use Carbon\CarbonImmutable;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,7 +17,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -30,7 +30,7 @@ use Illuminate\Support\Carbon;
  * @property int $location_id
  * @property FulfillmentMethod $fulfillment
  * @property array<string, string|null>|null $delivery_address
- * @property Carbon|null $requested_on
+ * @property CarbonImmutable|null $requested_on
  * @property string|null $po_number
  * @property Settlement|null $settlement
  * @property PaymentStatus $payment_status
@@ -43,15 +43,15 @@ use Illuminate\Support\Carbon;
  * @property int $amount_paid_cents
  * @property string|null $tax_calculation_ref
  * @property string|null $tax_transaction_ref
- * @property Carbon|null $rental_starts_at
- * @property Carbon|null $rental_ends_at
- * @property Carbon|null $returned_at
- * @property Carbon|null $confirmed_at
- * @property Carbon|null $fulfilled_at
- * @property Carbon|null $cancelled_at
+ * @property CarbonImmutable|null $rental_starts_at
+ * @property CarbonImmutable|null $rental_ends_at
+ * @property CarbonImmutable|null $returned_at
+ * @property CarbonImmutable|null $confirmed_at
+ * @property CarbonImmutable|null $fulfilled_at
+ * @property CarbonImmutable|null $cancelled_at
  * @property int|null $created_by
  * @property string|null $notes
- * @property Carbon $created_at
+ * @property CarbonImmutable $created_at
  * @property-read Organization|null $organization
  * @property-read Customer|null $customer
  * @property-read Location $location

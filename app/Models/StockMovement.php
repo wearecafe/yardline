@@ -4,11 +4,11 @@ namespace App\Models;
 
 use App\Enums\StockMovementType;
 use App\Tenancy\BelongsToTenant;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 
 /**
  * Append-only inventory ledger entry.
@@ -23,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $reference_id
  * @property int|null $user_id
  * @property string|null $note
- * @property Carbon $created_at
+ * @property CarbonImmutable $created_at
  */
 #[Fillable(['product_id', 'location_id', 'quantity', 'type', 'reference_type', 'reference_id', 'user_id', 'note'])]
 class StockMovement extends Model

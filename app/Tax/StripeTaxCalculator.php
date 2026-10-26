@@ -33,12 +33,19 @@ class StripeTaxCalculator implements TaxCalculator
 
         $lineItems = $order->lines
             ->filter(fn ($line) => $line->line_total_cents > 0)
-            ->map(fn ($line) => array_filter([
-                'amount' => $line->line_total_cents,
-                'reference' => 'line_'.$line->id,
-                'tax_code' => $line->product?->tax_code,
-                'tax_behavior' => 'exclusive',
-            ], fn ($value) => $value !== null))
+            ->map(function ($line): array {
+                $item = [
+                    'amount' => $line->line_total_cents,
+                    'reference' => 'line_'.$line->id,
+                    'tax_behavior' => 'exclusive',
+                ];
+
+                if (filled($line->product?->tax_code)) {
+                    $item['tax_code'] = (string) $line->product->tax_code;
+                }
+
+                return $item;
+            })
             ->values()
             ->all();
 
@@ -47,7 +54,14 @@ class StripeTaxCalculator implements TaxCalculator
         }
 
         $customerDetails = [
-            'address' => array_filter($address, fn ($value) => filled($value)),
+            'address' => [
+                'line1' => $address['line1'] ?: null,
+                'line2' => $address['line2'] ?: null,
+                'city' => $address['city'] ?: null,
+                'state' => $address['state'] ?: null,
+                'postal_code' => $address['postal_code'],
+                'country' => (string) $address['country'],
+            ],
             'address_source' => 'shipping',
         ];
 

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
 /**
+ * @implements Scope<Model>
+ *
  * Restricts every query to the current tenant. With no tenant set, the scope
  * matches nothing rather than everything, so a missing tenant fails closed.
  */

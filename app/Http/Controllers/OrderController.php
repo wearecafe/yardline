@@ -157,7 +157,8 @@ class OrderController extends Controller
      */
     private function validatedHeader(Request $request, ?Order $order = null): array
     {
-        $isRental = ($order?->type ?? OrderType::tryFrom((string) $request->input('type'))) === OrderType::Rental;
+        $type = $order !== null ? $order->type : OrderType::tryFrom((string) $request->input('type'));
+        $isRental = $type === OrderType::Rental;
 
         $data = $request->validate([
             'type' => [$order ? 'prohibited' : 'required', Rule::enum(OrderType::class)],
@@ -216,6 +217,6 @@ class OrderController extends Controller
             'price_cents' => $contractPrices[$product->id] ?? $product->price_cents,
             'contract_price' => isset($contractPrices[$product->id]),
             'on_hand' => $product->track_inventory ? ($onHand[$product->id] ?? '0.000') : null,
-        ])->all();
+        ])->values()->all();
     }
 }

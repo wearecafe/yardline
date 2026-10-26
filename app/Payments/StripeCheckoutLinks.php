@@ -21,7 +21,7 @@ class StripeCheckoutLinks implements CheckoutLinks
         $session = $this->stripe->client()->checkout->sessions->create([
             'mode' => 'payment',
             'client_reference_id' => $order->number,
-            'customer_email' => $order->customer?->email ?? $order->organization?->email,
+            'customer_email' => $order->customer->email ?? $order->organization->email ?? null,
             'line_items' => [[
                 'quantity' => 1,
                 'price_data' => [

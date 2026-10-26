@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use App\Tenancy\BelongsToTenant;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 
 /**
  * Maps a Yardline record to its ID in a connected system.
@@ -18,7 +18,7 @@ use Illuminate\Support\Carbon;
  * @property int $syncable_id
  * @property string $external_id
  * @property string|null $payload_hash
- * @property Carbon|null $last_synced_at
+ * @property CarbonImmutable|null $last_synced_at
  */
 #[Fillable(['provider', 'syncable_type', 'syncable_id', 'external_id', 'payload_hash', 'last_synced_at'])]
 class ExternalReference extends Model

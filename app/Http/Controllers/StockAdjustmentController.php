@@ -26,15 +26,16 @@ class StockAdjustmentController extends Controller
             'note' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $product = Product::query()->findOrFail($data['product_id']);
-        $location = Location::query()->findOrFail($data['location_id']);
+        $product = Product::query()->findOrFail((int) $data['product_id']);
+        $location = Location::query()->findOrFail((int) $data['location_id']);
         $quantity = (float) $data['quantity'];
 
-        match ($data['mode']) {
+        match ((string) $data['mode']) {
             'receive' => $ledger->record($product, $location, abs($quantity), StockMovementType::Receipt, user: $request->user(), note: $data['note'] ?? null),
             'damage' => $ledger->record($product, $location, -abs($quantity), StockMovementType::Damage, user: $request->user(), note: $data['note'] ?? null),
             'adjust' => $ledger->record($product, $location, $quantity, StockMovementType::Adjustment, user: $request->user(), note: $data['note'] ?? null),
             'count' => $ledger->count($product, $location, $quantity, $request->user(), $data['note'] ?? null),
+            default => null,
         };
 
         if ($request->has('reorder_point')) {

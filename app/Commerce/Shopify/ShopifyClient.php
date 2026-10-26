@@ -54,8 +54,10 @@ class ShopifyClient
     {
         $result = $this->query($mutation, $variables)[$field] ?? [];
 
-        if (! empty($result['userErrors'])) {
-            $messages = collect($result['userErrors'])->pluck('message')->implode('; ');
+        if (! empty($result['userErrors']) && is_array($result['userErrors'])) {
+            /** @var list<array{message?: string}> $errors */
+            $errors = $result['userErrors'];
+            $messages = implode('; ', array_map(fn (array $error) => (string) ($error['message'] ?? ''), $errors));
 
             throw new RuntimeException("Shopify {$field}: {$messages}");
         }

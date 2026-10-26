@@ -36,23 +36,26 @@ class StripeWebhookController extends Controller
             return response('Ignored', 200);
         }
 
-        $session = $event->data->object;
+        /** @var array<string, mixed> $session */
+        $session = $event->data->object->toArray();
+        $sessionId = is_string($session['id'] ?? null) ? $session['id'] : null;
+        $paymentIntent = is_string($session['payment_intent'] ?? null) ? $session['payment_intent'] : null;
 
-        if ($event->type === 'checkout.session.completed' && $session->payment_status !== 'paid') {
+        if ($event->type === 'checkout.session.completed' && ($session['payment_status'] ?? null) !== 'paid') {
             return response('Awaiting payment', 200); // async methods settle later
         }
 
         $payment = Payment::query()
             ->withoutGlobalScope(TenantScope::class)
-            ->where('stripe_checkout_session_id', $session->id)
+            ->where('stripe_checkout_session_id', $sessionId)
             ->first();
 
-        if ($payment === null) {
+        if ($sessionId === null || $payment === null) {
             return response('Unknown session', 200);
         }
 
-        CurrentTenant::run($payment->tenant_id, function () use ($payment, $session, $complete) {
-            $complete->handle($payment->fresh(), is_string($session->payment_intent) ? $session->payment_intent : null);
+        CurrentTenant::run($payment->tenant_id, function () use ($payment, $paymentIntent, $complete) {
+            $complete->handle($payment->fresh() ?? $payment, $paymentIntent);
         });
 
         return response('OK', 200);

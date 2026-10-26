@@ -28,7 +28,7 @@ class OrderLineController extends Controller
 
         $addLine->handle(
             $order,
-            Product::query()->findOrFail($data['product_id']),
+            Product::query()->findOrFail((int) $data['product_id']),
             $data['quantity'],
             $priceOverride,
         );

@@ -26,7 +26,7 @@ class StripeGateway
     }
 
     /**
-     * @return array<string, string>
+     * @return array{stripe_account?: string}
      */
     public function requestOptions(): array
     {
