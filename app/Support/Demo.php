@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Tenancy\CurrentTenant;
 use Database\Seeders\DemoYardSeeder;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * The fictional demo yard that can live in production alongside real yards.
@@ -35,6 +36,38 @@ final class Demo
     public static function available(): bool
     {
         return self::enabled() && self::tenantId() !== null;
+    }
+
+    /**
+     * The demo yard, building it first if it's turned on but hasn't been
+     * seeded yet (a fresh deploy before the nightly rebuild has run).
+     */
+    public static function ensureTenant(): ?Tenant
+    {
+        if (! self::enabled()) {
+            return null;
+        }
+
+        $tenant = self::tenant();
+
+        if ($tenant !== null) {
+            return $tenant;
+        }
+
+        Cache::lock('yardline:demo:seed', 120)->block(60, function () {
+            if (self::tenantId() === null) {
+                $previous = CurrentTenant::get();
+                CurrentTenant::set(null);
+
+                try {
+                    app(DemoYardSeeder::class)->run();
+                } finally {
+                    CurrentTenant::set($previous);
+                }
+            }
+        });
+
+        return self::tenant();
     }
 
     public static function isDemoUser(?User $user): bool

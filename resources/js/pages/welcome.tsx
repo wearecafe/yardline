@@ -149,14 +149,6 @@ export default function Welcome({ demo, canRegister }: Props) {
                         >
                             Features
                         </a>
-                        {demo && (
-                            <Link
-                                href="/demo"
-                                className="hidden rounded-md px-3 py-2 hover:bg-secondary sm:inline"
-                            >
-                                Demo
-                            </Link>
-                        )}
                         {auth.user ? (
                             <Link
                                 href={dashboard()}
@@ -172,13 +164,22 @@ export default function Welcome({ demo, canRegister }: Props) {
                                 >
                                     Log in
                                 </Link>
-                                {canRegister && (
+                                {demo ? (
                                     <Link
-                                        href={register()}
+                                        href="/demo"
                                         className="rounded-md bg-primary px-4 py-2.5 font-medium text-primary-foreground"
                                     >
-                                        Set up your yard
+                                        Try the demo
                                     </Link>
+                                ) : (
+                                    canRegister && (
+                                        <Link
+                                            href={register()}
+                                            className="rounded-md bg-primary px-4 py-2.5 font-medium text-primary-foreground"
+                                        >
+                                            Set up your yard
+                                        </Link>
+                                    )
                                 )}
                             </>
                         )}
