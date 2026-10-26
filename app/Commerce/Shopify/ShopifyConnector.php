@@ -7,6 +7,7 @@ use App\Enums\IntegrationProvider;
 use App\Models\Customer;
 use App\Models\ExternalReference;
 use App\Models\Product;
+use Illuminate\Support\Str;
 
 /**
  * Pushes Yardline products and customers to Shopify. Yardline controls price:
@@ -61,6 +62,11 @@ class ShopifyConnector implements CommerceConnector
             return $reference?->external_id;
         }
 
+        // One variant per selling unit. Only the base unit tracks stock in
+        // Shopify; other units convert back to it when the order comes in.
+        $units = $product->units()->get();
+        $names = $units->map(fn ($unit) => $unit->variant_title ?: $unit->name)->values();
+
         $variables = [
             'input' => [
                 'title' => $product->name,
@@ -68,14 +74,14 @@ class ShopifyConnector implements CommerceConnector
                 'productType' => (string) $product->category,
                 'status' => $product->is_active ? 'ACTIVE' : 'DRAFT',
                 'productOptions' => [
-                    ['name' => 'Title', 'values' => [['name' => 'Default Title']]],
+                    ['name' => 'Unit', 'values' => $names->map(fn ($name) => ['name' => $name])->all()],
                 ],
-                'variants' => [[
-                    'optionValues' => [['optionName' => 'Title', 'name' => 'Default Title']],
-                    'sku' => $product->sku,
-                    'price' => number_format($product->price_cents / 100, 2, '.', ''),
-                    'inventoryItem' => ['tracked' => $product->track_inventory],
-                ]],
+                'variants' => $units->values()->map(fn ($unit, $i) => [
+                    'optionValues' => [['optionName' => 'Unit', 'name' => $names[$i]]],
+                    'sku' => $unit->is_base ? $product->sku : $product->sku.'-'.Str::upper(Str::slug($unit->name)),
+                    'price' => number_format($unit->price_cents / 100, 2, '.', ''),
+                    'inventoryItem' => ['tracked' => $unit->is_base && $product->track_inventory],
+                ])->all(),
             ],
         ];
 

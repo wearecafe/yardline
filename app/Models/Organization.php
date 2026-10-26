@@ -6,9 +6,11 @@ use App\Enums\PaymentTerms;
 use App\Tenancy\BelongsToTenant;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -35,6 +37,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $stripe_customer_id
  * @property string|null $notes
  * @property-read PriceList|null $priceList
+ * @property-read Collection<int, OrganizationLocation> $locations
+ * @property-read Collection<int, Customer> $contacts
  */
 #[Fillable([
     'name', 'account_number', 'email', 'phone',
@@ -82,6 +86,48 @@ class Organization extends Model
     public function customers(): HasMany
     {
         return $this->hasMany(Customer::class);
+    }
+
+    /**
+     * Job sites and ship-to addresses.
+     *
+     * @return HasMany<OrganizationLocation, $this>
+     */
+    public function locations(): HasMany
+    {
+        return $this->hasMany(OrganizationLocation::class)->orderByDesc('is_default')->orderBy('name');
+    }
+
+    /**
+     * Same as locations(); named for route binding of {site}.
+     *
+     * @return HasMany<OrganizationLocation, $this>
+     */
+    public function sites(): HasMany
+    {
+        return $this->hasMany(OrganizationLocation::class);
+    }
+
+    /**
+     * Everyone who buys for this organization, with their role.
+     *
+     * @return BelongsToMany<Customer, $this, CustomerMembership, 'membership'>
+     */
+    public function contacts(): BelongsToMany
+    {
+        return $this->belongsToMany(Customer::class, 'customer_organization')
+            ->using(CustomerMembership::class)
+            ->as('membership')
+            ->withPivot(['id', 'tenant_id', 'role', 'can_charge_account'])
+            ->withTimestamps();
+    }
+
+    /**
+     * @return HasMany<ContractPrice, $this>
+     */
+    public function contractPrices(): HasMany
+    {
+        return $this->hasMany(ContractPrice::class);
     }
 
     /**

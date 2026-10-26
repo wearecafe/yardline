@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\CustomerDocument;
+use App\Models\CustomerMembership;
 use App\Models\Organization;
 use App\Support\Files;
 use App\Tenancy\TenantRule;
@@ -61,6 +62,12 @@ class CustomerController extends Controller
         return Inertia::render('customers/edit', [
             'customer' => $customer,
             'organizations' => $this->organizations(),
+            'memberships' => $customer->organizations()->orderBy('name')->get()->map(fn (Organization $org) => [
+                'id' => $org->id,
+                'name' => $org->name,
+                'role' => CustomerMembership::ROLES[$org->getRelation('membership')->role] ?? $org->getRelation('membership')->role,
+                'can_charge_account' => (bool) $org->getRelation('membership')->can_charge_account,
+            ]),
             'documents' => $customer->documents()->latest('id')->get()->map(fn (CustomerDocument $document) => [
                 'id' => $document->id,
                 'kind' => $document->kind->value,

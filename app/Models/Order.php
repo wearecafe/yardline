@@ -27,6 +27,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $source
  * @property int|null $organization_id
  * @property int|null $customer_id
+ * @property int|null $organization_location_id
+ * @property CarbonImmutable|null $quoted_at
+ * @property CarbonImmutable|null $quote_expires_on
+ * @property int $revision
+ * @property string|null $quote_token
+ * @property CarbonImmutable|null $quote_accepted_at
+ * @property string|null $quote_accepted_by
  * @property int $location_id
  * @property FulfillmentMethod $fulfillment
  * @property array<string, string|null>|null $delivery_address
@@ -55,10 +62,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Organization|null $organization
  * @property-read Customer|null $customer
  * @property-read Location $location
+ * @property-read OrganizationLocation|null $organizationLocation
+ * @property-read Collection<int, OrderRevision> $revisions
  * @property-read Collection<int, OrderLine> $lines
  */
 #[Fillable([
-    'number', 'type', 'source', 'organization_id', 'customer_id', 'location_id',
+    'number', 'type', 'source', 'organization_id', 'customer_id', 'organization_location_id', 'location_id',
     'fulfillment', 'delivery_address', 'requested_on', 'po_number',
     'rental_starts_at', 'rental_ends_at', 'notes', 'created_by',
 ])]
@@ -81,6 +90,7 @@ class Order extends Model
         'total_cents' => 0,
         'deposit_cents' => 0,
         'amount_paid_cents' => 0,
+        'revision' => 0,
     ];
 
     protected function casts(): array
@@ -104,6 +114,10 @@ class Order extends Model
             'confirmed_at' => 'datetime',
             'fulfilled_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'quoted_at' => 'immutable_datetime',
+            'quote_expires_on' => 'immutable_date',
+            'quote_accepted_at' => 'immutable_datetime',
+            'revision' => 'integer',
         ];
     }
 
@@ -137,6 +151,43 @@ class Order extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(OrderLine::class);
+    }
+
+    /**
+     * @return BelongsTo<OrganizationLocation, $this>
+     */
+    public function organizationLocation(): BelongsTo
+    {
+        return $this->belongsTo(OrganizationLocation::class);
+    }
+
+    /**
+     * @return HasMany<OrderRevision, $this>
+     */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(OrderRevision::class)->orderByDesc('revision');
+    }
+
+    /**
+     * A draft that's been sent to the customer as a quote.
+     */
+    public function isQuote(): bool
+    {
+        return $this->isDraft() && $this->quoted_at !== null;
+    }
+
+    public function quoteExpired(): bool
+    {
+        return $this->isQuote() && $this->quote_expires_on !== null && $this->quote_expires_on->endOfDay()->isPast();
+    }
+
+    /**
+     * Quoted prices hold until the quote expires.
+     */
+    public function pricesLocked(): bool
+    {
+        return $this->isQuote() && ! $this->quoteExpired();
     }
 
     /**

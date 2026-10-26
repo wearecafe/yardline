@@ -27,7 +27,7 @@ class ReturnRental
         return DB::transaction(function () use ($order, $user) {
             foreach ($order->lines()->with('product')->get() as $line) {
                 if ($line->product?->track_inventory) {
-                    $this->ledger->record($line->product, $order->location, (float) $line->quantity, StockMovementType::RentalReturn, $order, $user);
+                    $this->ledger->record($line->product, $order->location, $line->baseQuantity(), StockMovementType::RentalReturn, $order, $user);
                 }
             }
 

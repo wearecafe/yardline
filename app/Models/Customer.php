@@ -7,9 +7,11 @@ use App\Tenancy\BelongsToTenant;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 
@@ -30,6 +32,7 @@ use Illuminate\Notifications\Notifiable;
  * @property string|null $notes
  * @property-read string $full_name
  * @property-read Organization|null $organization
+ * @property-read Collection<int, Organization> $organizations
  */
 #[Fillable(['organization_id', 'first_name', 'last_name', 'email', 'phone', 'notes'])]
 class Customer extends Model
@@ -48,6 +51,48 @@ class Customer extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /**
+     * Every organization they buy for, with their role in each. Their
+     * primary organization (organization_id) is always one of them.
+     *
+     * @return BelongsToMany<Organization, $this, CustomerMembership, 'membership'>
+     */
+    public function organizations(): BelongsToMany
+    {
+        return $this->belongsToMany(Organization::class, 'customer_organization')
+            ->using(CustomerMembership::class)
+            ->as('membership')
+            ->withPivot(['id', 'tenant_id', 'role', 'can_charge_account'])
+            ->withTimestamps();
+    }
+
+    public function membershipIn(?int $organizationId): ?CustomerMembership
+    {
+        if ($organizationId === null) {
+            return null;
+        }
+
+        $org = $this->organizations()->whereKey($organizationId)->first();
+
+        /** @var CustomerMembership|null $membership */
+        $membership = $org?->getRelation('membership');
+
+        return $membership;
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function (self $customer) {
+            if ($customer->organization_id !== null && ! $customer->organizations()->whereKey($customer->organization_id)->exists()) {
+                $customer->organizations()->attach($customer->organization_id, [
+                    'tenant_id' => $customer->tenant_id,
+                    'role' => 'buyer',
+                    'can_charge_account' => true,
+                ]);
+            }
+        });
     }
 
     /**

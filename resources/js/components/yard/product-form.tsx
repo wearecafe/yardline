@@ -29,6 +29,9 @@ export function ProductForm({
         rental_period: product?.rental_period ?? 'day',
         deposit: centsToInput(product?.deposit_cents),
         tax_code: product?.tax_code ?? '',
+        taxable: product?.taxable ?? true,
+        weight_kg: product?.weight_kg ? String(Number(product.weight_kg)) : '',
+        supplier_name: product?.supplier_name ?? '',
         track_inventory: product?.track_inventory ?? true,
         is_active: product?.is_active ?? true,
         rate_hour: centsToInput(product?.rate_hour_cents),
@@ -265,7 +268,54 @@ export function ProductForm({
                         }
                     />
                 </Field>
+                <div className="mt-4">
+                    <Checkbox
+                        id="taxable"
+                        label="Taxable"
+                        hint="Untick for items that aren't taxed."
+                        checked={form.data.taxable}
+                        onChange={(checked) => form.setData('taxable', checked)}
+                    />
+                </div>
             </Section>
+
+            {!isRental && (
+                <Section title="Supplier and weight">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Field
+                            label="Supplier"
+                            htmlFor="supplier_name"
+                            error={form.errors.supplier_name}
+                        >
+                            <Input
+                                id="supplier_name"
+                                value={form.data.supplier_name}
+                                onChange={(e) =>
+                                    form.setData(
+                                        'supplier_name',
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                        </Field>
+                        <Field
+                            label="Weight per base unit (kg)"
+                            htmlFor="weight_kg"
+                            error={form.errors.weight_kg}
+                            hint="For truck loads. A tonne is 1000."
+                        >
+                            <Input
+                                id="weight_kg"
+                                inputMode="decimal"
+                                value={form.data.weight_kg}
+                                onChange={(e) =>
+                                    form.setData('weight_kg', e.target.value)
+                                }
+                            />
+                        </Field>
+                    </div>
+                </Section>
+            )}
 
             {isRental && (
                 <Section title="Rental rates and fleet">

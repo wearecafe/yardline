@@ -7,12 +7,15 @@ use App\Enums\ProductKind;
 use App\Enums\RentalPeriod;
 use App\Enums\Unit;
 use App\Tenancy\BelongsToTenant;
+use Carbon\CarbonImmutable;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $id
@@ -42,6 +45,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $tax_code
  * @property bool $track_inventory
  * @property bool $is_active
+ * @property string|null $weight_kg
+ * @property string|null $supplier_name
+ * @property int|null $previous_cost_cents
+ * @property CarbonImmutable|null $cost_changed_at
+ * @property bool $taxable
+ * @property-read Collection<int, ProductUnit> $units
+ * @property-read ProductUnit|null $baseUnit
  */
 #[Fillable([
     'sku', 'name', 'description', 'category', 'kind', 'unit',
@@ -50,6 +60,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'rate_hour_cents', 'rate_half_day_cents', 'rate_week_cents', 'rate_month_cents',
     'rate_weekend_cents', 'minimum_charge_cents', 'fuel_charge_cents', 'cleaning_fee_cents',
     'service_interval_hours', 'service_interval_days', 'use_case', 'bookable_online',
+    'weight_kg', 'supplier_name', 'taxable',
 ])]
 class Product extends Model
 {
@@ -69,7 +80,41 @@ class Product extends Model
         'fuel_charge_cents' => 0,
         'cleaning_fee_cents' => 0,
         'bookable_online' => false,
+        'taxable' => true,
     ];
+
+    protected static function booted(): void
+    {
+        // Every product has its base unit: the unit stock is counted in.
+        static::created(function (self $product) {
+            $product->units()->create([
+                'name' => self::unitName($product->unit),
+                'code' => $product->unit->value,
+                'factor' => 1,
+                'is_base' => true,
+                'price_cents' => $product->price_cents,
+            ]);
+        });
+
+        static::updated(function (self $product) {
+            if ($product->wasChanged(['unit', 'price_cents'])) {
+                $product->units()->where('is_base', true)->update([
+                    'price_cents' => $product->price_cents,
+                    ...($product->wasChanged('unit') ? ['name' => self::unitName($product->unit), 'code' => $product->unit->value] : []),
+                ]);
+            }
+        });
+    }
+
+    public static function unitName(Unit $unit): string
+    {
+        return match ($unit) {
+            Unit::CubicYard => 'Cubic yard',
+            Unit::SquareFoot => 'Square foot',
+            Unit::LinearFoot => 'Linear foot',
+            default => ucfirst($unit->label()),
+        };
+    }
 
     protected function casts(): array
     {
@@ -93,6 +138,10 @@ class Product extends Model
             'service_interval_hours' => 'integer',
             'service_interval_days' => 'integer',
             'bookable_online' => 'boolean',
+            'weight_kg' => 'decimal:3',
+            'previous_cost_cents' => 'integer',
+            'cost_changed_at' => 'immutable_datetime',
+            'taxable' => 'boolean',
         ];
     }
 
@@ -112,6 +161,32 @@ class Product extends Model
     public function rentalUnits(): HasMany
     {
         return $this->hasMany(RentalUnit::class);
+    }
+
+    /**
+     * Ways to sell it, base unit first.
+     *
+     * @return HasMany<ProductUnit, $this>
+     */
+    public function units(): HasMany
+    {
+        return $this->hasMany(ProductUnit::class)->orderByDesc('is_base')->orderBy('position')->orderBy('id');
+    }
+
+    /**
+     * @return HasOne<ProductUnit, $this>
+     */
+    public function baseUnit(): HasOne
+    {
+        return $this->hasOne(ProductUnit::class)->where('is_base', true);
+    }
+
+    /**
+     * @return HasMany<ContractPrice, $this>
+     */
+    public function contractPrices(): HasMany
+    {
+        return $this->hasMany(ContractPrice::class);
     }
 
     /**

@@ -4,9 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Credit\CreditCheck;
 use App\Enums\PaymentTerms;
+use App\Models\ContractPrice;
+use App\Models\Customer;
+use App\Models\CustomerMembership;
+use App\Models\Location;
 use App\Models\Order;
 use App\Models\Organization;
+use App\Models\OrganizationLocation;
 use App\Models\PriceList;
+use App\Models\Product;
 use App\Support\Money;
 use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
@@ -54,7 +60,7 @@ class OrganizationController extends Controller
 
     public function show(Organization $organization, CreditCheck $credit): Response
     {
-        $organization->load(['priceList:id,name', 'customers']);
+        $organization->load(['priceList:id,name', 'customers', 'contacts', 'locations.yard:id,name', 'contractPrices.product:id,sku,name', 'contractPrices.unit:id,name']);
         $used = $credit->usedCents($organization);
 
         return Inertia::render('organizations/show', [
@@ -71,6 +77,42 @@ class OrganizationController extends Controller
                 ->get()
                 ->map(fn (Order $order) => OrderController::summary($order)),
             'paymentTerms' => PaymentTerms::options(),
+            'contacts' => $organization->contacts->sortBy('first_name')->values()->map(fn (Customer $customer) => [
+                'id' => $customer->id,
+                'name' => $customer->full_name,
+                'email' => $customer->email,
+                'phone' => $customer->phone,
+                'role' => $customer->getRelation('membership')->role,
+                'can_charge_account' => (bool) $customer->getRelation('membership')->can_charge_account,
+                'primary' => $customer->organization_id === $organization->id,
+            ]),
+            'roles' => collect(CustomerMembership::ROLES)->map(fn ($label, $value) => ['value' => $value, 'label' => $label])->values(),
+            'sites' => $organization->locations->map(fn (OrganizationLocation $site) => [
+                ...$site->only('id', 'name', 'address_line1', 'address_line2', 'city', 'region', 'postal_code', 'country', 'delivery_notes', 'location_id', 'po_required', 'is_default', 'is_active'),
+                'yard' => $site->yard?->name,
+            ]),
+            'yards' => Location::query()->orderBy('name')->get(['id', 'name']),
+            'contractPrices' => $organization->contractPrices->sortByDesc('id')->values()->map(fn (ContractPrice $price) => [
+                'id' => $price->id,
+                'product' => $price->product->name,
+                'sku' => $price->product->sku,
+                'unit' => $price->unit?->name,
+                'price_cents' => $price->price_cents,
+                'starts_on' => $price->starts_on?->toDateString(),
+                'ends_on' => $price->ends_on?->toDateString(),
+                'in_effect' => $price->inEffect(),
+                'note' => $price->note,
+            ]),
+            'products' => Product::query()->with('units:id,product_id,name,is_base')->where('kind', 'sale')->where('is_active', true)->orderBy('name')->get(['id', 'sku', 'name'])
+                ->map(fn (Product $product) => [
+                    'id' => $product->id,
+                    'label' => "{$product->name} · {$product->sku}",
+                    'units' => $product->units->map(fn ($unit) => ['id' => $unit->id, 'name' => $unit->name, 'is_base' => $unit->is_base])->values(),
+                ]),
+            'otherCustomers' => Customer::query()->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'organization_id'])
+                ->reject(fn (Customer $customer) => $organization->contacts->contains('id', $customer->id))
+                ->values()
+                ->map(fn (Customer $customer) => ['id' => $customer->id, 'name' => $customer->full_name]),
         ]);
     }
 

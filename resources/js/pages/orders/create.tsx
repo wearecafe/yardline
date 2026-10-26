@@ -33,6 +33,7 @@ export default function CreateOrder({
     const form = useForm<OrderHeaderData>({
         organization_id: organizationId ? String(organizationId) : '',
         customer_id: '',
+        organization_location_id: '',
         location_id: String(
             locations.find((l) => l.is_default)?.id ?? locations[0]?.id ?? '',
         ),

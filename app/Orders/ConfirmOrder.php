@@ -43,6 +43,20 @@ class ConfirmOrder
             OrderRules::fail('Set the rental start and end dates before confirming.');
         }
 
+        $order->loadMissing(['organizationLocation', 'customer']);
+
+        if ($order->organizationLocation?->po_required && blank($order->po_number)) {
+            OrderRules::fail("{$order->organizationLocation->name} needs a PO number on every order. Add one under Details.");
+        }
+
+        if ($settlement === Settlement::Account && $order->customer !== null && $order->organization_id !== null) {
+            $membership = $order->customer->membershipIn($order->organization_id);
+
+            if ($membership !== null && ! $membership->can_charge_account) {
+                OrderRules::fail("{$order->customer->full_name} can’t charge to this account. Take a card, or have an approver place the order.");
+            }
+        }
+
         try {
             $this->recalculate->handle($order, withTax: true);
         } catch (TaxCalculationFailed $e) {

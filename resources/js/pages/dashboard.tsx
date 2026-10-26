@@ -115,7 +115,11 @@ export default function Dashboard({ stats, recentOrders, lowStock }: Props) {
                                         <Td>
                                             <div className="flex items-center gap-2">
                                                 <OrderStatusBadge
-                                                    status={order.status}
+                                                    status={
+                                                        order.is_quote
+                                                            ? 'quote'
+                                                            : order.status
+                                                    }
                                                     rental={
                                                         order.type === 'rental'
                                                     }

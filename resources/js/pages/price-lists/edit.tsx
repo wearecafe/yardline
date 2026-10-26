@@ -7,7 +7,12 @@ import { Field, NativeSelect } from '@/components/yard/field';
 import { PageBody, PageHeader, Section } from '@/components/yard/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { formatMoney, formatQuantity, unitLabel } from '@/lib/format';
+import {
+    formatDate,
+    formatMoney,
+    formatQuantity,
+    unitLabel,
+} from '@/lib/format';
 import type { PriceListItem, Product } from '@/types';
 
 type Props = {
@@ -17,7 +22,14 @@ type Props = {
         description: string | null;
         items: PriceListItem[];
     };
-    products: Pick<Product, 'id' | 'sku' | 'name' | 'unit' | 'price_cents'>[];
+    products: (Pick<Product, 'id' | 'sku' | 'name' | 'unit' | 'price_cents'> & {
+        units: {
+            id: number;
+            name: string;
+            is_base: boolean;
+            price_cents: number;
+        }[];
+    })[];
 };
 
 export default function EditPriceList({ priceList, products }: Props) {
@@ -25,10 +37,21 @@ export default function EditPriceList({ priceList, products }: Props) {
         name: priceList.name,
         description: priceList.description ?? '',
     });
-    const item = useForm({ product_id: '', min_quantity: '1', price: '' });
+    const item = useForm({
+        product_id: '',
+        product_unit_id: '',
+        min_quantity: '1',
+        price: '',
+        starts_on: '',
+        ends_on: '',
+    });
     const selected = products.find(
         (p) => String(p.id) === item.data.product_id,
     );
+    const selectedUnit =
+        selected?.units.find(
+            (u) => String(u.id) === item.data.product_unit_id,
+        ) ?? selected?.units.find((u) => u.is_base);
 
     function saveDetails(event: FormEvent) {
         event.preventDefault();
@@ -39,6 +62,12 @@ export default function EditPriceList({ priceList, products }: Props) {
 
     function addItem(event: FormEvent) {
         event.preventDefault();
+        item.transform((d) => ({
+            ...d,
+            product_unit_id: d.product_unit_id || null,
+            starts_on: d.starts_on || null,
+            ends_on: d.ends_on || null,
+        }));
         item.post(PriceListItemController.store.url(priceList.id), {
             preserveScroll: true,
             onSuccess: () => item.reset('price', 'min_quantity'),
@@ -85,9 +114,10 @@ export default function EditPriceList({ priceList, products }: Props) {
                                     </EmptyRow>
                                 )}
                                 {priceList.items.map((row) => {
-                                    const saving =
-                                        row.product.price_cents -
-                                        row.price_cents;
+                                    const list =
+                                        row.unit?.price_cents ??
+                                        row.product.price_cents;
+                                    const saving = list - row.price_cents;
 
                                     return (
                                         <tr key={row.id}>
@@ -103,24 +133,40 @@ export default function EditPriceList({ priceList, products }: Props) {
                                                 {formatQuantity(
                                                     row.min_quantity,
                                                 )}{' '}
-                                                {unitLabel(row.product.unit)}
+                                                {row.unit
+                                                    ? row.unit.name.toLowerCase()
+                                                    : unitLabel(
+                                                          row.product.unit,
+                                                      )}
+                                                {(row.starts_on ||
+                                                    row.ends_on) && (
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {row.starts_on
+                                                            ? formatDate(
+                                                                  row.starts_on,
+                                                              )
+                                                            : 'Now'}{' '}
+                                                        –{' '}
+                                                        {row.ends_on
+                                                            ? formatDate(
+                                                                  row.ends_on,
+                                                              )
+                                                            : 'ongoing'}
+                                                    </div>
+                                                )}
                                             </Td>
                                             <Td
                                                 numeric
                                                 className="text-muted-foreground"
                                             >
-                                                {formatMoney(
-                                                    row.product.price_cents,
-                                                )}
+                                                {formatMoney(list)}
                                             </Td>
                                             <Td numeric>
                                                 {formatMoney(row.price_cents)}
                                                 {saving > 0 && (
                                                     <div className="text-xs text-success">
                                                         {Math.round(
-                                                            (saving /
-                                                                row.product
-                                                                    .price_cents) *
+                                                            (saving / list) *
                                                                 100,
                                                         )}
                                                         % off
@@ -157,10 +203,11 @@ export default function EditPriceList({ priceList, products }: Props) {
                                         id="product_id"
                                         value={item.data.product_id}
                                         onChange={(e) =>
-                                            item.setData(
-                                                'product_id',
-                                                e.target.value,
-                                            )
+                                            item.setData((d) => ({
+                                                ...d,
+                                                product_id: e.target.value,
+                                                product_unit_id: '',
+                                            }))
                                         }
                                         required
                                     >
@@ -174,6 +221,35 @@ export default function EditPriceList({ priceList, products }: Props) {
                                         ))}
                                     </NativeSelect>
                                 </Field>
+                                {selected && selected.units.length > 1 && (
+                                    <Field
+                                        label="Unit"
+                                        htmlFor="product_unit_id"
+                                        error={item.errors.product_unit_id}
+                                    >
+                                        <NativeSelect
+                                            id="product_unit_id"
+                                            value={item.data.product_unit_id}
+                                            onChange={(e) =>
+                                                item.setData(
+                                                    'product_unit_id',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        >
+                                            {selected.units.map((u) => (
+                                                <option
+                                                    key={u.id}
+                                                    value={
+                                                        u.is_base ? '' : u.id
+                                                    }
+                                                >
+                                                    {u.name}
+                                                </option>
+                                            ))}
+                                        </NativeSelect>
+                                    </Field>
+                                )}
                                 <div className="grid grid-cols-2 gap-4">
                                     <Field
                                         label="From quantity"
@@ -198,7 +274,7 @@ export default function EditPriceList({ priceList, products }: Props) {
                                         error={item.errors.price}
                                         hint={
                                             selected
-                                                ? `List ${formatMoney(selected.price_cents)} / ${unitLabel(selected.unit)}`
+                                                ? `Retail ${formatMoney(selectedUnit?.price_cents ?? selected.price_cents)} / ${selectedUnit && !selectedUnit.is_base ? selectedUnit.name.toLowerCase() : unitLabel(selected.unit)}`
                                                 : undefined
                                         }
                                     >
@@ -213,6 +289,44 @@ export default function EditPriceList({ priceList, products }: Props) {
                                                 )
                                             }
                                             required
+                                        />
+                                    </Field>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Field
+                                        label="From"
+                                        htmlFor="starts_on"
+                                        error={item.errors.starts_on}
+                                        hint="Blank for now"
+                                    >
+                                        <Input
+                                            id="starts_on"
+                                            type="date"
+                                            value={item.data.starts_on}
+                                            onChange={(e) =>
+                                                item.setData(
+                                                    'starts_on',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </Field>
+                                    <Field
+                                        label="Until"
+                                        htmlFor="ends_on"
+                                        error={item.errors.ends_on}
+                                        hint="Blank for ongoing"
+                                    >
+                                        <Input
+                                            id="ends_on"
+                                            type="date"
+                                            value={item.data.ends_on}
+                                            onChange={(e) =>
+                                                item.setData(
+                                                    'ends_on',
+                                                    e.target.value,
+                                                )
+                                            }
                                         />
                                     </Field>
                                 </div>

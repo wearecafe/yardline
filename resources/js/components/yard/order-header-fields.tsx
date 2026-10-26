@@ -6,6 +6,7 @@ import type { DeliveryAddress } from '@/types';
 export type OrderHeaderData = {
     organization_id: string;
     customer_id: string;
+    organization_location_id: string;
     location_id: string;
     fulfillment: 'pickup' | 'delivery';
     delivery_address: DeliveryAddress;
@@ -17,6 +18,15 @@ export type OrderHeaderData = {
 };
 
 type Org = { id: number; name: string };
+export type JobSite = {
+    id: number;
+    name: string;
+    address: string;
+    delivery_address: DeliveryAddress;
+    po_required: boolean;
+    location_id: number | null;
+    delivery_notes: string | null;
+};
 type Person = {
     id: number;
     organization_id: number | null;
@@ -33,12 +43,14 @@ export function OrderHeaderFields<T extends OrderHeaderData>({
     organizations,
     customers,
     locations,
+    sites = [],
 }: {
     form: InertiaFormProps<T>;
     isRental: boolean;
     organizations: Org[];
     customers: Person[];
     locations: { id: number; name: string }[];
+    sites?: JobSite[];
 }) {
     const data = form.data as OrderHeaderData;
     const errors = form.errors as Partial<Record<string, string>>;
@@ -73,6 +85,7 @@ export function OrderHeaderFields<T extends OrderHeaderData>({
                         onChange={(e) => {
                             set('organization_id', e.target.value);
                             set('customer_id', '');
+                            set('organization_location_id', '');
                         }}
                     >
                         <option value="">Walk-in</option>
@@ -102,6 +115,65 @@ export function OrderHeaderFields<T extends OrderHeaderData>({
                     </NativeSelect>
                 </Field>
             </div>
+
+            {sites.length > 0 && String(data.organization_id) !== '' && (
+                <Field
+                    label="Job site"
+                    htmlFor="organization_location_id"
+                    error={errors.organization_location_id}
+                    hint={(() => {
+                        const site = sites.find(
+                            (s) =>
+                                String(s.id) === data.organization_location_id,
+                        );
+
+                        return site
+                            ? [
+                                  site.address,
+                                  site.po_required ? 'PO required' : null,
+                                  site.delivery_notes,
+                              ]
+                                  .filter(Boolean)
+                                  .join(' · ')
+                            : undefined;
+                    })()}
+                >
+                    <NativeSelect
+                        id="organization_location_id"
+                        value={data.organization_location_id}
+                        onChange={(e) => {
+                            const site = sites.find(
+                                (s) => String(s.id) === e.target.value,
+                            );
+                            set('organization_location_id', e.target.value);
+
+                            if (site) {
+                                if (site.location_id) {
+                                    set(
+                                        'location_id',
+                                        String(site.location_id),
+                                    );
+                                }
+
+                                if (site.delivery_address.line1) {
+                                    set('fulfillment', 'delivery');
+                                    set(
+                                        'delivery_address',
+                                        site.delivery_address,
+                                    );
+                                }
+                            }
+                        }}
+                    >
+                        <option value="">None</option>
+                        {sites.map((s) => (
+                            <option key={s.id} value={s.id}>
+                                {s.name}
+                            </option>
+                        ))}
+                    </NativeSelect>
+                </Field>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-3">
                 <Field
@@ -288,6 +360,7 @@ export function headerPayload(data: OrderHeaderData, isRental: boolean) {
         ...data,
         organization_id: data.organization_id || null,
         customer_id: data.customer_id || null,
+        organization_location_id: data.organization_location_id || null,
         delivery_address:
             data.fulfillment === 'delivery'
                 ? { country: 'CA', ...data.delivery_address }

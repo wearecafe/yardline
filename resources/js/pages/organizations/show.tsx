@@ -1,8 +1,17 @@
 import { Head, Link } from '@inertiajs/react';
-import CustomerController from '@/actions/App/Http/Controllers/CustomerController';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import OrganizationController from '@/actions/App/Http/Controllers/OrganizationController';
 import { EmptyRow, Table, Td, Th } from '@/components/yard/data-table';
+import {
+    ContactsSection,
+    ContractPricesSection,
+    SitesSection,
+} from '@/components/yard/organization-sections';
+import type {
+    OrgContact,
+    OrgContractPrice,
+    OrgSite,
+} from '@/components/yard/organization-sections';
 import { PageBody, PageHeader, Section } from '@/components/yard/page-header';
 import { OrderStatusBadge, PaymentBadge } from '@/components/yard/status-badge';
 import { Button } from '@/components/ui/button';
@@ -19,14 +28,21 @@ type Props = {
     };
     orders: OrderSummary[];
     paymentTerms: Option[];
+    contacts: OrgContact[];
+    roles: Option[];
+    otherCustomers: { id: number; name: string }[];
+    sites: OrgSite[];
+    yards: { id: number; name: string }[];
+    contractPrices: OrgContractPrice[];
+    products: {
+        id: number;
+        label: string;
+        units: { id: number; name: string; is_base: boolean }[];
+    }[];
 };
 
-export default function ShowOrganization({
-    organization,
-    credit,
-    orders,
-    paymentTerms,
-}: Props) {
+export default function ShowOrganization(props: Props) {
+    const { organization, credit, orders, paymentTerms } = props;
     const terms =
         paymentTerms.find((t) => t.value === organization.payment_terms)
             ?.label ?? organization.payment_terms;
@@ -141,47 +157,12 @@ export default function ShowOrganization({
                             </dl>
                         </Section>
 
-                        <Section
-                            title="Contacts"
-                            actions={
-                                <Link
-                                    href={CustomerController.create({
-                                        query: {
-                                            organization_id: organization.id,
-                                        },
-                                    })}
-                                    className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-                                >
-                                    Add contact
-                                </Link>
-                            }
-                        >
-                            {organization.customers?.length ? (
-                                <ul className="grid gap-2 text-sm">
-                                    {organization.customers.map((c) => (
-                                        <li key={c.id}>
-                                            <Link
-                                                href={CustomerController.edit(
-                                                    c.id,
-                                                )}
-                                                className="font-medium underline-offset-4 hover:underline"
-                                            >
-                                                {c.full_name}
-                                            </Link>
-                                            <div className="text-muted-foreground">
-                                                {[c.phone, c.email]
-                                                    .filter(Boolean)
-                                                    .join(', ')}
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">
-                                    No contacts yet.
-                                </p>
-                            )}
-                        </Section>
+                        <ContactsSection
+                            organizationId={organization.id}
+                            contacts={props.contacts}
+                            roles={props.roles}
+                            otherCustomers={props.otherCustomers}
+                        />
 
                         {organization.notes && (
                             <Section title="Notes">
@@ -192,76 +173,94 @@ export default function ShowOrganization({
                         )}
                     </div>
 
-                    <Section title="Orders">
-                        <Table>
-                            <thead>
-                                <tr>
-                                    <Th>Order</Th>
-                                    <Th>Date</Th>
-                                    <Th>Status</Th>
-                                    <Th numeric>Total</Th>
-                                    <Th numeric>Balance</Th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {orders.length === 0 && (
-                                    <EmptyRow colSpan={5}>
-                                        No orders yet.
-                                    </EmptyRow>
-                                )}
-                                {orders.map((order) => (
-                                    <tr
-                                        key={order.id}
-                                        className="hover:bg-accent/50"
-                                    >
-                                        <Td>
-                                            <Link
-                                                href={OrderController.show(
-                                                    order.id,
-                                                )}
-                                                className="font-medium underline-offset-4 hover:underline"
-                                            >
-                                                {order.number}
-                                            </Link>
-                                        </Td>
-                                        <Td className="whitespace-nowrap text-muted-foreground">
-                                            {formatDate(order.created_at)}
-                                        </Td>
-                                        <Td>
-                                            <div className="flex items-center gap-2">
-                                                <OrderStatusBadge
-                                                    status={order.status}
-                                                    rental={
-                                                        order.type === 'rental'
-                                                    }
-                                                />
-                                                {order.status !== 'draft' && (
-                                                    <PaymentBadge
+                    <div className="grid content-start gap-8">
+                        <Section title="Orders">
+                            <Table>
+                                <thead>
+                                    <tr>
+                                        <Th>Order</Th>
+                                        <Th>Date</Th>
+                                        <Th>Status</Th>
+                                        <Th numeric>Total</Th>
+                                        <Th numeric>Balance</Th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {orders.length === 0 && (
+                                        <EmptyRow colSpan={5}>
+                                            No orders yet.
+                                        </EmptyRow>
+                                    )}
+                                    {orders.map((order) => (
+                                        <tr
+                                            key={order.id}
+                                            className="hover:bg-accent/50"
+                                        >
+                                            <Td>
+                                                <Link
+                                                    href={OrderController.show(
+                                                        order.id,
+                                                    )}
+                                                    className="font-medium underline-offset-4 hover:underline"
+                                                >
+                                                    {order.number}
+                                                </Link>
+                                            </Td>
+                                            <Td className="whitespace-nowrap text-muted-foreground">
+                                                {formatDate(order.created_at)}
+                                            </Td>
+                                            <Td>
+                                                <div className="flex items-center gap-2">
+                                                    <OrderStatusBadge
                                                         status={
-                                                            order.payment_status
+                                                            order.is_quote
+                                                                ? 'quote'
+                                                                : order.status
                                                         }
-                                                        settlement={
-                                                            order.settlement
+                                                        rental={
+                                                            order.type ===
+                                                            'rental'
                                                         }
                                                     />
-                                                )}
-                                            </div>
-                                        </Td>
-                                        <Td numeric>
-                                            {formatMoney(order.total_cents)}
-                                        </Td>
-                                        <Td numeric>
-                                            {order.status === 'draft'
-                                                ? ''
-                                                : formatMoney(
-                                                      order.balance_cents,
-                                                  )}
-                                        </Td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </Table>
-                    </Section>
+                                                    {order.status !==
+                                                        'draft' && (
+                                                        <PaymentBadge
+                                                            status={
+                                                                order.payment_status
+                                                            }
+                                                            settlement={
+                                                                order.settlement
+                                                            }
+                                                        />
+                                                    )}
+                                                </div>
+                                            </Td>
+                                            <Td numeric>
+                                                {formatMoney(order.total_cents)}
+                                            </Td>
+                                            <Td numeric>
+                                                {order.status === 'draft'
+                                                    ? ''
+                                                    : formatMoney(
+                                                          order.balance_cents,
+                                                      )}
+                                            </Td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </Section>
+                        <SitesSection
+                            organizationId={organization.id}
+                            sites={props.sites}
+                            yards={props.yards}
+                        />
+                        <ContractPricesSection
+                            organizationId={organization.id}
+                            prices={props.contractPrices}
+                            products={props.products}
+                        />
+                    </div>
                 </div>
             </PageBody>
         </>

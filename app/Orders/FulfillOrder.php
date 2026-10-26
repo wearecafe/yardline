@@ -32,7 +32,7 @@ class FulfillOrder
 
             foreach ($order->lines()->with('product')->get() as $line) {
                 if ($line->product?->track_inventory) {
-                    $this->ledger->record($line->product, $order->location, -1 * (float) $line->quantity, $type, $order, $user);
+                    $this->ledger->record($line->product, $order->location, -1 * $line->baseQuantity(), $type, $order, $user);
                 }
             }
 
