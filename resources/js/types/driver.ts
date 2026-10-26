@@ -1,0 +1,23 @@
+export type DriverStop = {
+    id: number;
+    kind: 'delivery' | 'rental_drop' | 'rental_pickup' | 'pallet_pickup';
+    kind_label: string;
+    title: string;
+    reference: string | null;
+    address: string;
+    address_full: string;
+    map_url: string | null;
+    starts_at: string | null;
+    time_label: string | null;
+    duration_minutes: number;
+    status: 'scheduled' | 'en_route' | 'done';
+    eta_label: string | null;
+    done_label: string | null;
+    needs: string | null;
+    loaded: boolean;
+    weight_kg: number | null;
+    contact: { name: string; phone: string | null } | null;
+    shipment_id: number | null;
+    shipment_status: string | null;
+    delivered: boolean;
+};

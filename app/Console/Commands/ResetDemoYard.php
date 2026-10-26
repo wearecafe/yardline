@@ -37,6 +37,7 @@ class ResetDemoYard extends Command
         'credit_notes',
         'invoices',
         'stops',
+        'driver_pings',
         'shipment_lines',
         'shipments',
         'trucks',

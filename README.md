@@ -21,7 +21,8 @@ composer dev
 ```
 
 Open http://localhost:8000/demo and pick someone at Escarpment Stone, the
-fictional demo yard: the owner, office manager, counter or yard lead. It has
+fictional demo yard: the owner, office manager, counter, yard lead or
+driver (Sam, whose run opens on a phone-sized screen). It has
 two yards, a truck and rental fleet, contractor and builder price lists, job
 sites and contract prices, purchase orders and colour runs, today's pick
 queue and dispatch board, invoices across every aging bucket, returns,

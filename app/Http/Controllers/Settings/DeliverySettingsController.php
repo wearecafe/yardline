@@ -6,7 +6,9 @@ use App\Fulfillment\DeliverySettings;
 use App\Http\Controllers\Controller;
 use App\Models\DeliveryZone;
 use App\Models\Location;
+use App\Enums\UserRole;
 use App\Models\Truck;
+use App\Models\User;
 use App\Receivables\ReturnsSettings;
 use App\Support\Money;
 use App\Tenancy\CurrentTenant;
@@ -35,6 +37,7 @@ class DeliverySettingsController extends Controller
                 'fee' => number_format($zone->fee_cents / 100, 2, '.', ''),
             ]),
             'trucks' => Truck::query()->orderBy('position')->orderBy('name')->get(),
+            'drivers' => User::query()->where('tenant_id', CurrentTenant::id())->where('role', UserRole::Driver->value)->orderBy('name')->get(['id', 'name']),
             'yards' => Location::query()->orderBy('name')->get(['id', 'name', 'pallet_deposits']),
             'returns' => ReturnsSettings::current()->toArray(),
         ]);
@@ -50,6 +53,8 @@ class DeliverySettingsController extends Controller
             'load_capacity_t' => ['required', 'numeric', 'min:0.1', 'max:100'],
             'out_of_zone' => ['nullable', 'numeric', 'min:0', 'max:99999'],
             'eta_texts' => ['boolean'],
+            'portal_stops_ahead' => ['boolean'],
+            'portal_truck_location' => ['boolean'],
         ]);
 
         $tenant = CurrentTenant::get();
@@ -64,6 +69,8 @@ class DeliverySettingsController extends Controller
             'load_capacity_kg' => (int) round((float) $data['load_capacity_t'] * 1000),
             'out_of_zone_cents' => (int) (Money::parse($data['out_of_zone'] ?? null) ?? 0),
             'eta_texts' => (bool) ($data['eta_texts'] ?? false),
+            'portal_stops_ahead' => (bool) ($data['portal_stops_ahead'] ?? false),
+            'portal_truck_location' => (bool) ($data['portal_truck_location'] ?? false),
         ];
         $tenant->update(['settings' => $settings]);
 
@@ -103,6 +110,7 @@ class DeliverySettingsController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'kind' => ['required', Rule::in(['material', 'equipment'])],
+            'driver_id' => ['nullable', Rule::exists('users', 'id')->where('tenant_id', CurrentTenant::id())->where('role', UserRole::Driver->value)],
             'driver_name' => ['nullable', 'string', 'max:100'],
             'driver_phone' => ['nullable', 'string', 'max:30'],
             'capacity_t' => ['nullable', 'numeric', 'min:0', 'max:100'],

@@ -12,6 +12,10 @@ use App\Tenancy\CurrentTenant;
  *  - zone: a flat fee per delivery zone (by postal code prefix)
  *  - distance: a base fee plus a rate per km from the yard
  *  - truckload: a fee per truckload, with loads worked out from weight
+ *
+ * It also says what contractors see about a delivery in the portal: how
+ * many stops are ahead of theirs, and the truck on a map once theirs is
+ * next. Both are off until the yard turns them on.
  */
 final readonly class DeliverySettings
 {
@@ -25,6 +29,8 @@ final readonly class DeliverySettings
         public int $loadCapacityKg = 14000,
         public int $outOfZoneCents = 0,
         public bool $etaTexts = true,
+        public bool $portalStopsAhead = false,
+        public bool $portalTruckLocation = false,
     ) {}
 
     public static function current(): self
@@ -44,6 +50,8 @@ final readonly class DeliverySettings
             loadCapacityKg: max(1, (int) ($v['load_capacity_kg'] ?? 14000)),
             outOfZoneCents: (int) ($v['out_of_zone_cents'] ?? 0),
             etaTexts: (bool) ($v['eta_texts'] ?? true),
+            portalStopsAhead: (bool) ($v['portal_stops_ahead'] ?? false),
+            portalTruckLocation: (bool) ($v['portal_truck_location'] ?? false),
         );
     }
 
@@ -60,6 +68,8 @@ final readonly class DeliverySettings
             'load_capacity_kg' => $this->loadCapacityKg,
             'out_of_zone_cents' => $this->outOfZoneCents,
             'eta_texts' => $this->etaTexts,
+            'portal_stops_ahead' => $this->portalStopsAhead,
+            'portal_truck_location' => $this->portalTruckLocation,
         ];
     }
 }

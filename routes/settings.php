@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Settings\BusinessController;
+use App\Http\Controllers\Settings\DriverAccountsController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\QuickBooksController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -32,6 +33,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function () {
     Route::get('settings/business', [BusinessController::class, 'edit'])->name('business.edit');
     Route::patch('settings/business', [BusinessController::class, 'update'])->name('business.update');
+
+    Route::get('settings/drivers', [DriverAccountsController::class, 'index'])->name('drivers.index');
+    Route::post('settings/drivers', [DriverAccountsController::class, 'store'])->name('drivers.store');
+    Route::post('settings/drivers/{driver}/resend', [DriverAccountsController::class, 'resend'])->name('drivers.resend');
+    Route::delete('settings/drivers/{driver}', [DriverAccountsController::class, 'destroy'])->name('drivers.destroy');
 
     Route::get('settings/shopify', [ShopifyController::class, 'edit'])->name('shopify.edit');
     Route::put('settings/shopify', [ShopifyController::class, 'update'])->name('shopify.update');

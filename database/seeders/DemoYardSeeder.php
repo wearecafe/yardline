@@ -17,6 +17,7 @@ use App\Enums\Unit;
 use App\Enums\UserRole;
 use App\Fulfillment\CompleteShipment;
 use App\Fulfillment\Dispatch;
+use App\Fulfillment\DriverRun;
 use App\Fulfillment\LoadShipment;
 use App\Fulfillment\RecordPick;
 use App\Fulfillment\StartPicking;
@@ -118,7 +119,34 @@ class DemoYardSeeder extends Seeder
             'title' => 'Yard lead',
             'description' => 'Receives and counts stock, releases loads and checks rentals back in.',
         ],
+        [
+            'email' => 'sam.rinaldi@example.com',
+            'name' => 'Sam Rinaldi',
+            'role' => UserRole::Driver,
+            'title' => 'Driver',
+            'description' => 'Drives Truck 2, the boom truck. Sees only his run on his phone: stops in order, directions, proof of delivery. Shares his location with dispatch.',
+        ],
     ];
+
+    /**
+     * Truck 2's way from the Waterdown yard to Brantwood's Hamilton St
+     * site. yardline:demo:drive moves the truck along it so the board and
+     * the portal always have a fresh position.
+     *
+     * @var list<array{float, float}>
+     */
+    public const DEMO_ROUTE = [
+        [43.33352, -79.87953],
+        [43.33371, -79.88262],
+        [43.33389, -79.88581],
+        [43.33405, -79.88874],
+        [43.33431, -79.89148],
+        [43.33512, -79.89262],
+        [43.33617, -79.89301],
+        [43.33702, -79.89322],
+    ];
+
+    public const DEMO_DRIVER = 'sam.rinaldi@example.com';
 
     private const TZ = 'America/Toronto';
 
@@ -1160,6 +1188,11 @@ class DemoYardSeeder extends Seeder
         $dispatch->enRoute($stop->refresh(), $today->setTimeFromTimeString('10:40'));
         $stop->forceFill(['eta_sent_at' => $this->at(0, '08:55')])->save();
 
+        // Sam's day on Truck 2 (the demo driver): a drop first thing, the
+        // Brantwood run above, and another Brantwood load this afternoon,
+        // so the portal shows "1 stop before yours".
+        $this->samsRun($today);
+
         // Greenline's pickup is being picked: mulch done, soil to go.
         $greenline = Order::query()->where('po_number', 'GL-0193')->firstOrFail();
         $shipment = $start->handle($greenline, $this->owner(), $owen);
@@ -1191,6 +1224,50 @@ class DemoYardSeeder extends Seeder
             'po_number' => 'HM-RIDGEVIEW',
         ], ['WAL-STD@Pallet (48 blocks)' => 3, 'WAL-CAP' => 40, 'AGG-34C' => 6], $this->at(0, '09:20'));
         $this->confirm($order, Settlement::Account, $this->at(0, '09:25'), override: 'Good for it: cheque for HM-TOWNSEND came in today. (Gord)');
+    }
+
+    /**
+     * The demo driver's other stops today, and where his truck is.
+     */
+    private function samsRun(CarbonImmutable $today): void
+    {
+        $truck = $this->trucks[1];
+        $dispatch = app(Dispatch::class);
+
+        // Delivered first thing to Kerncliff, signed for on site.
+        $order = $this->draft([
+            'organization_id' => $this->orgs['kerncliff']->id,
+            'customer_id' => $this->people['tom']->id,
+            'fulfillment' => 'delivery',
+            'delivery_address' => ['line1' => '62 Mill St S', 'city' => 'Waterdown', 'region' => 'ON', 'postal_code' => 'L8B 1K1', 'country' => 'CA'],
+            'po_number' => 'KC-MILL-07',
+        ], ['AGG-34C' => 5, 'FAB-GEO' => 2], $this->at(1, '14:10'));
+        $this->confirm($order, Settlement::Prepaid, $this->at(1, '14:15'));
+        $this->pay($order, PaymentTender::ETransfer, $this->at(1, '14:20'), reference: 'KC e-Transfer');
+        $this->release($order, $this->at(0, '06:30'));
+        $order->shipments()->firstOrFail()->stop()->firstOrFail()
+            ->forceFill(['truck_id' => $truck->id, 'starts_at' => '07:00', 'duration_minutes' => 60])
+            ->save();
+
+        // This afternoon: a second Brantwood site, loaded and waiting.
+        $order = $this->draft([
+            'organization_id' => $this->orgs['brantwood']->id,
+            'customer_id' => $this->people['mike']->id,
+            'fulfillment' => 'delivery',
+            'delivery_address' => ['line1' => '9 Kerr St', 'city' => 'Waterdown', 'region' => 'ON', 'postal_code' => 'L8B 0E4', 'country' => 'CA'],
+            'po_number' => 'BW-KERR-1',
+        ], ['SOIL-3MX' => 6, 'MUL-BCD' => 4], $this->at(0, '07:10'));
+        $this->confirm($order, Settlement::Prepaid, $this->at(0, '07:12'));
+        $this->pay($order, PaymentTender::CardTerminal, $this->at(0, '07:13'), reference: 'Auth 552301');
+        $shipment = app(StartPicking::class)->handle($order->refresh(), $this->owner(), $this->yardLead());
+        foreach ($shipment->lines as $line) {
+            app(RecordPick::class)->handle($line, $line->quantity);
+        }
+        app(LoadShipment::class)->handle($shipment->refresh(), $this->yardLead());
+        $dispatch->schedule($shipment->stop()->firstOrFail(), $truck, $today, '13:00', 60);
+
+        [$lat, $lng] = self::DEMO_ROUTE[4];
+        app(DriverRun::class)->locate($this->users[self::DEMO_DRIVER], $lat, $lng, 12, 38.0);
     }
 
     /**
@@ -1362,6 +1439,8 @@ class DemoYardSeeder extends Seeder
             'method' => 'zone',
             'out_of_zone_cents' => 14500,
             'eta_texts' => true,
+            'portal_stops_ahead' => true,
+            'portal_truck_location' => true,
         ]]]);
 
         foreach ([
@@ -1375,6 +1454,8 @@ class DemoYardSeeder extends Seeder
                 'kind' => $kind,
                 'driver_name' => $driver,
                 'driver_phone' => '905-555-01'.(70 + $position),
+                // Sam signs in to the driver app; the others are names on the board.
+                'driver_id' => $driver === 'Sam Rinaldi' ? $this->users[self::DEMO_DRIVER]->id : null,
                 'capacity_kg' => $capacity,
                 'has_boom' => $boom,
                 'location_id' => $this->waterdown->id,

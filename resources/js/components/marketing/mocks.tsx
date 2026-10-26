@@ -564,3 +564,145 @@ export function StockMock() {
         </Frame>
     );
 }
+
+const run: {
+    time: string;
+    who: string;
+    where: string;
+    tone: ChipTone;
+    status: string;
+}[] = [
+    {
+        time: '7:00',
+        who: 'Kerncliff Homes',
+        where: '62 Mill St S',
+        tone: 'success',
+        status: 'Delivered 8:05',
+    },
+    {
+        time: '9:00',
+        who: 'Brantwood Landscaping',
+        where: '251 Hamilton St N',
+        tone: 'info',
+        status: 'ETA 10:40',
+    },
+    {
+        time: '1:00',
+        who: 'Brantwood Landscaping',
+        where: '9 Kerr St',
+        tone: 'neutral',
+        status: 'Scheduled',
+    },
+];
+
+/** The driver's phone, and what the contractor sees at the same moment. */
+export function DriverMock() {
+    return (
+        <div className="relative mx-auto flex w-full max-w-md flex-col items-center gap-4 sm:block sm:h-[30rem]">
+            <div className="w-full max-w-[17rem] rounded-[2rem] border-8 border-foreground bg-background shadow-lg sm:absolute sm:top-0 sm:left-0">
+                <div className="flex items-center justify-between rounded-t-[1.4rem] bg-sidebar px-3 py-2.5 text-[#fafaf9]">
+                    <span className="text-xs font-semibold">Sam · Truck 2</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-[10px] font-semibold text-success">
+                        ● Sharing location
+                    </span>
+                </div>
+                <div className="grid gap-2 p-3">
+                    <div className="text-center text-sm font-bold">Today</div>
+                    {run.map((stop, i) => (
+                        <div
+                            key={stop.time}
+                            className={cn(
+                                'rounded-lg border bg-card p-2.5',
+                                i === 1 ? 'border-primary' : 'border-border',
+                                i === 0 && 'opacity-60',
+                            )}
+                        >
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                    <div className="font-mono text-[10px] text-muted-foreground uppercase">
+                                        {i + 1}. {stop.time} · Delivery
+                                        {i === 1 && (
+                                            <span className="text-primary">
+                                                {' '}
+                                                · Next
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="truncate text-xs font-semibold">
+                                        {stop.who}
+                                    </div>
+                                    <div className="text-[11px] text-muted-foreground">
+                                        {stop.where}
+                                    </div>
+                                </div>
+                                <Chip tone={stop.tone} className="text-[10px]">
+                                    {stop.status}
+                                </Chip>
+                            </div>
+                            {i === 1 && (
+                                <div className="mt-2 grid grid-cols-2 gap-1.5 text-center text-[11px] font-semibold">
+                                    <span className="rounded-md border border-border py-1.5">
+                                        Directions
+                                    </span>
+                                    <span className="rounded-md border border-border py-1.5">
+                                        Call
+                                    </span>
+                                    <span className="col-span-2 rounded-md bg-primary py-1.5 text-primary-foreground">
+                                        Proof of delivery
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className="w-full max-w-[15rem] rounded-lg border border-border bg-card p-3 shadow-lg sm:absolute sm:right-0 sm:bottom-0">
+                <div className="text-[11px] text-muted-foreground">
+                    Contractor portal · SO-1042
+                </div>
+                <div className="mt-0.5 text-sm font-semibold">
+                    Your delivery is next
+                </div>
+                <svg
+                    viewBox="0 0 200 110"
+                    className="mt-2 w-full rounded-md bg-secondary"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M0 70 H200 M120 0 V110 M40 0 L70 110 M0 25 H120"
+                        stroke="currentColor"
+                        strokeWidth="6"
+                        className="text-background"
+                        fill="none"
+                    />
+                    <path
+                        d="M190 70 H120 V30"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeDasharray="5 4"
+                        className="text-primary"
+                        fill="none"
+                    />
+                    <circle
+                        cx="120"
+                        cy="22"
+                        r="5"
+                        className="fill-foreground"
+                    />
+                    <circle
+                        cx="160"
+                        cy="70"
+                        r="8"
+                        className="fill-primary"
+                        stroke="white"
+                        strokeWidth="2"
+                    />
+                </svg>
+                <div className="mt-1.5 text-[11px] text-muted-foreground">
+                    Truck location updated 1 min ago
+                </div>
+            </div>
+        </div>
+    );
+}

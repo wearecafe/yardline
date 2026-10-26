@@ -53,7 +53,7 @@ class DispatchController extends Controller
             Rental::class => ['organization:id,name', 'customer:id,first_name,last_name,phone', 'items'],
         ]);
 
-        $trucks = Truck::query()->where('is_active', true)->orderBy('position')->orderBy('name')->get();
+        $trucks = Truck::query()->with('driver:id,name')->where('is_active', true)->orderBy('position')->orderBy('name')->get();
         $scheduled = $stops->filter(fn (Stop $s) => $s->truck_id !== null && $s->starts_at !== null && $s->date?->toDateString() === $date->toDateString());
 
         return Inertia::render('dispatch/board', [
@@ -63,7 +63,9 @@ class DispatchController extends Controller
             'trucks' => $trucks->map(fn (Truck $truck) => [
                 'id' => $truck->id,
                 'name' => $truck->name,
-                'driver' => $truck->driver_name,
+                'driver' => $truck->driverLabel(),
+                'signs_in' => $truck->driver_id !== null,
+                'location' => $truck->lastLocation(),
                 'capacity' => $truck->capacityLabel(),
                 'kind' => $truck->kind,
                 'stops' => $scheduled->where('truck_id', $truck->id)->sortBy('starts_at')->values()->map(fn (Stop $s) => $this->stop($s, $dispatch)),

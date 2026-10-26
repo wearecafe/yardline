@@ -1,5 +1,6 @@
-import { Link } from '@inertiajs/react';
-import { LifeBuoy } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { LifeBuoy, Route } from 'lucide-react';
+import DriverController from '@/actions/App/Http/Controllers/DriverController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -17,6 +18,23 @@ import { navSections } from '@/lib/navigation';
 import { dashboard } from '@/routes';
 
 export function AppSidebar() {
+    const { auth } = usePage().props;
+    // Drivers only reach settings pages here; their run is the way back.
+    const sections = auth.can.drive
+        ? [
+              {
+                  label: 'Driving',
+                  items: [
+                      {
+                          title: 'My run',
+                          href: DriverController.today(),
+                          icon: Route,
+                      },
+                  ],
+              },
+          ]
+        : navSections;
+
     return (
         <Sidebar collapsible="icon" variant="sidebar">
             <SidebarHeader>
@@ -27,7 +45,14 @@ export function AppSidebar() {
                             asChild
                             className="hover:bg-transparent"
                         >
-                            <Link href={dashboard()} prefetch>
+                            <Link
+                                href={
+                                    auth.can.drive
+                                        ? DriverController.today()
+                                        : dashboard()
+                                }
+                                prefetch
+                            >
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
@@ -36,7 +61,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent className="gap-2">
-                {navSections.map((section) => (
+                {sections.map((section) => (
                     <NavMain
                         key={section.label}
                         label={section.label}

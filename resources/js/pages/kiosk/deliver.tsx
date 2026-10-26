@@ -1,11 +1,13 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useRef } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import DeliveryController from '@/actions/App/Http/Controllers/DeliveryController';
 import DispatchController from '@/actions/App/Http/Controllers/DispatchController';
+import DriverController from '@/actions/App/Http/Controllers/DriverController';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import InputError from '@/components/input-error';
 import { SignaturePad } from '@/components/yard/signature-pad';
+import { useLocationSharing } from '@/hooks/use-location-sharing';
 import type { SignaturePadHandle } from '@/components/yard/signature-pad';
 import { formatDateTime, formatQuantity } from '@/lib/format';
 
@@ -33,6 +35,7 @@ type Props = {
         pod_signature_url: string | null;
         pod_photo_url: string | null;
         pod_notes: string | null;
+        stop_id: number | null;
     };
     items: {
         order_line_id: number;
@@ -64,6 +67,8 @@ export default function Deliver({ shipment, items, weight_kg }: Props) {
         notes: '',
     });
     const pad = useRef<SignaturePadHandle>(null);
+    // Drivers keep sharing their location while they take the signature.
+    useLocationSharing(usePage().props.shareLocation);
     const where = [
         shipment.address?.line1,
         shipment.address?.city,
@@ -81,14 +86,20 @@ export default function Deliver({ shipment, items, weight_kg }: Props) {
                 <main className="mx-auto flex max-w-lg flex-col gap-4">
                     <Link
                         href={
-                            shipment.delivery
-                                ? DispatchController.board.url()
-                                : OrderController.show.url(shipment.order_id)
+                            shipment.stop_id !== null
+                                ? DriverController.show.url(shipment.stop_id)
+                                : shipment.delivery
+                                  ? DispatchController.board.url()
+                                  : OrderController.show.url(shipment.order_id)
                         }
                         className="flex items-center gap-1 text-sm text-muted-foreground"
                     >
                         <ChevronLeft className="size-4" />{' '}
-                        {shipment.delivery ? 'Dispatch' : 'Order'}
+                        {shipment.stop_id !== null
+                            ? 'Stop'
+                            : shipment.delivery
+                              ? 'Dispatch'
+                              : 'Order'}
                     </Link>
                     <header>
                         <div className="figure text-sm text-muted-foreground">

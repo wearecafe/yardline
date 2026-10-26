@@ -17,14 +17,33 @@ Mockups for each screen are in [scope/mockups](scope/mockups).
 
 ## Yard and delivery
 
-| Feature                                                             | Screens                    | Code                                 |
-| ------------------------------------------------------------------- | -------------------------- | ------------------------------------ |
-| Pick queue, picking with 5% tolerance, bins                         | Orders → Queue, yard kiosk | `StartPicking`, `RecordPick`         |
-| Loading shipments onto trucks, partial shipments                    | Kiosk                      | `LoadShipment`                       |
-| Dispatch board: trucks × hours, rental drops and pallet pickups too | Dispatch                   | `Dispatch`, `DispatchController`     |
-| Delivery pricing by zone, distance or truckload                     | Settings → Delivery        | `DeliveryPricer`, `DeliverySettings` |
-| ETA texts                                                           | Dispatch                   | `Dispatch::sendEtas`, `EtaMessage`   |
-| Proof of delivery (signature, photo)                                | Driver kiosk               | `CompleteShipment`                   |
+| Feature                                                             | Screens                       | Code                                               |
+| ------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------- |
+| Pick queue, picking with 5% tolerance, bins                         | Orders → Queue, yard kiosk    | `StartPicking`, `RecordPick`                       |
+| Loading shipments onto trucks, partial shipments                    | Kiosk                         | `LoadShipment`                                     |
+| Dispatch board: trucks × hours, rental drops and pallet pickups too | Dispatch                      | `Dispatch`, `DispatchController`                   |
+| Delivery pricing by zone, distance or truckload                     | Settings → Delivery           | `DeliveryPricer`, `DeliverySettings`               |
+| ETA texts                                                           | Dispatch                      | `Dispatch::sendEtas`, `EtaMessage`                 |
+| Proof of delivery (signature, photo)                                | Driver app, deliver screen    | `CompleteShipment`                                 |
+| Driver role: own truck's run on their phone, nothing else           | `/driver`, Settings → Drivers | `DriverRun`, `DriverController`, `RestrictDrivers` |
+| Truck locations from drivers' phones (kept 30 days)                 | Driver app, Dispatch          | `DriverRun::locate`, `DriverPing`                  |
+| Contractor tracking: stops before yours, truck map when next        | Portal order page             | `DeliveryTracking`                                 |
+
+### Drivers
+
+Users with the `driver` role are added under Settings → Drivers (an
+emailed link to choose a password) and linked to a truck with
+`trucks.driver_id`. `RestrictDrivers` keeps them to `driver.*`, the
+deliver screen and their own account settings. While `/driver` is open
+on their phone, `useLocationSharing` posts the position about once a
+minute (`driver.locate`); the latest is kept on the truck for the board
+and every ping in `driver_pings`, pruned after 30 days. Browsers only
+share location while the page is on screen. The portal shows
+`DeliveryTracking` when the yard turns it on in Settings → Delivery; the
+truck's position shows only once the contractor's stop is next and on
+its way. The demo driver never shares a visitor's real position:
+`yardline:demo:drive` moves Truck 2 along a fixed route every five
+minutes instead.
 
 ## Rentals
 

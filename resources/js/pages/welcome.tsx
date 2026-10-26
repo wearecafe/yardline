@@ -4,6 +4,7 @@ import AppLogoIcon from '@/components/app-logo-icon';
 import {
     AgingMock,
     DispatchMock,
+    DriverMock,
     PortalMock,
     PricingMock,
     QueueMock,
@@ -22,6 +23,7 @@ type Props = {
 const nav = [
     { href: '#day', label: 'A day in the yard' },
     { href: '#features', label: 'Features' },
+    { href: '#drivers', label: 'Driver app' },
     { href: '#rentals', label: 'Rentals' },
     { href: '#portal', label: 'Contractor portal' },
     { href: '#faq', label: 'FAQ' },
@@ -76,7 +78,7 @@ const day: { time: string; who: string; title: string; body: string }[] = [
         time: '10:40',
         who: 'Driver',
         title: 'Signed for at the curb',
-        body: 'Signature and photo on the driver’s phone. Pallet deposits go on the account automatically.',
+        body: 'Sam’s phone shows his run in order. Mike watched the truck on the map once he was next, then signed on Sam’s screen. Pallet deposits go on the account automatically.',
     },
     {
         time: '3:50',
@@ -129,6 +131,8 @@ const everything: { group: string; items: string[] }[] = [
             'Dispatch board by hour',
             'Zone, distance or truckload fees',
             'ETA text messages',
+            'Driver app on their own phone',
+            'Live truck locations on the board',
             'Signature and photo proof',
         ],
     },
@@ -200,6 +204,12 @@ const compare: { feature: string; sheet: string; pos: string; erp: string }[] =
             erp: 'Add-on',
         },
         {
+            feature: 'Driver app and live truck locations',
+            sheet: 'No',
+            pos: 'No',
+            erp: 'Add-on',
+        },
+        {
             feature: 'Equipment rentals in the same system',
             sheet: 'No',
             pos: 'No',
@@ -237,6 +247,10 @@ const faqs: { q: string; a: string }[] = [
     {
         q: 'What hardware do I need?',
         a: 'Anything with a modern browser. The counter works on a desktop or tablet, the yard kiosk on a rugged tablet, and drivers use their phones. Pick tickets, invoices and statements print on regular paper.',
+    },
+    {
+        q: 'Do drivers need an app? How does truck tracking work?',
+        a: 'No app store. Drivers sign in on their phone’s browser and see only their own truck’s run. While that page is open, the phone shares its location with the dispatch board about once a minute; it stops when they close it or lock the phone, and positions are kept for 30 days. You choose whether contractors see “stops before yours” and the truck on a map in their portal; the truck only shows once their delivery is next.',
     },
     {
         q: 'We have more than one yard. Does that work?',
@@ -507,6 +521,21 @@ export default function Welcome({ demo, canRegister }: Props) {
                             visual={<DispatchMock />}
                             flip
                         />
+                        <section id="drivers" className="scroll-mt-20">
+                            <Feature
+                                eyebrow="Driver app"
+                                title="Every driver’s run on their phone, every truck on the map"
+                                body="Drivers sign in on their own phone and see their truck’s stops in order: address, site notes, PO, what’s on the truck. One tap for directions, one to call the site, and the signature at the curb. While their run is open, the phone shares where the truck is."
+                                points={[
+                                    'Each driver sees only their own truck. No prices, no accounts, nothing to break',
+                                    '“On my way” with an ETA; rental drops and pallet pickups finished in a tap',
+                                    'Dispatch sees where every truck was last seen, right on the board',
+                                    'Optional for contractors: “2 stops before yours” in the portal, and the truck on a map once theirs is next',
+                                    'Nothing to install. It runs in the phone’s browser and adds to the home screen',
+                                ]}
+                                visual={<DriverMock />}
+                            />
+                        </section>
                         <Feature
                             eyebrow="Inventory and purchasing"
                             title="Stock you can trust, at every yard"
@@ -543,7 +572,8 @@ export default function Welcome({ demo, canRegister }: Props) {
                                 points={[
                                     'Reorder a past job in one tap; it lands as a draft for the counter',
                                     'Patio calculator turns square feet into pavers, base and sand',
-                                    'Delivery status and ETA for today’s loads',
+                                    'Delivery status and ETA for today’s loads, with how many stops are before theirs',
+                                    'The truck on a map once their delivery is next (if you turn it on)',
                                     'Statement, open invoices and pallets on site',
                                     'Request a pallet pickup; it goes straight onto the dispatch board',
                                 ]}
@@ -589,9 +619,9 @@ export default function Welcome({ demo, canRegister }: Props) {
                                     check-in.
                                 </Role>
                                 <Role title="Drivers" device="Their phone">
-                                    The delivery address, site notes and PO
-                                    number, then a signature and photo at the
-                                    curb.
+                                    Their own run in order, directions and site
+                                    notes, a signature at the curb, and the
+                                    truck’s location shared with dispatch.
                                 </Role>
                                 <Role title="Office" device="Desktop">
                                     Prices, credit, receivables, purchasing and
@@ -703,8 +733,9 @@ export default function Welcome({ demo, canRegister }: Props) {
                             </Point>
                             <Point title="Roles that match the yard">
                                 Owners set prices and credit. The office runs
-                                accounts. The counter sells. The yard picks,
-                                loads and delivers.
+                                accounts. The counter sells. The yard picks and
+                                loads. Drivers see their own run and nothing
+                                else.
                             </Point>
                             <Point title="In the cloud, nothing to install">
                                 Runs in the browser on any desktop, tablet or
