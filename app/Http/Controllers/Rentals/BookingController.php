@@ -231,7 +231,7 @@ class BookingController extends Controller
     /**
      * Current documents on the account, so the renter knows what to bring.
      *
-     * @return list<array{kind: string, label: string, detail: string}>
+     * @return array<int, array{kind: string, label: string, detail: string}>
      */
     private function onFile(Customer $customer): array
     {
