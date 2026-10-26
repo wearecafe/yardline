@@ -79,7 +79,7 @@ final class ProductEditor
                 'id' => $price->id,
                 'organization_id' => $price->organization_id,
                 'organization' => $price->organization->name,
-                'unit' => $price->unit?->name ?? $base?->name,
+                'unit' => $price->unit->name ?? $base?->name,
                 'price_cents' => $price->price_cents,
                 'starts_on' => $price->starts_on?->toDateString(),
                 'ends_on' => $price->ends_on?->toDateString(),

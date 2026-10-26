@@ -50,7 +50,7 @@ class ProductUnitController extends Controller
                     OrderRules::fail('One of those units no longer exists. Reload and try again.', 'units');
                 }
 
-                $isBase = $unit?->is_base ?? false;
+                $isBase = $unit !== null && $unit->is_base;
                 $unit ??= new ProductUnit(['product_id' => $product->id]);
                 $unit->fill([
                     'name' => $row['name'],
