@@ -254,6 +254,7 @@ class QuickBooksSyncTest extends TestCase
         $this->order(['pavers' => 230]);
         $this->post(route('pallet-returns.store'), ['organization_id' => $this->org->id, 'count' => 2, 'location_id' => $this->yard->id])->assertRedirect();
 
+        $this->assertSame([], QuickBooksSync::query()->where('syncable_type', 'credit_note')->whereNotNull('message')->pluck('message')->all());
         $memo = $this->qbo->last('CreditMemo');
         $this->assertCount(1, $memo['Line']);
         $this->assertSame('23', $memo['Line'][0]['SalesItemLineDetail']['TaxCodeRef']['value']);
