@@ -1,5 +1,10 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, MessageSquareText } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    MapPin,
+    MessageSquareText,
+} from 'lucide-react';
 import { useState } from 'react';
 import DeliveryController from '@/actions/App/Http/Controllers/DeliveryController';
 import DispatchController from '@/actions/App/Http/Controllers/DispatchController';
@@ -10,6 +15,40 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
+
+/** Where the driver's phone last put the truck, and how long ago. */
+function TruckLocation({
+    location,
+}: {
+    location: NonNullable<Props['trucks'][number]['location']>;
+}) {
+    const minutes = Math.max(
+        0,
+        Math.round((Date.now() - new Date(location.at).getTime()) / 60_000),
+    );
+    const stale = minutes > 15;
+    const ago =
+        minutes < 1
+            ? 'just now'
+            : minutes < 90
+              ? `${minutes} min ago`
+              : formatDate(location.at);
+
+    return (
+        <a
+            href={`https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`}
+            target="_blank"
+            rel="noreferrer"
+            className={cn(
+                'mt-0.5 inline-flex items-center gap-1 text-xs font-medium hover:underline',
+                stale ? 'text-muted-foreground' : 'text-success',
+            )}
+            title="Shared from the driver's phone while their run is open"
+        >
+            <MapPin className="size-3" /> Seen {ago}
+        </a>
+    );
+}
 
 type Stop = {
     id: number;
@@ -41,6 +80,13 @@ type Props = {
         id: number;
         name: string;
         driver: string | null;
+        signs_in: boolean;
+        location: {
+            latitude: number;
+            longitude: number;
+            accuracy_m: number | null;
+            at: string;
+        } | null;
         capacity: string;
         kind: string;
         stops: Stop[];
@@ -280,6 +326,11 @@ export default function Board({
                                                 .filter(Boolean)
                                                 .join(' · ')}
                                         </div>
+                                        {truck.location && (
+                                            <TruckLocation
+                                                location={truck.location}
+                                            />
+                                        )}
                                     </div>
                                     {hours.map((h, i) => {
                                         const key = `${truck.id}:${h}`;

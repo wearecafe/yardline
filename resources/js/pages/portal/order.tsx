@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePoll } from '@inertiajs/react';
 import PortalController from '@/actions/App/Http/Controllers/Portal/PortalController';
 import { PortalLayout } from '@/components/yard/portal-layout';
 import {
@@ -40,14 +40,81 @@ type Props = {
             eta: string | null;
             delivered_at: string | null;
             pod_name: string | null;
+            tracking: Tracking | null;
         }[];
     };
 };
 
+type Tracking = {
+    stops_ahead: number | null;
+    location: {
+        latitude: number;
+        longitude: number;
+        accuracy_m: number | null;
+        at: string;
+    } | null;
+};
+
+/** Keeps "stops before yours" and the truck's position current. */
+function RefreshTracking() {
+    usePoll(60_000, { only: ['order'] });
+
+    return null;
+}
+
+function minutesAgo(iso: string): string {
+    const minutes = Math.max(
+        0,
+        Math.round((Date.now() - new Date(iso).getTime()) / 60_000),
+    );
+
+    return minutes < 1 ? 'just now' : `${minutes} min ago`;
+}
+
+/**
+ * Where the delivery is in the truck's day, and the truck on a map once
+ * it's on its way to this site.
+ */
+function DeliveryTracker({ tracking }: { tracking: Tracking }) {
+    const { stops_ahead, location } = tracking;
+    const pad = 0.012;
+
+    return (
+        <div className="grid gap-2 rounded-lg bg-secondary p-3">
+            {stops_ahead !== null && (
+                <div className="font-semibold">
+                    {stops_ahead === 0
+                        ? 'Your delivery is next'
+                        : `${stops_ahead} ${stops_ahead === 1 ? 'stop' : 'stops'} before yours`}
+                </div>
+            )}
+            {location && (
+                <>
+                    <iframe
+                        title="Where the truck is"
+                        className="h-56 w-full rounded-md border border-border"
+                        loading="lazy"
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${location.longitude - pad},${location.latitude - pad},${location.longitude + pad},${location.latitude + pad}&layer=mapnik&marker=${location.latitude},${location.longitude}`}
+                    />
+                    <div className="text-xs text-muted-foreground">
+                        Truck location from the driver's phone, updated{' '}
+                        {minutesAgo(location.at)}.
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
 export default function PortalOrder({ order }: Props) {
+    const tracking = order.shipments.some(
+        (s) => s.tracking !== null && !s.delivered_at,
+    );
+
     return (
         <PortalLayout active="orders">
             <Head title={`Order ${order.number}`} />
+            {tracking && <RefreshTracking />}
             <div>
                 <Link
                     href={PortalController.orders.url()}
@@ -79,21 +146,23 @@ export default function PortalOrder({ order }: Props) {
                 <section className="grid gap-3 rounded-[10px] border border-border bg-card p-5">
                     <h2 className="text-base font-semibold">Deliveries</h2>
                     {order.shipments.map((s) => (
-                        <div
-                            key={s.number}
-                            className="flex flex-wrap justify-between gap-3 text-sm"
-                        >
-                            <span className="font-medium">
-                                {s.status}
-                                {s.truck ? ` · ${s.truck}` : ''}
-                            </span>
-                            <span className="text-muted-foreground">
-                                {s.delivered_at
-                                    ? `Signed for by ${s.pod_name} · ${s.delivered_at}`
-                                    : s.eta
-                                      ? `ETA ${s.eta}`
-                                      : 'Being scheduled'}
-                            </span>
+                        <div key={s.number} className="grid gap-2 text-sm">
+                            <div className="flex flex-wrap justify-between gap-3">
+                                <span className="font-medium">
+                                    {s.status}
+                                    {s.truck ? ` · ${s.truck}` : ''}
+                                </span>
+                                <span className="text-muted-foreground">
+                                    {s.delivered_at
+                                        ? `Signed for by ${s.pod_name} · ${s.delivered_at}`
+                                        : s.eta
+                                          ? `ETA ${s.eta}`
+                                          : 'Being scheduled'}
+                                </span>
+                            </div>
+                            {s.tracking && !s.delivered_at && (
+                                <DeliveryTracker tracking={s.tracking} />
+                            )}
                         </div>
                     ))}
                 </section>

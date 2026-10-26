@@ -32,7 +32,7 @@ class DemoSetupTest extends TestCase
         config(['yardline.demo' => true]);
         $this->assertFalse(Tenant::query()->where('slug', DemoYardSeeder::SLUG)->exists());
 
-        $this->get('/demo')->assertOk()->assertInertia(fn (Assert $page) => $page->has('accounts', 4));
+        $this->get('/demo')->assertOk()->assertInertia(fn (Assert $page) => $page->has('accounts', count(DemoYardSeeder::ACCOUNTS)));
         $this->assertTrue(Tenant::query()->where('slug', DemoYardSeeder::SLUG)->exists());
 
         $this->post('/demo', ['email' => 'gord.hessels@example.com'])->assertRedirect(route('dashboard'));

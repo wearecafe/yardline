@@ -3,11 +3,13 @@
 namespace Tests\Feature\Yardline;
 
 use App\Models\AuditEvent;
+use App\Models\DriverPing;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Rental;
 use App\Models\Stop;
 use App\Models\Tenant;
+use App\Models\Truck;
 use App\Models\User;
 use App\Payments\CheckoutLinks;
 use App\Payments\FakeCheckoutLinks;
@@ -182,5 +184,57 @@ class DemoYardTest extends TestCase
         foreach (['dashboard', 'orders.index', 'orders.queue', 'dispatch.board', 'counter.show', 'inventory.index', 'purchasing.index', 'returns.index', 'receivables.index', 'products.index', 'organizations.index', 'customers.index', 'price-lists.index', 'fleet.index', 'rentals.calendar', 'rentals.index', 'maintenance.index', 'rental-payments.index', 'audit.index', 'delivery-settings.edit', 'rental-settings.edit'] as $name) {
             $this->get(route($name))->assertOk();
         }
+    }
+
+    public function test_visitors_can_try_the_driver_app(): void
+    {
+        config(['yardline.demo' => true]);
+
+        $this->post('/demo', ['email' => DemoYardSeeder::DEMO_DRIVER])->assertRedirect(route('driver.today'));
+
+        // A full day: done first thing, on the way now, one this afternoon.
+        $this->get(route('driver.today'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('driver/today')
+                ->has('stops', 3)
+                ->where('stops.0.status', 'done')
+                ->where('stops.1.status', 'en_route')
+                ->where('stops.2.status', 'scheduled')
+                // The demo never asks a visitor's phone where it is.
+                ->where('shareLocation', false));
+
+        $this->get(route('orders.index'))->assertRedirect(route('driver.today'));
+
+        $tenant = Tenant::query()->where('slug', DemoYardSeeder::SLUG)->firstOrFail();
+        $before = CurrentTenant::run($tenant, fn () => DriverPing::query()->count());
+        $this->postJson(route('driver.locate'), ['latitude' => 45.5, 'longitude' => -73.5])->assertNoContent();
+        $this->assertSame($before, CurrentTenant::run($tenant, fn () => DriverPing::query()->count()));
+
+        // The scheduler moves the demo truck instead.
+        CurrentTenant::run($tenant, fn () => Truck::query()->whereNotNull('driver_id')->update(['last_located_at' => now()->subHour()]));
+        $this->artisan('yardline:demo:drive')->assertSuccessful();
+        $truck = CurrentTenant::run($tenant, fn () => Truck::query()->whereNotNull('driver_id')->firstOrFail());
+        $this->assertTrue($truck->last_located_at?->greaterThan(now()->subMinute()));
+    }
+
+    public function test_the_demo_portal_shows_the_truck_coming(): void
+    {
+        config(['yardline.demo' => true]);
+
+        $this->post(route('portal.demo', DemoYardSeeder::SLUG))->assertRedirect(route('portal.home'));
+
+        $tenant = Tenant::query()->where('slug', DemoYardSeeder::SLUG)->firstOrFail();
+        [$next, $later] = CurrentTenant::run($tenant, fn () => [
+            Order::query()->where('po_number', 'BW-HAMILTON-2')->firstOrFail(),
+            Order::query()->where('po_number', 'BW-KERR-1')->firstOrFail(),
+        ]);
+
+        $this->get(route('portal.order', $next))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('order.shipments.0.tracking.stops_ahead', 0)
+            ->whereNot('order.shipments.0.tracking.location', null));
+        $this->get(route('portal.order', $later))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('order.shipments.0.tracking.stops_ahead', 1)
+            ->where('order.shipments.0.tracking.location', null));
     }
 }

@@ -10,9 +10,10 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
-            auth: Auth & { can: { manageBusiness: boolean } };
+            auth: Auth & { can: { manageBusiness: boolean; drive: boolean } };
             tenant: { id: number; name: string; currency: string } | null;
             isDemo: boolean;
+            shareLocation: boolean;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

@@ -44,8 +44,17 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'can' => [
                     'manageBusiness' => (bool) $request->user()?->canManageBusiness(),
+                    'drive' => (bool) $request->user()?->isDriver(),
                 ],
             ],
+            // Drivers' phones share their position while their run is open.
+            'shareLocation' => function () use ($request): bool {
+                $user = $request->user();
+
+                // The demo driver's position is simulated (yardline:demo:drive),
+                // so visitors' real locations are never asked for or kept.
+                return $user !== null && $user->isDriver() && ! Demo::isDemoUser($user) && $user->trucks()->exists();
+            },
             'tenant' => fn () => CurrentTenant::get()?->only('id', 'name', 'currency'),
             'isDemo' => fn () => Demo::isDemoUser($request->user()),
             'portal_flash' => fn () => $request->hasSession() ? $request->session()->get('portal_flash') : null,

@@ -10,7 +10,7 @@ If your supplier runs on Yardline, you can manage your account online, from the 
 
 ## What you can do
 
-- **Recent orders**: every order with its job site, items and status. Select **Track** to see where a delivery is and its ETA.
+- **Recent orders**: every order with its job site, items and status. Select **Track** to see where a delivery is and its ETA. If your supplier turns it on, a delivery that's on a truck today shows how many stops are before yours, and the truck on a map once yours is next.
 - **Reorder**: repeat a past order in one tap. It goes to the yard as a request, and they'll confirm it with you.
 - **Material calculator**: enter your **Patio area (sq ft)** and **Base depth (in)** to work out pallets of pavers, tonnes of base and bedding sand, and bags of polymeric sand, at your prices.
 - **Your account**: your balance, your **Statement** (download it as a PDF), **Pallets on deposit** and **Rentals out**.

@@ -6,6 +6,8 @@ use App\Enums\OrderStatus;
 use App\Enums\RentalStatus;
 use App\Enums\ShipmentStatus;
 use App\Enums\StopStatus;
+use App\Fulfillment\DeliverySettings;
+use App\Fulfillment\DeliveryTracking;
 use App\Fulfillment\Dispatch;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
@@ -107,11 +109,12 @@ class PortalController extends Controller
         return Inertia::render('portal/orders', ['orders' => $this->recentOrders($this->customer($request), 100)]);
     }
 
-    public function order(Request $request, Order $order, Dispatch $dispatch): Response
+    public function order(Request $request, Order $order, Dispatch $dispatch, DeliveryTracking $tracking): Response
     {
         $customer = $this->customer($request);
         abort_unless($this->owns($customer, $order), 404);
-        $order->load(['lines' => fn ($q) => $q->orderBy('position'), 'shipments.stop.truck:id,name', 'invoice']);
+        $order->load(['lines' => fn ($q) => $q->orderBy('position'), 'shipments.stop.truck', 'invoice']);
+        $settings = DeliverySettings::current();
         $tz = CurrentTenant::get()->timezone ?? 'America/Toronto';
 
         return Inertia::render('portal/order', [
@@ -133,6 +136,7 @@ class PortalController extends Controller
                     'eta' => ($s->stop->eta_at ?? ($s->stop ? $dispatch->plannedStart($s->stop) : null))?->setTimezone($tz)->format('D M j, g:i a'),
                     'delivered_at' => $s->delivered_at?->setTimezone($tz)->format('D M j, g:i a'),
                     'pod_name' => $s->pod_name,
+                    'tracking' => $tracking->forStop($s->stop, $settings),
                 ])->values(),
             ],
         ]);

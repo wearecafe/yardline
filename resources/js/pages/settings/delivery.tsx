@@ -19,12 +19,15 @@ type Settings = {
     load_capacity_kg: number;
     out_of_zone_cents: number;
     eta_texts: boolean;
+    portal_stops_ahead: boolean;
+    portal_truck_location: boolean;
 };
 
 type Truck = {
     id: number;
     name: string;
     kind: 'material' | 'equipment';
+    driver_id: number | null;
     driver_name: string | null;
     driver_phone: string | null;
     capacity_kg: number | null;
@@ -33,11 +36,14 @@ type Truck = {
     location_id: number | null;
 };
 
+type Driver = { id: number; name: string };
+
 type Props = {
     settings: Settings;
     methods: { value: Settings['method']; label: string }[];
     zones: Zone[];
     trucks: Truck[];
+    drivers: Driver[];
     yards: { id: number; name: string; pallet_deposits: boolean }[];
     returns: {
         restocking_percent: number;
@@ -148,11 +154,18 @@ function ReturnsForm({ returns, yards }: Pick<Props, 'returns' | 'yards'>) {
     );
 }
 
-function TruckRow({ truck }: { truck: Truck | null }) {
+function TruckRow({
+    truck,
+    drivers,
+}: {
+    truck: Truck | null;
+    drivers: Driver[];
+}) {
     const id = truck?.id ?? 'new';
     const form = useForm({
         name: truck?.name ?? '',
         kind: truck?.kind ?? 'material',
+        driver_id: truck?.driver_id ? String(truck.driver_id) : '',
         driver_name: truck?.driver_name ?? '',
         driver_phone: truck?.driver_phone ?? '',
         capacity_t: truck?.capacity_kg ? String(truck.capacity_kg / 1000) : '',
@@ -237,7 +250,30 @@ function TruckRow({ truck }: { truck: Truck | null }) {
                     }
                 />
             </Field>
-            <div className="flex flex-wrap items-center gap-4 sm:col-span-4">
+            <Field
+                label="Driver's sign-in"
+                htmlFor={`truck-signin-${id}`}
+                error={form.errors.driver_id}
+                className="sm:col-span-2"
+            >
+                <NativeSelect
+                    id={`truck-signin-${id}`}
+                    value={form.data.driver_id}
+                    onChange={(e) => form.setData('driver_id', e.target.value)}
+                >
+                    <option value="">
+                        {drivers.length === 0
+                            ? 'Add drivers under Settings → Drivers'
+                            : 'Nobody signs in'}
+                    </option>
+                    {drivers.map((d) => (
+                        <option key={d.id} value={String(d.id)}>
+                            {d.name}
+                        </option>
+                    ))}
+                </NativeSelect>
+            </Field>
+            <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
                 <Checkbox
                     id={`truck-boom-${id}`}
                     label="Boom"
@@ -292,6 +328,7 @@ export default function DeliverySettingsPage({
     methods,
     zones,
     trucks,
+    drivers,
     yards,
     returns,
 }: Props) {
@@ -305,6 +342,8 @@ export default function DeliverySettingsPage({
             ? centsToInput(settings.out_of_zone_cents)
             : '',
         eta_texts: settings.eta_texts,
+        portal_stops_ahead: settings.portal_stops_ahead,
+        portal_truck_location: settings.portal_truck_location,
     });
 
     return (
@@ -430,6 +469,30 @@ export default function DeliverySettingsPage({
                         onChange={(v) => form.setData('eta_texts', v)}
                     />
 
+                    <div className="space-y-3">
+                        <div className="text-sm font-medium">
+                            In the contractor portal
+                        </div>
+                        <Checkbox
+                            id="portal_stops_ahead"
+                            label="Show how many stops are before theirs"
+                            hint="On the order page while the delivery is on a truck today, for example “2 stops before yours”."
+                            checked={form.data.portal_stops_ahead}
+                            onChange={(v) =>
+                                form.setData('portal_stops_ahead', v)
+                            }
+                        />
+                        <Checkbox
+                            id="portal_truck_location"
+                            label="Show the truck on a map when theirs is next"
+                            hint="Uses the location the driver's phone shares. Only shown once their stop is the next one and the truck is on its way, so other customers' addresses stay private."
+                            checked={form.data.portal_truck_location}
+                            onChange={(v) =>
+                                form.setData('portal_truck_location', v)
+                            }
+                        />
+                    </div>
+
                     <Button type="submit" disabled={form.processing}>
                         Save delivery settings
                     </Button>
@@ -456,9 +519,13 @@ export default function DeliverySettingsPage({
                         description="Each truck is a row on the dispatch board."
                     />
                     {trucks.map((truck) => (
-                        <TruckRow key={truck.id} truck={truck} />
+                        <TruckRow
+                            key={truck.id}
+                            truck={truck}
+                            drivers={drivers}
+                        />
                     ))}
-                    <TruckRow truck={null} />
+                    <TruckRow truck={null} drivers={drivers} />
                 </section>
             </div>
         </>

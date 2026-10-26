@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\DemoLoginController;
 use App\Http\Controllers\DispatchController;
+use App\Http\Controllers\DriverController;
 use App\Http\Controllers\FakeCheckoutController;
 use App\Http\Controllers\FulfillmentController;
 use App\Http\Controllers\HelpController;
@@ -161,6 +162,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('stops/{stop}', [DispatchController::class, 'schedule'])->name('stops.schedule');
     Route::post('stops/{stop}/en-route', [DispatchController::class, 'enRoute'])->name('stops.en-route');
     Route::post('stops/{stop}/done', [DispatchController::class, 'done'])->name('stops.done');
+
+    // The driver's phone: their run, each stop, and where they are.
+    Route::controller(DriverController::class)->prefix('driver')->name('driver.')->group(function () {
+        Route::get('/', 'today')->name('today');
+        Route::get('stops/{stop}', 'show')->name('stops.show');
+        Route::post('stops/{stop}/start', 'start')->name('stops.start');
+        Route::post('stops/{stop}/done', 'done')->name('stops.done');
+        Route::post('location', 'locate')->middleware('throttle:30,1')->name('locate');
+    });
+
     Route::post('inventory/adjustments', [StockAdjustmentController::class, 'store'])->name('inventory.adjustments.store');
     Route::resource('locations', LocationController::class)->only(['index', 'store', 'update']);
 

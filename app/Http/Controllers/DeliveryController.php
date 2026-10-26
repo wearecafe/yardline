@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ShipmentStatus;
 use App\Fulfillment\CompleteShipment;
+use App\Fulfillment\DriverRun;
 use App\Http\Presenters\FulfillmentPresenter;
 use App\Models\Shipment;
 use App\Models\StockLevel;
@@ -20,8 +21,10 @@ use Inertia\Response;
  */
 class DeliveryController extends Controller
 {
-    public function show(Shipment $shipment): Response
+    public function show(Request $request, Shipment $shipment, DriverRun $run): Response
     {
+        abort_unless($run->canDeliver($request->user(), $shipment), 404);
+
         $shipment->load(['order.organization:id,name', 'order.customer', 'order.organizationLocation', 'order.location', 'lines.orderLine.productUnit', 'lines.orderLine.product:id,weight_kg,track_lots', 'lines.lot', 'stop.truck']);
         $order = $shipment->order;
         $levels = StockLevel::query()->where('location_id', $order->location_id)->get()->keyBy('product_id');
@@ -46,13 +49,17 @@ class DeliveryController extends Controller
                 'pod_signature_url' => Files::url($shipment->pod_signature_path),
                 'pod_photo_url' => Files::url($shipment->pod_photo_path),
                 'pod_notes' => $shipment->pod_notes,
+                // Drivers go back to the stop on their run.
+                'stop_id' => $request->user()?->isDriver() ? $shipment->stop?->id : null,
             ],
             ...FulfillmentPresenter::pickList($order, $shipment, $levels),
         ]);
     }
 
-    public function complete(Request $request, Shipment $shipment, CompleteShipment $complete): RedirectResponse
+    public function complete(Request $request, Shipment $shipment, CompleteShipment $complete, DriverRun $run): RedirectResponse
     {
+        abort_unless($run->canDeliver($request->user(), $shipment), 404);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'signature' => ['nullable', 'string', 'starts_with:data:image/png;base64,', 'max:2800000'],
