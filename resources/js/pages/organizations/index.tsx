@@ -66,7 +66,7 @@ export default function Organizations({
                                         {org.name}
                                     </Link>
                                     {org.credit_hold && (
-                                        <span className="ml-2 text-xs font-medium text-brick">
+                                        <span className="ml-2 text-xs font-medium text-danger">
                                             On hold
                                         </span>
                                     )}

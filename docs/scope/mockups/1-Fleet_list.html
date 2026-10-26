@@ -1,107 +1,544 @@
-<!DOCTYPE html>
-<html lang="en"><head>
-<meta charset="utf-8">
-<title>Rental fleet</title>
-<script src="f5458366-def9-4641-beb1-5a6548e69ec3"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
-<style>
-body{margin:0}
-a{color:#C2410C}a:hover{color:#9A3412}
-</style>
-</helmet>
-<div style="min-height: 900px; display: flex; flex-wrap: wrap; background: #F5F3EF; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #1C1917; font-size: 14px">
-<nav aria-label="Main" style="flex: 0 1 232px; background: #1C1917; color: #D6D3D1; padding: 20px 14px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px">
-<div style="display: flex; align-items: center; gap: 10px; padding: 4px 10px 20px">
-<div style="width: 28px; height: 28px; border-radius: 6px; background: #C2410C"></div>
-<div style="font-weight: 700; font-size: 17px; color: #FAFAF9">Yardline</div>
-</div>
-<div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #A8A29E; padding: 8px 10px 4px">Supply yard</div>
-<a href="Main.dc.html" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Products</a>
-<a href="Orders.dc.html" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Orders and picking</a>
-<a href="Dispatch.dc.html" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Dispatch</a>
-<div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #A8A29E; padding: 16px 10px 4px">Rental</div>
-<a href="Fleet.dc.html" style="display: block; padding: 10px; border-radius: 6px; background: #292524; color: #FAFAF9; text-decoration: none; font-weight: 600">Fleet</a>
-<a href="Calendar.dc.html" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Calendar</a>
-<a href="NewRental.dc.html" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Rentals and contracts</a>
-<a href="#" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Maintenance</a>
-<a href="#" style="display: block; padding: 10px; border-radius: 6px; color: #D6D3D1; text-decoration: none">Rental payments</a>
-</nav>
-<main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
-<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
-<div>
-<h1 style="margin: 0; font-size: 28px; font-weight: 700">Fleet</h1>
-<p style="margin: 4px 0 0; color: #57534E">14 units · 8 out on rent · 1 in the shop</p>
-</div>
-<div style="display: flex; flex-wrap: wrap; gap: 10px">
-<button type="button" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #D6D3D1; background: #FFFFFF; font: inherit; font-weight: 500">Add unit</button>
-<a href="NewRental.dc.html" style="height: 44px; padding: 0 16px; border-radius: 8px; background: #C2410C; color: #FFFFFF; font-weight: 600; text-decoration: none; display: flex; align-items: center">New rental</a>
-</div>
-</div>
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px">
-<div style="background: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 10px; padding: 16px"><div style="color: #57534E">Utilization, last 30 days</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px; margin-top: 6px">61%</div></div>
-<div style="background: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 10px; padding: 16px"><div style="color: #57534E">Due back today</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px; margin-top: 6px">3</div></div>
-<div style="background: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 10px; padding: 16px"><div style="color: #57534E">Overdue</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px; margin-top: 6px; color: #B91C1C">1</div></div>
-<div style="background: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 10px; padding: 16px"><div style="color: #57534E">Service due within 10 hrs</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 28px; margin-top: 6px; color: #A16207">2</div></div>
-</div>
-<section style="background: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 10px; overflow-x: auto">
-<sc-raw-table style="width: 100%; border-collapse: collapse; min-width: 900px">
-<sc-raw-thead>
-<sc-raw-tr style="text-align: left; color: #57534E; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em">
-<sc-raw-th style="padding: 12px 16px; border-bottom: 1px solid #E7E5E4">Unit</sc-raw-th>
-<sc-raw-th style="padding: 12px 16px; border-bottom: 1px solid #E7E5E4">Serial</sc-raw-th>
-<sc-raw-th style="padding: 12px 16px; border-bottom: 1px solid #E7E5E4">Status</sc-raw-th>
-<sc-raw-th style="padding: 12px 16px; border-bottom: 1px solid #E7E5E4">With / due back</sc-raw-th>
-<sc-raw-th style="padding: 12px 16px; border-bottom: 1px solid #E7E5E4; text-align: right">Hours</sc-raw-th>
-<sc-raw-th style="padding: 12px 16px; border-bottom: 1px solid #E7E5E4">Next service</sc-raw-th>
-<sc-raw-th style="padding: 12px 16px; border-bottom: 1px solid #E7E5E4; text-align: right">Day rate</sc-raw-th>
-</sc-raw-tr>
-</sc-raw-thead>
-<sc-raw-tbody>
-<sc-for list="{{units}}" as="u" hint-placeholder-count="8">
-<sc-raw-tr>
-<sc-raw-td style="padding: 12px 16px; border-bottom: 1px solid #F5F5F4"><div style="font-weight: 600">{{u.name}}</div><div style="font-size: 12px; color: #57534E">{{u.cat}}</div></sc-raw-td>
-<sc-raw-td style="padding: 12px 16px; border-bottom: 1px solid #F5F5F4; font-family: 'IBM Plex Mono', monospace; color: #57534E">{{u.serial}}</sc-raw-td>
-<sc-raw-td style="padding: 12px 16px; border-bottom: 1px solid #F5F5F4"><span style="padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: {{u.chipBg}}; color: {{u.chipFg}}">{{u.status}}</span></sc-raw-td>
-<sc-raw-td style="padding: 12px 16px; border-bottom: 1px solid #F5F5F4; color: #44403C">{{u.with}}</sc-raw-td>
-<sc-raw-td style="padding: 12px 16px; border-bottom: 1px solid #F5F5F4; text-align: right; font-family: 'IBM Plex Mono', monospace">{{u.hours}}</sc-raw-td>
-<sc-raw-td style="padding: 12px 16px; border-bottom: 1px solid #F5F5F4; color: #44403C">{{u.service}}</sc-raw-td>
-<sc-raw-td style="padding: 12px 16px; border-bottom: 1px solid #F5F5F4; text-align: right; font-family: 'IBM Plex Mono', monospace">{{u.rate}}</sc-raw-td>
-</sc-raw-tr>
-</sc-for>
-</sc-raw-tbody>
-</sc-raw-table>
-</section>
-</main>
-</div>
-</x-dc>
-<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
-class Component extends DCLogic {
-renderVals() {
-const chip = {
-'Available': ['#DCFCE7', '#166534'],
-'On rent': ['#DBEAFE', '#1E40AF'],
-'Overdue': ['#FEE2E2', '#991B1B'],
-'In shop': ['#FEF3C7', '#92400E'],
-'Reserved': ['#F5F5F4', '#44403C']
-};
-const units = [
-{ name: 'Skid steer, 74 hp', cat: 'Earthmoving', serial: 'SS-02', status: 'On rent', with: 'Brick & Stone · Oct 30', hours: '1,284', service: '250-hr at 1,300 · 16 hrs', rate: '$395' },
-{ name: 'Mini excavator, 3.5 t', cat: 'Earthmoving', serial: 'MX-01', status: 'Overdue', with: 'R. Singh · was due Oct 25', hours: '2,016', service: 'Oct 31', rate: '$425' },
-{ name: 'Plate compactor, 200 lb', cat: 'Compaction', serial: 'PC-04', status: 'On rent', with: 'Greenway · today 3 pm', hours: '612', service: '8 hrs', rate: '$85' },
-{ name: 'Reversible plate, 1,000 lb', cat: 'Compaction', serial: 'RP-01', status: 'Available', with: '—', hours: '488', service: 'Nov 14', rate: '$165' },
-{ name: 'Wet cut-off saw, 14 in', cat: 'Cutting', serial: 'CS-03', status: 'Reserved', with: 'Northshore · from Oct 27', hours: '301', service: 'Blade check', rate: '$75' },
-{ name: 'Block splitter, hydraulic', cat: 'Masonry', serial: 'BS-01', status: 'Available', with: '—', hours: '—', service: 'Nov 2', rate: '$110' },
-{ name: 'Mortar mixer, 9 cu ft', cat: 'Masonry', serial: 'MM-02', status: 'In shop', with: 'Belt replacement', hours: '940', service: 'In progress', rate: '$95' },
-{ name: 'Sod cutter, 18 in', cat: 'Landscape', serial: 'SC-01', status: 'Available', with: '—', hours: '233', service: 'Nov 20', rate: '$120' }
-];
-return { units: units.map(u => ({ ...u, chipBg: chip[u.status][0], chipFg: chip[u.status][1] })) };
-}
-}
-</script>
-
-
-</body></html>
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Rental fleet</title>
+        <script src="f5458366-def9-4641-beb1-5a6548e69ec3"></script>
+    </head>
+    <body>
+        <x-dc>
+            <helmet>
+                <link
+                    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap"
+                    rel="stylesheet"
+                />
+                <style>
+                    body {
+                        margin: 0;
+                    }
+                    a {
+                        color: #c2410c;
+                    }
+                    a:hover {
+                        color: #9a3412;
+                    }
+                </style>
+            </helmet>
+            <div
+                style="
+                    min-height: 900px;
+                    display: flex;
+                    flex-wrap: wrap;
+                    background: #f5f3ef;
+                    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+                    color: #1c1917;
+                    font-size: 14px;
+                "
+            >
+                <nav
+                    aria-label="Main"
+                    style="
+                        flex: 0 1 232px;
+                        background: #1c1917;
+                        color: #d6d3d1;
+                        padding: 20px 14px;
+                        box-sizing: border-box;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                    "
+                >
+                    <div
+                        style="
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                            padding: 4px 10px 20px;
+                        "
+                    >
+                        <div
+                            style="
+                                width: 28px;
+                                height: 28px;
+                                border-radius: 6px;
+                                background: #c2410c;
+                            "
+                        ></div>
+                        <div
+                            style="
+                                font-weight: 700;
+                                font-size: 17px;
+                                color: #fafaf9;
+                            "
+                        >
+                            Yardline
+                        </div>
+                    </div>
+                    <div
+                        style="
+                            font-size: 11px;
+                            letter-spacing: 0.08em;
+                            text-transform: uppercase;
+                            color: #a8a29e;
+                            padding: 8px 10px 4px;
+                        "
+                    >
+                        Supply yard
+                    </div>
+                    <a
+                        href="Main.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Products</a
+                    >
+                    <a
+                        href="Orders.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Orders and picking</a
+                    >
+                    <a
+                        href="Dispatch.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Dispatch</a
+                    >
+                    <div
+                        style="
+                            font-size: 11px;
+                            letter-spacing: 0.08em;
+                            text-transform: uppercase;
+                            color: #a8a29e;
+                            padding: 16px 10px 4px;
+                        "
+                    >
+                        Rental
+                    </div>
+                    <a
+                        href="Fleet.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            background: #292524;
+                            color: #fafaf9;
+                            text-decoration: none;
+                            font-weight: 600;
+                        "
+                        >Fleet</a
+                    >
+                    <a
+                        href="Calendar.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Calendar</a
+                    >
+                    <a
+                        href="NewRental.dc.html"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Rentals and contracts</a
+                    >
+                    <a
+                        href="#"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Maintenance</a
+                    >
+                    <a
+                        href="#"
+                        style="
+                            display: block;
+                            padding: 10px;
+                            border-radius: 6px;
+                            color: #d6d3d1;
+                            text-decoration: none;
+                        "
+                        >Rental payments</a
+                    >
+                </nav>
+                <main
+                    style="
+                        flex: 999 1 560px;
+                        min-width: 0;
+                        padding: 28px 32px;
+                        box-sizing: border-box;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 20px;
+                    "
+                >
+                    <div
+                        style="
+                            display: flex;
+                            flex-wrap: wrap;
+                            align-items: flex-end;
+                            justify-content: space-between;
+                            gap: 16px;
+                        "
+                    >
+                        <div>
+                            <h1
+                                style="
+                                    margin: 0;
+                                    font-size: 28px;
+                                    font-weight: 700;
+                                "
+                            >
+                                Fleet
+                            </h1>
+                            <p style="margin: 4px 0 0; color: #57534e">
+                                14 units · 8 out on rent · 1 in the shop
+                            </p>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px">
+                            <button
+                                type="button"
+                                style="
+                                    height: 44px;
+                                    padding: 0 16px;
+                                    border-radius: 8px;
+                                    border: 1px solid #d6d3d1;
+                                    background: #ffffff;
+                                    font: inherit;
+                                    font-weight: 500;
+                                "
+                            >
+                                Add unit
+                            </button>
+                            <a
+                                href="NewRental.dc.html"
+                                style="
+                                    height: 44px;
+                                    padding: 0 16px;
+                                    border-radius: 8px;
+                                    background: #c2410c;
+                                    color: #ffffff;
+                                    font-weight: 600;
+                                    text-decoration: none;
+                                    display: flex;
+                                    align-items: center;
+                                "
+                                >New rental</a
+                            >
+                        </div>
+                    </div>
+                    <div
+                        style="
+                            display: grid;
+                            grid-template-columns: repeat(
+                                auto-fit,
+                                minmax(200px, 1fr)
+                            );
+                            gap: 16px;
+                        "
+                    >
+                        <div
+                            style="
+                                background: #ffffff;
+                                border: 1px solid #e7e5e4;
+                                border-radius: 10px;
+                                padding: 16px;
+                            "
+                        >
+                            <div style="color: #57534e">
+                                Utilization, last 30 days
+                            </div>
+                            <div
+                                style="
+                                    font-family: 'IBM Plex Mono', monospace;
+                                    font-size: 28px;
+                                    margin-top: 6px;
+                                "
+                            >
+                                61%
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                background: #ffffff;
+                                border: 1px solid #e7e5e4;
+                                border-radius: 10px;
+                                padding: 16px;
+                            "
+                        >
+                            <div style="color: #57534e">Due back today</div>
+                            <div
+                                style="
+                                    font-family: 'IBM Plex Mono', monospace;
+                                    font-size: 28px;
+                                    margin-top: 6px;
+                                "
+                            >
+                                3
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                background: #ffffff;
+                                border: 1px solid #e7e5e4;
+                                border-radius: 10px;
+                                padding: 16px;
+                            "
+                        >
+                            <div style="color: #57534e">Overdue</div>
+                            <div
+                                style="
+                                    font-family: 'IBM Plex Mono', monospace;
+                                    font-size: 28px;
+                                    margin-top: 6px;
+                                    color: #b91c1c;
+                                "
+                            >
+                                1
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                background: #ffffff;
+                                border: 1px solid #e7e5e4;
+                                border-radius: 10px;
+                                padding: 16px;
+                            "
+                        >
+                            <div style="color: #57534e">
+                                Service due within 10 hrs
+                            </div>
+                            <div
+                                style="
+                                    font-family: 'IBM Plex Mono', monospace;
+                                    font-size: 28px;
+                                    margin-top: 6px;
+                                    color: #a16207;
+                                "
+                            >
+                                2
+                            </div>
+                        </div>
+                    </div>
+                    <section
+                        style="
+                            background: #ffffff;
+                            border: 1px solid #e7e5e4;
+                            border-radius: 10px;
+                            overflow-x: auto;
+                        "
+                    >
+                        <sc-raw-table
+                            style="
+                                width: 100%;
+                                border-collapse: collapse;
+                                min-width: 900px;
+                            "
+                        >
+                            <sc-raw-thead>
+                                <sc-raw-tr
+                                    style="
+                                        text-align: left;
+                                        color: #57534e;
+                                        font-size: 12px;
+                                        text-transform: uppercase;
+                                        letter-spacing: 0.04em;
+                                    "
+                                >
+                                    <sc-raw-th
+                                        style="
+                                            padding: 12px 16px;
+                                            border-bottom: 1px solid #e7e5e4;
+                                        "
+                                        >Unit</sc-raw-th
+                                    >
+                                    <sc-raw-th
+                                        style="
+                                            padding: 12px 16px;
+                                            border-bottom: 1px solid #e7e5e4;
+                                        "
+                                        >Serial</sc-raw-th
+                                    >
+                                    <sc-raw-th
+                                        style="
+                                            padding: 12px 16px;
+                                            border-bottom: 1px solid #e7e5e4;
+                                        "
+                                        >Status</sc-raw-th
+                                    >
+                                    <sc-raw-th
+                                        style="
+                                            padding: 12px 16px;
+                                            border-bottom: 1px solid #e7e5e4;
+                                        "
+                                        >With / due back</sc-raw-th
+                                    >
+                                    <sc-raw-th
+                                        style="
+                                            padding: 12px 16px;
+                                            border-bottom: 1px solid #e7e5e4;
+                                            text-align: right;
+                                        "
+                                        >Hours</sc-raw-th
+                                    >
+                                    <sc-raw-th
+                                        style="
+                                            padding: 12px 16px;
+                                            border-bottom: 1px solid #e7e5e4;
+                                        "
+                                        >Next service</sc-raw-th
+                                    >
+                                    <sc-raw-th
+                                        style="
+                                            padding: 12px 16px;
+                                            border-bottom: 1px solid #e7e5e4;
+                                            text-align: right;
+                                        "
+                                        >Day rate</sc-raw-th
+                                    >
+                                </sc-raw-tr>
+                            </sc-raw-thead>
+                            <sc-raw-tbody>
+                                <sc-for
+                                    list="{{units}}"
+                                    as="u"
+                                    hint-placeholder-count="8"
+                                >
+                                    <sc-raw-tr>
+                                        <sc-raw-td
+                                            style="
+                                                padding: 12px 16px;
+                                                border-bottom: 1px solid #f5f5f4;
+                                            "
+                                            ><div style="font-weight: 600">
+                                                {{u.name}}
+                                            </div>
+                                            <div
+                                                style="
+                                                    font-size: 12px;
+                                                    color: #57534e;
+                                                "
+                                            >
+                                                {{u.cat}}
+                                            </div></sc-raw-td
+                                        >
+                                        <sc-raw-td
+                                            style="
+                                                padding: 12px 16px;
+                                                border-bottom: 1px solid #f5f5f4;
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                                color: #57534e;
+                                            "
+                                            >{{u.serial}}</sc-raw-td
+                                        >
+                                        <sc-raw-td
+                                            style="
+                                                padding: 12px 16px;
+                                                border-bottom: 1px solid #f5f5f4;
+                                            "
+                                            ><span
+                                                style="padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: {{u.chipBg}}; color: {{u.chipFg}}"
+                                                >{{u.status}}</span
+                                            ></sc-raw-td
+                                        >
+                                        <sc-raw-td
+                                            style="
+                                                padding: 12px 16px;
+                                                border-bottom: 1px solid #f5f5f4;
+                                                color: #44403c;
+                                            "
+                                            >{{u.with}}</sc-raw-td
+                                        >
+                                        <sc-raw-td
+                                            style="
+                                                padding: 12px 16px;
+                                                border-bottom: 1px solid #f5f5f4;
+                                                text-align: right;
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                            "
+                                            >{{u.hours}}</sc-raw-td
+                                        >
+                                        <sc-raw-td
+                                            style="
+                                                padding: 12px 16px;
+                                                border-bottom: 1px solid #f5f5f4;
+                                                color: #44403c;
+                                            "
+                                            >{{u.service}}</sc-raw-td
+                                        >
+                                        <sc-raw-td
+                                            style="
+                                                padding: 12px 16px;
+                                                border-bottom: 1px solid #f5f5f4;
+                                                text-align: right;
+                                                font-family:
+                                                    'IBM Plex Mono', monospace;
+                                            "
+                                            >{{u.rate}}</sc-raw-td
+                                        >
+                                    </sc-raw-tr>
+                                </sc-for>
+                            </sc-raw-tbody>
+                        </sc-raw-table>
+                    </section>
+                </main>
+            </div>
+        </x-dc>
+        <script
+            type="text/x-dc"
+            data-dc-script=""
+            data-props='{"$preview":{"width":1440,"height":900}}'
+        >
+            class Component extends DCLogic {
+            renderVals() {
+            const chip = {
+            'Available': ['#DCFCE7', '#166534'],
+            'On rent': ['#DBEAFE', '#1E40AF'],
+            'Overdue': ['#FEE2E2', '#991B1B'],
+            'In shop': ['#FEF3C7', '#92400E'],
+            'Reserved': ['#F5F5F4', '#44403C']
+            };
+            const units = [
+            { name: 'Skid steer, 74 hp', cat: 'Earthmoving', serial: 'SS-02', status: 'On rent', with: 'Brick & Stone · Oct 30', hours: '1,284', service: '250-hr at 1,300 · 16 hrs', rate: '$395' },
+            { name: 'Mini excavator, 3.5 t', cat: 'Earthmoving', serial: 'MX-01', status: 'Overdue', with: 'R. Singh · was due Oct 25', hours: '2,016', service: 'Oct 31', rate: '$425' },
+            { name: 'Plate compactor, 200 lb', cat: 'Compaction', serial: 'PC-04', status: 'On rent', with: 'Greenway · today 3 pm', hours: '612', service: '8 hrs', rate: '$85' },
+            { name: 'Reversible plate, 1,000 lb', cat: 'Compaction', serial: 'RP-01', status: 'Available', with: '—', hours: '488', service: 'Nov 14', rate: '$165' },
+            { name: 'Wet cut-off saw, 14 in', cat: 'Cutting', serial: 'CS-03', status: 'Reserved', with: 'Northshore · from Oct 27', hours: '301', service: 'Blade check', rate: '$75' },
+            { name: 'Block splitter, hydraulic', cat: 'Masonry', serial: 'BS-01', status: 'Available', with: '—', hours: '—', service: 'Nov 2', rate: '$110' },
+            { name: 'Mortar mixer, 9 cu ft', cat: 'Masonry', serial: 'MM-02', status: 'In shop', with: 'Belt replacement', hours: '940', service: 'In progress', rate: '$95' },
+            { name: 'Sod cutter, 18 in', cat: 'Landscape', serial: 'SC-01', status: 'Available', with: '—', hours: '233', service: 'Nov 20', rate: '$120' }
+            ];
+            return { units: units.map(u => ({ ...u, chipBg: chip[u.status][0], chipFg: chip[u.status][1] })) };
+            }
+            }
+        </script>
+    </body>
+</html>

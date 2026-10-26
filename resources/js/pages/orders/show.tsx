@@ -76,7 +76,7 @@ export default function ShowOrder(props: Props) {
                 {errors?.order && (
                     <p
                         role="alert"
-                        className="mb-6 rounded-md border border-brick/40 bg-brick/10 px-3 py-2 text-sm text-brick"
+                        className="mb-6 rounded-md border border-danger/20 bg-danger-soft px-3 py-2 text-sm text-danger"
                     >
                         {errors.order}
                     </p>
@@ -525,16 +525,16 @@ function Totals({ order }: { order: Order }) {
                         <dd className="text-right tabular-nums">{value}</dd>
                     </div>
                 ))}
-                <dt className="mt-2 border-t border-foreground pt-2 font-display text-lg font-semibold">
+                <dt className="mt-2 border-t border-foreground pt-2 text-lg font-semibold">
                     Total
                 </dt>
-                <dd className="mt-2 border-t border-foreground pt-2 text-right font-display text-lg font-semibold tabular-nums">
+                <dd className="mt-2 border-t border-foreground pt-2 text-right text-lg font-semibold tabular-nums">
                     {formatMoney(order.amount_due_cents)}
                 </dd>
                 {!isDraft && order.amount_paid_cents > 0 && (
                     <>
                         <dt className="text-muted-foreground">Paid</dt>
-                        <dd className="text-right text-moss tabular-nums">
+                        <dd className="text-right text-success tabular-nums">
                             {formatMoney(order.amount_paid_cents)}
                         </dd>
                         <dt className="font-medium">Balance</dt>
@@ -590,7 +590,7 @@ function ConfirmPanel({
                     <p
                         className={cn(
                             'mt-2',
-                            credit.approved ? 'text-moss' : 'text-brick',
+                            credit.approved ? 'text-success' : 'text-danger',
                         )}
                     >
                         {credit.approved

@@ -179,7 +179,7 @@ export default function Dashboard({ stats, recentOrders, lowStock }: Props) {
                                                 )}
                                             </div>
                                         </div>
-                                        <span className="whitespace-nowrap text-brick tabular-nums">
+                                        <span className="whitespace-nowrap text-danger tabular-nums">
                                             {formatQuantity(level.on_hand)}{' '}
                                             {unitLabel(level.product.unit)}
                                         </span>

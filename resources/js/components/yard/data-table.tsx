@@ -1,13 +1,33 @@
 import type { ReactNode, TdHTMLAttributes, ThHTMLAttributes } from 'react';
+import { useInCard } from '@/components/yard/page-header';
 import { cn } from '@/lib/utils';
 
 /**
- * Dense, ruled tables. Numbers right-aligned in tabular figures.
+ * Ruled tables as in the mockups. Inside a Section card the table runs
+ * edge to edge; on its own it gets its own card.
  */
-export function Table({ children }: { children: ReactNode }) {
+export function Table({
+    children,
+    minWidth,
+}: {
+    children: ReactNode;
+    minWidth?: number;
+}) {
+    const inCard = useInCard();
+
     return (
-        <div className="overflow-x-auto rounded-md border border-border bg-card">
-            <table className="w-full text-sm">{children}</table>
+        <div
+            className={cn(
+                'overflow-x-auto',
+                !inCard && 'rounded-[10px] border border-border bg-card',
+            )}
+        >
+            <table
+                className="w-full border-collapse text-sm"
+                style={minWidth ? { minWidth } : undefined}
+            >
+                {children}
+            </table>
         </div>
     );
 }
@@ -20,7 +40,7 @@ export function Th({
     return (
         <th
             className={cn(
-                'border-b border-border bg-muted/60 px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground',
+                'border-b border-border px-4 py-3 text-left text-xs font-medium tracking-[0.04em] whitespace-nowrap text-muted-foreground uppercase',
                 numeric && 'text-right',
                 className,
             )}
@@ -37,8 +57,8 @@ export function Td({
     return (
         <td
             className={cn(
-                'border-b border-border/70 px-3 py-2 align-middle',
-                numeric && 'text-right whitespace-nowrap tabular-nums',
+                'border-b border-secondary px-4 py-3 align-middle',
+                numeric && 'figure text-right whitespace-nowrap',
                 className,
             )}
             {...props}
@@ -57,7 +77,7 @@ export function EmptyRow({
         <tr>
             <td
                 colSpan={colSpan}
-                className="px-3 py-10 text-center text-muted-foreground"
+                className="px-4 py-10 text-center text-muted-foreground"
             >
                 {children}
             </td>

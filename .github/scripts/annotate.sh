@@ -7,14 +7,14 @@ title="$1"
 log="$2"
 [ -s "$log" ] || exit 0
 
-# Last 240 lines, in chunks of ~6,000 characters (annotation size limit),
-# at most 4 chunks per check (GitHub keeps 10 error annotations per step).
-tail -n 240 "$log" | sed 's/\x1b\[[0-9;]*[A-Za-z]//g' | python3 -c '
+# Last 400 lines, in chunks of ~6,000 characters (annotation size limit),
+# at most 6 chunks per check (GitHub keeps 50 annotations per job).
+tail -n 400 "$log" | sed 's/\x1b\[[0-9;]*[A-Za-z]//g' | python3 -c '
 import sys
 title = sys.argv[1]
 text = sys.stdin.read()
 chunks, size = [], 6000
-while text and len(chunks) < 4:
+while text and len(chunks) < 6:
     chunks.append(text[:size]); text = text[size:]
 for i, chunk in enumerate(chunks, 1):
     body = chunk.replace("%", "%25").replace("\r", "").replace("\n", "%0A")

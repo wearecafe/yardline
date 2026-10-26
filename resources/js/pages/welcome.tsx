@@ -12,7 +12,7 @@ export default function Welcome() {
                 <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-5">
                     <div className="flex items-center gap-2">
                         <AppLogoIcon className="size-7 fill-current" />
-                        <span className="font-display text-xl font-bold tracking-tight">
+                        <span className="text-xl font-bold tracking-tight">
                             Yardline
                         </span>
                     </div>
@@ -44,7 +44,7 @@ export default function Welcome() {
                 </header>
 
                 <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-6 pb-24">
-                    <h1 className="max-w-3xl font-display text-5xl leading-[1.05] font-bold tracking-tight md:text-7xl">
+                    <h1 className="max-w-3xl text-5xl leading-[1.05] font-bold tracking-tight md:text-7xl">
                         Every pallet, tonne and yard of it, accounted for.
                     </h1>
                     <div

@@ -78,7 +78,7 @@ export default function ShowOrganization({
                     <div className="grid content-start gap-8">
                         <Section title="Credit">
                             {organization.credit_hold && (
-                                <p className="mb-3 rounded-md border border-brick/40 bg-brick/10 px-3 py-2 text-sm text-brick">
+                                <p className="mb-3 rounded-md border border-danger/20 bg-danger-soft px-3 py-2 text-sm text-danger">
                                     On credit hold. New orders must be paid up
                                     front.
                                 </p>
@@ -108,7 +108,7 @@ export default function ShowOrganization({
                                             className={cn(
                                                 'h-full',
                                                 usedShare >= 90
-                                                    ? 'bg-brick'
+                                                    ? 'bg-danger'
                                                     : 'bg-foreground',
                                             )}
                                             style={{ width: `${usedShare}%` }}

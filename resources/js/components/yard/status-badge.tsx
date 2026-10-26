@@ -1,20 +1,14 @@
-import { cn } from '@/lib/utils';
+import { Chip } from '@/components/yard/chip';
+import type { ChipTone } from '@/components/yard/chip';
 import type { OrderStatus, PaymentStatus, Settlement } from '@/types';
 
-const statusStyles: Record<OrderStatus, string> = {
-    draft: 'border-dashed border-muted-foreground/60 text-muted-foreground',
-    confirmed: 'border-tag bg-tag/20 text-foreground',
-    fulfilled: 'border-moss/50 bg-moss/10 text-moss',
-    returned: 'border-moss/50 bg-moss/10 text-moss',
-    cancelled: 'border-border text-muted-foreground line-through',
-};
-
-const statusLabels: Record<OrderStatus, string> = {
-    draft: 'Draft',
-    confirmed: 'Confirmed',
-    fulfilled: 'Released',
-    returned: 'Returned',
-    cancelled: 'Cancelled',
+const orderStatus: Record<string, [string, ChipTone]> = {
+    quote: ['Quote', 'neutral'],
+    draft: ['Draft', 'neutral'],
+    confirmed: ['Confirmed', 'warning'],
+    fulfilled: ['Released', 'success'],
+    returned: ['Returned', 'success'],
+    cancelled: ['Cancelled', 'neutral'],
 };
 
 export function OrderStatusBadge({
@@ -24,19 +18,13 @@ export function OrderStatusBadge({
     status: OrderStatus;
     rental?: boolean;
 }) {
-    const label =
-        rental && status === 'fulfilled' ? 'Out on rent' : statusLabels[status];
+    const [label, tone] = orderStatus[status] ?? [status, 'neutral'];
 
-    return (
-        <span
-            className={cn(
-                'inline-flex items-center rounded-sm border px-1.5 py-0.5 text-xs font-medium whitespace-nowrap',
-                statusStyles[status],
-            )}
-        >
-            {label}
-        </span>
-    );
+    if (rental && status === 'fulfilled') {
+        return <Chip tone="info">On rent</Chip>;
+    }
+
+    return <Chip tone={tone}>{label}</Chip>;
 }
 
 export function PaymentBadge({
@@ -47,16 +35,16 @@ export function PaymentBadge({
     settlement: Settlement | null;
 }) {
     if (status === 'paid') {
-        return <span className="text-xs font-medium text-moss">Paid</span>;
+        return <Chip tone="success">Paid</Chip>;
     }
 
     if (status === 'partial') {
-        return <span className="text-xs font-medium">Part paid</span>;
+        return <Chip tone="warning">Part paid</Chip>;
     }
 
     return (
-        <span className="text-xs text-muted-foreground">
+        <Chip tone="neutral">
             {settlement === 'account' ? 'On account' : 'Unpaid'}
-        </span>
+        </Chip>
     );
 }

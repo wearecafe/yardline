@@ -58,7 +58,7 @@ jobs:
 
       - name: PHPStan
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
-        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G 2>&1 | tee "$RUNNER_TEMP/phpstan.log"; s=${PIPESTATUS[0]}; [ "$s" -eq 0 ] || touch "$RUNNER_TEMP/phpstan.failed"; exit $s
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G --error-format=raw 2>&1 | tee "$RUNNER_TEMP/phpstan.log"; s=${PIPESTATUS[0]}; [ "$s" -eq 0 ] || touch "$RUNNER_TEMP/phpstan.failed"; exit $s
 
       - name: PHPUnit
         if: ${{ !cancelled() && steps.setup.outcome == 'success' }}

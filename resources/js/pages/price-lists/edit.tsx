@@ -116,7 +116,7 @@ export default function EditPriceList({ priceList, products }: Props) {
                                             <Td numeric>
                                                 {formatMoney(row.price_cents)}
                                                 {saving > 0 && (
-                                                    <div className="text-xs text-moss">
+                                                    <div className="text-xs text-success">
                                                         {Math.round(
                                                             (saving /
                                                                 row.product

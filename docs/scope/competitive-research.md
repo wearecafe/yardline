@@ -7,7 +7,7 @@ Research done October 2026 to support building a modern inventory/ERP product fo
 - **Target customer:** masonry and building supply yards (wholesale, retail counter and producers) selling block, brick, pavers, hardscape products (Nicolock, Cambridge, etc.), stone, aggregate and bulk material.
 - **Main incumbent:** CAVU ERP, a vertical ERP from an established vendor that dates back to 1990.
 - **Modern challenger:** YardBoss, a cloud-based, mobile-friendly yard management SaaS with a self-serve trial.
-- **Adjacent, not direct:** Crete Quote, a customer-facing estimating tool for concrete and hardscape *contractors*. It doesn't compete with yard software, but it points to a possible feature or partnership: contractor-facing quoting that feeds yard orders.
+- **Adjacent, not direct:** Crete Quote, a customer-facing estimating tool for concrete and hardscape _contractors_. It doesn't compete with yard software, but it points to a possible feature or partnership: contractor-facing quoting that feeds yard orders.
 
 ## 2. CAVU ERP (Incumbent)
 
@@ -196,15 +196,15 @@ These gaps are where the custom product would add value on top of Shopify.
 
 Rental is in scope: equipment management, pricing, notifications, agreements and e-signing. The tools below are the ones targeted at equipment rental specifically.
 
-| Vendor | Target | Notable features | Relevance |
-| --- | --- | --- | --- |
-| [Quipli](https://www.quipli.com/) | Independent general-tool, light and heavy equipment rental | Contracts, availability, photos, deliveries and digital signatures from a phone; online ordering website; POS; maintenance; QuickBooks Online sync | Closest model for the rental module. Reported as pricey for small shops |
-| [InTempo](https://www.intemposoftware.com/products/intempo-mobile-app) (merged with Texada, 2023) | Mid-market and enterprise | Mobile quotes, reservations, e-signatures and inspections | Benchmark for mobile counter and yard workflows |
-| [Texada](https://texadasoftware.com/equipment-rental-software-rental-management/) | Heavy construction equipment | Reservations turned into contracts, staging assets before pickup; rental, sales and service together | Enterprise feature ceiling |
-| Point of Rental | General and construction rental stores | Central dashboard for inventory, billing and contracts; analytics | Established incumbent |
-| Wynne RentalMan | Large heavy-equipment fleets | Full lifecycle from contract to equipment cost analysis | Enterprise only |
-| Clue | Contractors with mixed heavy fleets | Telematics engine hours triggering maintenance, inspections, dispatch | Idea: hour-meter based maintenance |
-| Renterra, Rentrax | Smaller equipment renters | Conflict detection, contract creation, maintenance reminders, invoicing | Lighter competitors to check |
+| Vendor                                                                                            | Target                                                     | Notable features                                                                                                                                   | Relevance                                                               |
+| ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [Quipli](https://www.quipli.com/)                                                                 | Independent general-tool, light and heavy equipment rental | Contracts, availability, photos, deliveries and digital signatures from a phone; online ordering website; POS; maintenance; QuickBooks Online sync | Closest model for the rental module. Reported as pricey for small shops |
+| [InTempo](https://www.intemposoftware.com/products/intempo-mobile-app) (merged with Texada, 2023) | Mid-market and enterprise                                  | Mobile quotes, reservations, e-signatures and inspections                                                                                          | Benchmark for mobile counter and yard workflows                         |
+| [Texada](https://texadasoftware.com/equipment-rental-software-rental-management/)                 | Heavy construction equipment                               | Reservations turned into contracts, staging assets before pickup; rental, sales and service together                                               | Enterprise feature ceiling                                              |
+| Point of Rental                                                                                   | General and construction rental stores                     | Central dashboard for inventory, billing and contracts; analytics                                                                                  | Established incumbent                                                   |
+| Wynne RentalMan                                                                                   | Large heavy-equipment fleets                               | Full lifecycle from contract to equipment cost analysis                                                                                            | Enterprise only                                                         |
+| Clue                                                                                              | Contractors with mixed heavy fleets                        | Telematics engine hours triggering maintenance, inspections, dispatch                                                                              | Idea: hour-meter based maintenance                                      |
+| Renterra, Rentrax                                                                                 | Smaller equipment renters                                  | Conflict detection, contract creation, maintenance reminders, invoicing                                                                            | Lighter competitors to check                                            |
 
 Sources: [rent2B guide](https://www.rent2b.net/en/blog/equipment-rental-software-guide-2026), [EZO heavy equipment roundup](https://ezo.io/ezrentout/blog/best-heavy-equipment-rental-software-compared/), [SoftwareConnect](https://softwareconnect.com/roundups/best-equipment-rental-software/).
 
@@ -230,21 +230,21 @@ Quipli is the model to study for the rental module: a flat $6,000 per location p
 
 ## 5. Feature Comparison
 
-| Capability | CAVU ERP | YardBoss | Crete Quote |
-| --- | --- | --- | --- |
-| Counter POS | Yes | Unconfirmed | No |
-| Truck scale integration | Yes | Unconfirmed | No |
-| Quotes to orders | Yes | Yes | Estimates only |
-| Dispatch board | Yes | Truck visibility | No |
-| Driver mobile app and proof of delivery | Unconfirmed | Yes, with signature | No |
-| Picking workflow | Unconfirmed | Yes | No |
-| Inventory and purchasing | Yes | Likely | No |
-| Built-in accounting | Yes | Unconfirmed | No |
-| Multi-location | Yes | Unconfirmed | No |
-| Public API | No | Unconfirmed | Unconfirmed |
-| Self-serve trial | No | Yes, 14 days | Unconfirmed |
-| Published pricing | No | Unconfirmed | Unconfirmed |
-| Customer self-quoting | No | No | Yes |
+| Capability                              | CAVU ERP    | YardBoss            | Crete Quote    |
+| --------------------------------------- | ----------- | ------------------- | -------------- |
+| Counter POS                             | Yes         | Unconfirmed         | No             |
+| Truck scale integration                 | Yes         | Unconfirmed         | No             |
+| Quotes to orders                        | Yes         | Yes                 | Estimates only |
+| Dispatch board                          | Yes         | Truck visibility    | No             |
+| Driver mobile app and proof of delivery | Unconfirmed | Yes, with signature | No             |
+| Picking workflow                        | Unconfirmed | Yes                 | No             |
+| Inventory and purchasing                | Yes         | Likely              | No             |
+| Built-in accounting                     | Yes         | Unconfirmed         | No             |
+| Multi-location                          | Yes         | Unconfirmed         | No             |
+| Public API                              | No          | Unconfirmed         | Unconfirmed    |
+| Self-serve trial                        | No          | Yes, 14 days        | Unconfirmed    |
+| Published pricing                       | No          | Unconfirmed         | Unconfirmed    |
+| Customer self-quoting                   | No          | No                  | Yes            |
 
 ## 6. Opportunity Areas for a New Product
 
@@ -273,11 +273,11 @@ Shopify records every goods sale; the app manages inventory and fulfilment for t
 
 ### System boundaries
 
-| Area | Shopify | The app | QuickBooks Online |
-| --- | --- | --- | --- |
-| Goods sales (stone, block, mulch, pavers) | Checkout, payment, transaction record | Inventory, units of measure, contractor pricing pushed to Shopify, pick/pack lists, delivery | Receives sales from Shopify |
-| Equipment rental | None | Quotes, reservations, contracts, e-signing, payments, deposits, returns | Receives rental revenue from the app |
-| Customers | Customer records for goods sales | Contractor accounts, rental customers, ID and insurance on file | Customer balances and statements |
+| Area                                      | Shopify                               | The app                                                                                      | QuickBooks Online                    |
+| ----------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Goods sales (stone, block, mulch, pavers) | Checkout, payment, transaction record | Inventory, units of measure, contractor pricing pushed to Shopify, pick/pack lists, delivery | Receives sales from Shopify          |
+| Equipment rental                          | None                                  | Quotes, reservations, contracts, e-signing, payments, deposits, returns                      | Receives rental revenue from the app |
+| Customers                                 | Customer records for goods sales      | Contractor accounts, rental customers, ID and insurance on file                              | Customer balances and statements     |
 
 ### Module 1: Supply yard inventory and fulfilment
 

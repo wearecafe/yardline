@@ -53,7 +53,7 @@ export default function Shopify({ integration, webhookUrl }: Props) {
                                 : 'Nothing synced yet. Edit a product to send it.'}
                         </div>
                         {integration.last_error && (
-                            <p className="mt-2 text-brick">
+                            <p className="mt-2 text-danger">
                                 Last sync failed: {integration.last_error}
                             </p>
                         )}

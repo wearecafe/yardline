@@ -297,9 +297,9 @@ export default function Inventory({
                                                     numeric
                                                     className={cn(
                                                         low &&
-                                                            'font-medium text-brick',
+                                                            'font-medium text-danger',
                                                         Number(row.on_hand) <
-                                                            0 && 'text-brick',
+                                                            0 && 'text-danger',
                                                     )}
                                                 >
                                                     {formatQuantity(
@@ -370,8 +370,8 @@ export default function Inventory({
                                                 className={cn(
                                                     'whitespace-nowrap tabular-nums',
                                                     Number(m.quantity) < 0
-                                                        ? 'text-brick'
-                                                        : 'text-moss',
+                                                        ? 'text-danger'
+                                                        : 'text-success',
                                                 )}
                                             >
                                                 {Number(m.quantity) > 0

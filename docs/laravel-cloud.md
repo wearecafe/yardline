@@ -86,4 +86,3 @@ Demo accounts have random passwords, can only be entered through `/demo`,
 and can't change account or business settings. The demo yard always uses
 flat-rate tax and fake card payments, so it never creates Stripe Tax
 transactions or Checkout sessions on your live account.
-
