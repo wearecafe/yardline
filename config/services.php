@@ -39,6 +39,14 @@ return [
         'webhook_secret' => env('SHOPIFY_WEBHOOK_SECRET'),
     ],
 
+    'quickbooks' => [
+        // Intuit developer app (developer.intuit.com) keys.
+        'client_id' => env('QUICKBOOKS_CLIENT_ID'),
+        'client_secret' => env('QUICKBOOKS_CLIENT_SECRET'),
+        'environment' => env('QUICKBOOKS_ENVIRONMENT', 'sandbox'), // sandbox | production
+        'minor_version' => env('QUICKBOOKS_MINOR_VERSION', '75'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

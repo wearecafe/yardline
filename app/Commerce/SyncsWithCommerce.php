@@ -24,7 +24,7 @@ trait SyncsWithCommerce
                 return;
             }
 
-            foreach (IntegrationProvider::cases() as $provider) {
+            foreach (IntegrationProvider::commerce() as $provider) {
                 if (Integration::activeFor($provider) !== null) {
                     PushToCommerce::dispatch($provider, $model->getMorphClass(), (int) $model->getKey())
                         ->afterCommit();

@@ -17,6 +17,7 @@ class ConnectorFactory
                 accessToken: (string) ($integration->credentials['access_token'] ?? ''),
                 apiVersion: (string) config('yardline.shopify.api_version'),
             )),
+            default => throw new \LogicException("{$integration->provider->value} is not a storefront."),
         };
     }
 }
