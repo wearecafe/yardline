@@ -16,6 +16,7 @@ use App\Support\Money;
 use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
@@ -169,7 +170,7 @@ class PurchasingController extends Controller
         ]);
 
         DB::transaction(function () use ($purchaseOrder, $data) {
-            $purchaseOrder->update(collect($data)->except('lines')->all());
+            $purchaseOrder->update(Arr::except($data, ['lines']));
             $keep = [];
 
             foreach (array_values($data['lines'] ?? []) as $i => $row) {

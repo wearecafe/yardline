@@ -129,7 +129,7 @@ final class FulfillmentPresenter
             return null;
         }
 
-        $lot = $shipmentLine?->lot ?? ($levels->first() ? StockLot::bestFor((int) $line->product_id, (int) $levels->first()->location_id) : null);
+        $lot = $shipmentLine->lot ?? ($levels->first() ? StockLot::bestFor((int) $line->product_id, (int) $levels->first()->location_id) : null);
 
         return $lot ? "{$lot->code} only" : null;
     }
