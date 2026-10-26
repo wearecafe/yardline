@@ -12,6 +12,7 @@ type Props = {
         currency: string;
         timezone: string;
         stripe_account_id: string | null;
+        reply_to_email: string | null;
     };
     timezones: string[];
 };
@@ -21,6 +22,7 @@ export default function Business({ business, timezones }: Props) {
         name: business.name,
         timezone: business.timezone,
         stripe_account_id: business.stripe_account_id ?? '',
+        reply_to_email: business.reply_to_email ?? '',
     });
 
     function submit(event: FormEvent) {
@@ -73,6 +75,22 @@ export default function Business({ business, timezones }: Props) {
                                 </option>
                             ))}
                         </NativeSelect>
+                    </Field>
+                    <Field
+                        label="Reply-to email"
+                        htmlFor="reply_to_email"
+                        error={form.errors.reply_to_email}
+                        hint="Quote and rental emails go out under your business name. When customers reply, it goes to this address."
+                    >
+                        <Input
+                            id="reply_to_email"
+                            type="email"
+                            value={form.data.reply_to_email}
+                            placeholder="sales@youryard.ca"
+                            onChange={(e) =>
+                                form.setData('reply_to_email', e.target.value)
+                            }
+                        />
                     </Field>
                     <Field
                         label="Stripe connected account"
