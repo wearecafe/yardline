@@ -163,6 +163,8 @@ const everything: { group: string; items: string[] }[] = [
         group: 'Yard & delivery',
         items: [
             'Pick queue and yard kiosk',
+            'Pick and load stages you switch on or off',
+            'Second-person sign-off at Picked or Loaded',
             'Bin locations',
             'Partial shipments',
             'Truck capacities in tonnes, yards or pallets',
@@ -199,6 +201,7 @@ const everything: { group: string; items: string[] }[] = [
             'Agreements signed in person or by link',
             'Check-out and check-in inspections',
             'Service intervals and lockouts',
+            'Reminder texts and emails, overdue alerts',
             'Online booking page',
             'Contractors book on their own account',
         ],
@@ -211,15 +214,21 @@ const everything: { group: string; items: string[] }[] = [
             'Returns and restocking fees',
             'Credit notes',
             'Pallet deposit ledger',
+            'Pallet usage fees',
             'Card payments and payment links',
             'Sales tax by Stripe Tax',
+            'Gross profit by category, product, customer and unit',
             'Audit log of changes',
         ],
     },
     {
         group: 'Team',
         items: [
-            'Owner invites admins and staff',
+            'Job-based roles, several per person',
+            'Permissions per person, refund limits per role',
+            'Staff scoped to their yards',
+            'PIN switching on shared tablets',
+            'Installs to the home screen, with alerts',
             'Time clock on a tablet with PINs',
             'Punches from phones and the driver app',
             'Phone punches checked against each yard',
@@ -326,7 +335,11 @@ const faqs: { q: string; a: string }[] = [
     },
     {
         q: 'Who can change prices or credit limits?',
-        a: 'Owners and admins. Counter staff can sell and take payments but can’t change prices or override a credit hold, and every price and credit change is in the audit log. Products you mark exempt from discounts can only be repriced by the roles you choose, with a reason that’s logged on the order.',
+        a: 'You decide. Everyone gets job-based roles (Sales, Rental desk, Yard crew, Dispatcher, Driver, Accounts and more), and judgment calls are separate permissions you can give to anyone: setting line prices by hand, overriding a credit limit, refunding above their role’s limit, seeing costs and margins. Out of the box, Sales can sell and take payments but can’t change prices or override a credit hold. Products you mark exempt from discounts can only be repriced by the roles you choose, with a reason. Every grant and every use is in the audit log.',
+    },
+    {
+        q: 'Can someone check a load before it leaves the yard?',
+        a: 'Yes. Choose which stages your yard uses (Picking, Picked, Loaded, Out for delivery), then require a sign-off at Picked, Loaded or both, by the roles you pick and by someone other than whoever did the work. A rejected load goes back a stage with the reason, and pick slips show who signed off.',
     },
     {
         q: 'We sell interlock by the layer and the pallet, never the single paver. Can it handle that?',
@@ -559,7 +572,9 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                                 'Aging by account; statements to print, download or email',
                                 'Returns restocked less a fee and credited to the account',
                                 'Pallet deposits charged going out and credited coming back',
+                                'Or a non-refundable usage fee per pallet, on its own line so customers see what comes back',
                                 'Card payments and payment links by text or email through Stripe',
+                                'Gross profit by category, product, customer or unit, with a drill-down to every line',
                             ]}
                             visual={<AgingMock />}
                             flip
@@ -583,6 +598,8 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                             points={[
                                 'Truck capacity in tonnes, yards or pallets, and boom, shown while you schedule',
                                 'Pick who drives each truck each day from the drivers allowed on it',
+                                'Switch on only the pick and load stages your yard uses',
+                                'Require a second person to sign off a load at Picked or Loaded',
                                 'Delivery fees priced by zone, by distance or by truckload',
                                 'Partial loads tracked line by line until the order is complete',
                                 'Proof of delivery with a signature and photo, attached to the order',
@@ -600,6 +617,7 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                                     'Optional free Sunday with a Saturday pickup',
                                     'Agreements signed on a tablet or from a texted link, with damage waiver',
                                     'Hour meters and service intervals; units due for service are locked out',
+                                    'Reminder texts and emails before pickup and return; the rental desk is alerted when a unit is overdue',
                                     'An online booking page for homeowners, with a calendar of what’s free',
                                     'Contractors signed in to the portal book on their own account, licence and insurance already on file',
                                 ]}
@@ -740,8 +758,9 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                                 status="Available"
                                 tone="success"
                             >
-                                Card payments at the counter and payment links
-                                by text or email.
+                                Card payments and payment links by text or
+                                email. Set up payouts, bank details and disputes
+                                in Settings, with no separate Stripe account.
                             </Integration>
                             <Integration
                                 name="Stripe Tax"
@@ -821,15 +840,17 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                                 before and after.
                             </Point>
                             <Point title="Roles that match the yard">
-                                The owner invites admins and staff and sets who
-                                can do what. The office runs accounts. The
-                                counter sells. The yard picks and loads. Drivers
-                                see their own run and nothing else.
+                                Sales, Rental desk, Yard crew, Dispatcher,
+                                Driver, Accounts and more, several to a person
+                                if they wear two hats. Each works their own
+                                yards, the yard crew never see prices, and
+                                drivers see their own run and nothing else.
                             </Point>
-                            <Point title="In the cloud, nothing to install">
+                            <Point title="In the cloud, nothing to set up">
                                 Runs in the browser on any desktop, tablet or
-                                phone. No server in the back office, no updates
-                                to run.
+                                phone, and installs to the home screen with its
+                                own icon. No server in the back office, no
+                                updates to run.
                             </Point>
                             <Point title="Your data stays yours">
                                 Each business is kept separate, and the yard
@@ -864,7 +885,8 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                                 <Role title="Yard" device="Kiosk tablet">
                                     Big buttons for gloves: the pick queue,
                                     bins, colour runs, loading and rental
-                                    check-in.
+                                    check-in. The crew switch users with their
+                                    PIN.
                                 </Role>
                                 <Role title="Drivers" device="Their phone">
                                     Their own run in order, directions and site
@@ -878,6 +900,15 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                                     logged.
                                 </Role>
                             </div>
+                            <p className="mt-6 max-w-3xl text-sm text-muted-foreground">
+                                One app for everyone: install it to the home
+                                screen of any tablet or phone and it opens
+                                straight to that person’s screen. Turn on alerts
+                                and the yard hears about new orders to pick,
+                                checkers about loads waiting for sign-off,
+                                drivers about new stops, and the rental desk
+                                about overdue units.
+                            </p>
                         </div>
                     </section>
 
@@ -1077,8 +1108,10 @@ const pricingCopy: Record<
             'Picking, dispatch and the driver app',
             'Stock by yard, purchasing and colour runs',
             'Price lists, contract prices and credit',
-            'Pallet deposits, returns and receivables',
+            'Pallet deposits and usage fees, returns and receivables',
+            'Gross-profit report with drill-down',
             'Contractor portal and QuickBooks Online',
+            'Job-based roles and permissions',
             'Unlimited users',
         ],
     },
