@@ -101,7 +101,7 @@ class QuickBooksSyncTest extends TestCase
     {
         // 230 sq ft of pavers ships on two pallets at the default deposit.
         $order = $this->order(['pavers' => 230, 'mortar' => 10]);
-        \Illuminate\Support\Facades\Exceptions::assertNothingReported();
+        $this->assertSame([], array_map(fn ($e) => get_class($e).': '.mb_substr($e->getMessage(), 0, 300), \Illuminate\Support\Facades\Exceptions::reported()));
         $this->assertNotEmpty($this->qbo->writes, 'DIAG integration='.json_encode(QuickBooks::integration()?->id).' demo='.json_encode(\App\Support\Demo::tenantId()).' tenant='.\App\Tenancy\CurrentTenant::id().' syncs='.json_encode(QuickBooksSync::query()->get(['syncable_type','status','message'])->toArray()).' now='.now()->toIso8601String());
         $invoice = $this->qbo->last('Invoice');
 

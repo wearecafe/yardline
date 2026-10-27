@@ -170,7 +170,7 @@ class FulfillmentTest extends TestCase
         $this->post(route('stops.en-route', $stop), ['eta' => '10:40'])->assertSessionHasNoErrors();
         $this->assertSame(ShipmentStatus::Out, $shipment->refresh()->status);
         $this->post(route('dispatch.etas'))->assertSessionHasNoErrors();
-        \Illuminate\Support\Facades\Exceptions::assertNothingReported();
+        $this->assertSame([], array_map(fn ($e) => get_class($e).': '.mb_substr($e->getMessage(), 0, 300), \Illuminate\Support\Facades\Exceptions::reported()));
         $this->assertNotNull($stop->refresh()->eta_sent_at, 'DIAG now='.now()->toIso8601String().' stopdate='.$stop->date?->toDateString().' status='.$stop->status->value.' phone='.json_encode($stop->stoppable?->order?->customer?->phone).' demo='.json_encode(\App\Support\Demo::tenantId()).' tenant='.\App\Tenancy\CurrentTenant::id());
 
         $this->get(route('dispatch.board'))->assertOk();
