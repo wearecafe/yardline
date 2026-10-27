@@ -5,8 +5,10 @@ namespace App\Models;
 use App\Tenancy\BelongsToTenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -27,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $last_accuracy_m
  * @property CarbonImmutable|null $last_located_at
  * @property-read User|null $driver
+ * @property-read Collection<int, User> $drivers
  */
 #[Fillable(['location_id', 'name', 'kind', 'driver_id', 'driver_name', 'driver_phone', 'capacity_kg', 'has_boom', 'is_active', 'position'])]
 class Truck extends Model
@@ -64,6 +67,18 @@ class Truck extends Model
     public function driver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'driver_id');
+    }
+
+    /**
+     * Drivers who are able to drive this truck.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function drivers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'driver_truck')
+            ->withPivot('tenant_id')
+            ->withTimestamps();
     }
 
     /**

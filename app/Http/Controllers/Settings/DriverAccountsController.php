@@ -19,8 +19,8 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Driver sign-ins: who drives, which truck is theirs, and when their
- * phone last checked in. Drivers only ever see their own run.
+ * Driver sign-ins: who drives, which trucks they're able to drive, and
+ * when their phone last checked in. Drivers only ever see their own run.
  */
 class DriverAccountsController extends Controller
 {
@@ -32,6 +32,7 @@ class DriverAccountsController extends Controller
             'drivers' => User::query()
                 ->where('tenant_id', CurrentTenant::id())
                 ->where('role', UserRole::Driver->value)
+                ->with('drivableTrucks:id')
                 ->orderBy('name')
                 ->get()
                 ->map(fn (User $driver) => [
@@ -39,10 +40,11 @@ class DriverAccountsController extends Controller
                     'name' => $driver->name,
                     'email' => $driver->email,
                     'joined' => $driver->email_verified_at !== null,
-                    'trucks' => $trucks->where('driver_id', $driver->id)->pluck('name')->values(),
+                    'truck_ids' => $trucks->whereIn('id', $driver->drivableTrucks->modelKeys())->pluck('id')->values(),
+                    'signs_in_to' => $trucks->where('driver_id', $driver->id)->pluck('id')->values(),
                     'last_seen' => $trucks->where('driver_id', $driver->id)->whereNotNull('last_located_at')->sortByDesc('last_located_at')->first()?->last_located_at?->toIso8601String(),
                 ]),
-            'trucks' => $trucks->map(fn (Truck $t) => ['id' => $t->id, 'name' => $t->name, 'driver_id' => $t->driver_id])->values(),
+            'trucks' => $trucks->map(fn (Truck $t) => ['id' => $t->id, 'name' => $t->name, 'is_active' => $t->is_active])->values(),
         ]);
     }
 
@@ -51,7 +53,7 @@ class DriverAccountsController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-            'truck_id' => ['nullable', TenantRule::exists('trucks')],
+            ...$this->truckRules(),
         ]);
 
         $driver = DB::transaction(function () use ($data) {
@@ -64,9 +66,7 @@ class DriverAccountsController extends Controller
                 'password' => Hash::make(Str::random(40)),
             ]);
 
-            if (isset($data['truck_id'])) {
-                Truck::query()->whereKey((int) $data['truck_id'])->update(['driver_id' => $driver->id]);
-            }
+            $driver->setDrivableTrucks($this->truckIds($data));
 
             return $driver;
         });
@@ -74,6 +74,19 @@ class DriverAccountsController extends Controller
         $this->invite($driver);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Sent {$driver->name} a link to choose a password."]);
+
+        return back();
+    }
+
+    public function update(Request $request, User $driver): RedirectResponse
+    {
+        $this->ensureDriver($driver);
+
+        $data = $request->validate($this->truckRules());
+
+        DB::transaction(fn () => $driver->setDrivableTrucks($this->truckIds($data)));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Saved the trucks {$driver->name} can drive."]);
 
         return back();
     }
@@ -105,6 +118,26 @@ class DriverAccountsController extends Controller
     private function ensureDriver(User $driver): void
     {
         abort_unless($driver->tenant_id === CurrentTenant::id() && $driver->isDriver(), 404);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function truckRules(): array
+    {
+        return [
+            'truck_ids' => ['present', 'array'],
+            'truck_ids.*' => ['integer', 'distinct', TenantRule::exists('trucks')],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return list<int>
+     */
+    private function truckIds(array $data): array
+    {
+        return array_values(array_map('intval', $data['truck_ids']));
     }
 
     private function invite(User $driver): void

@@ -81,7 +81,8 @@ class DeliverySettingsController extends Controller
 
     public function storeTruck(Request $request): RedirectResponse
     {
-        Truck::query()->create($this->truck($request) + ['position' => (int) Truck::query()->max('position') + 1]);
+        $truck = Truck::query()->create($this->truck($request) + ['position' => (int) Truck::query()->max('position') + 1]);
+        $this->clearSignedInDriver($truck);
 
         return back();
     }
@@ -89,6 +90,7 @@ class DeliverySettingsController extends Controller
     public function updateTruck(Request $request, Truck $truck): RedirectResponse
     {
         $truck->update($this->truck($request));
+        $this->clearSignedInDriver($truck);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "{$truck->name} saved."]);
 
@@ -100,6 +102,17 @@ class DeliverySettingsController extends Controller
         $truck->delete();
 
         return back();
+    }
+
+    /**
+     * Whoever signs in to a truck's run is able to drive it, so they're
+     * ticked for it under Settings → Drivers too.
+     */
+    private function clearSignedInDriver(Truck $truck): void
+    {
+        if ($truck->driver_id !== null) {
+            $truck->drivers()->syncWithoutDetaching([$truck->driver_id => ['tenant_id' => $truck->tenant_id]]);
+        }
     }
 
     /**

@@ -89,8 +89,12 @@ layer (9 sq ft) or the pallet (90 sq ft) and round up.
 ### Drivers
 
 Users with the `driver` role are added under Settings → Drivers (an
-emailed link to choose a password) and linked to a truck with
-`trucks.driver_id`. `RestrictDrivers` keeps them to `driver.*`, the
+emailed link to choose a password), where the owner ticks every truck
+they can drive (`driver_truck`, edited any time with "Edit trucks").
+The one driver who signs in to a truck's run is `trucks.driver_id`: a
+driver takes a ticked truck's run if nobody signs in to it yet, loses it
+when the truck is unticked, and picking a sign-in under Delivery →
+Trucks ticks that truck for them. `RestrictDrivers` keeps them to `driver.*`, the
 deliver screen and their own account settings. While `/driver` is open
 on their phone, `useLocationSharing` posts the position about once a
 minute (`driver.locate`); the latest is kept on the truck for the board

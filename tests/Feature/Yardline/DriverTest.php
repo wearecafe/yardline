@@ -245,7 +245,7 @@ class DriverTest extends TestCase
     {
         Notification::fake();
 
-        $this->post(route('drivers.store'), ['name' => 'Dave Kowalchuk', 'email' => 'dave@example.com', 'truck_id' => $this->truck3->id])->assertSessionHasNoErrors();
+        $this->post(route('drivers.store'), ['name' => 'Dave Kowalchuk', 'email' => 'dave@example.com', 'truck_ids' => [$this->truck3->id]])->assertSessionHasNoErrors();
 
         $dave = User::query()->where('email', 'dave@example.com')->firstOrFail();
         $this->assertSame(UserRole::Driver, $dave->role);
@@ -258,7 +258,9 @@ class DriverTest extends TestCase
             ->component('settings/drivers')
             ->has('drivers', 2)
             ->where('drivers.0.name', 'Dave Kowalchuk')
-            ->where('drivers.0.trucks.0', 'Truck 3'));
+            ->where('drivers.0.truck_ids', [$this->truck3->id])
+            ->where('drivers.0.signs_in_to', [$this->truck3->id])
+            ->has('trucks', 2));
 
         // Choosing a password from the link verifies their email.
         auth()->logout();
@@ -283,6 +285,49 @@ class DriverTest extends TestCase
         $staff = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Staff]);
         $this->actingAs($staff);
         $this->get(route('drivers.index'))->assertForbidden();
+    }
+
+    public function test_owners_pick_every_truck_a_driver_can_drive(): void
+    {
+        Notification::fake();
+        $this->actingAs($this->owner);
+
+        // Cleared for both trucks: Sam keeps signing in to Truck 2, and
+        // Dave takes Truck 3, which nobody signed in to.
+        $this->post(route('drivers.store'), ['name' => 'Dave Kowalchuk', 'email' => 'dave@example.com', 'truck_ids' => [$this->truck2->id, $this->truck3->id]])
+            ->assertSessionHasNoErrors();
+        $dave = User::query()->where('email', 'dave@example.com')->firstOrFail();
+        $this->assertEqualsCanonicalizing([$this->truck2->id, $this->truck3->id], $dave->drivableTrucks()->pluck('trucks.id')->all());
+        $this->assertSame($this->driver->id, $this->truck2->refresh()->driver_id);
+        $this->assertSame($dave->id, $this->truck3->refresh()->driver_id);
+        $this->assertDatabaseHas('driver_truck', ['user_id' => $dave->id, 'truck_id' => $this->truck3->id, 'tenant_id' => $this->tenant->id]);
+
+        // No longer cleared for Truck 3: he stops signing in to its run.
+        $this->put(route('drivers.update', $dave), ['truck_ids' => [$this->truck2->id]])->assertSessionHasNoErrors();
+        $this->assertSame([$this->truck2->id], $dave->drivableTrucks()->pluck('trucks.id')->all());
+        $this->assertNull($this->truck3->refresh()->driver_id);
+        $this->assertSame($this->driver->id, $this->truck2->refresh()->driver_id);
+
+        // Nothing ticked is fine; the list itself is required.
+        $this->put(route('drivers.update', $dave), ['truck_ids' => []])->assertSessionHasNoErrors();
+        $this->assertSame(0, $dave->drivableTrucks()->count());
+        $this->put(route('drivers.update', $dave), [])->assertSessionHasErrors('truck_ids');
+
+        // Only this business's trucks, and only drivers.
+        $otherTenant = Tenant::factory()->create();
+        $theirs = (new Truck)->forceFill(['tenant_id' => $otherTenant->id, 'name' => 'Their truck']);
+        $theirs->save();
+        $this->put(route('drivers.update', $dave), ['truck_ids' => [$theirs->id]])->assertSessionHasErrors('truck_ids.0');
+        $this->put(route('drivers.update', $this->owner), ['truck_ids' => []])->assertNotFound();
+
+        // Picking who signs in to a truck clears them to drive it.
+        $this->put(route('trucks.update', $this->truck3), ['name' => 'Truck 3', 'kind' => 'material', 'driver_id' => $dave->id])->assertSessionHasNoErrors();
+        $this->assertSame([$this->truck3->id], $dave->drivableTrucks()->pluck('trucks.id')->all());
+
+        $this->get(route('drivers.index'))->assertInertia(fn (Assert $page) => $page
+            ->where('drivers.0.name', 'Dave Kowalchuk')
+            ->where('drivers.0.truck_ids', [$this->truck3->id])
+            ->where('drivers.0.signs_in_to', [$this->truck3->id]));
     }
 
     public function test_contractors_see_stops_before_theirs_and_the_truck_when_next(): void
