@@ -198,6 +198,7 @@ class DemoYardSeeder extends Seeder
                 'rentals_enabled' => true,
                 'status' => 'active',
             ]);
+            $tenant->forceFill(['onboarded_at' => now()])->save();
 
             CurrentTenant::run($tenant, function () use ($tenant) {
                 $this->users($tenant);

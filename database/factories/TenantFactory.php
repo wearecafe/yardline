@@ -24,7 +24,18 @@ class TenantFactory extends Factory
             'trial_ends_at' => now('America/Toronto')->addYear()->toDateString(),
             // Most tests exercise rentals; new sign-ups start with it off.
             'rentals_enabled' => true,
+            // Past Setup; see notSetUp().
+            'onboarded_at' => now(),
         ];
+    }
+
+    /**
+     * A business that hasn't finished the required part of Setup, like a
+     * new sign-up.
+     */
+    public function notSetUp(): static
+    {
+        return $this->state(fn () => ['onboarded_at' => null]);
     }
 
     /**

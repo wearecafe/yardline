@@ -5,3 +5,4 @@ export type * from './models';
 export type * from './rentals';
 export type * from './time';
 export type * from './billing';
+export type * from './setup';

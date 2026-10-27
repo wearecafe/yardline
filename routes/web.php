@@ -239,6 +239,7 @@ Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.s
 Route::post('webhooks/stripe/billing', StripeBillingWebhookController::class)->name('webhooks.stripe-billing');
 
 require __DIR__.'/settings.php';
+require __DIR__.'/setup.php';
 require __DIR__.'/admin.php';
 require __DIR__.'/rentals.php';
 require __DIR__.'/time.php';

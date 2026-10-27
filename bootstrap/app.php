@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureBilling;
 use App\Http\Middleware\EnsurePlatformStaff;
 use App\Http\Middleware\EnsurePortalCustomer;
 use App\Http\Middleware\EnsureRentals;
+use App\Http\Middleware\EnsureSetUp;
 use App\Http\Middleware\EnsureTimeTracking;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -39,6 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
             IdentifyTenant::class,
             ProtectDemoAccounts::class,
             EnsureBilling::class,
+            EnsureSetUp::class,
             KeepStaffInBackOffice::class,
             RestrictByRole::class,
             TrackActivity::class,
