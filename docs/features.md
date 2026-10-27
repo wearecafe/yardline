@@ -450,3 +450,19 @@ between articles with `/help/{category}/{slug}`; `HelpCenterTest` fails on
 a broken link. A blockquote starting with **Tip**, **Note** or **Heads up**
 renders as a callout. When a screen or rule changes, update its article.
 Set `YARDLINE_SUPPORT_EMAIL` to show contact links.
+
+## Not built yet
+
+Features the scope (`docs/scope`) calls for that aren't built, or are
+only partly built. Add to this list when something is left out, and
+remove an item when it ships.
+
+| Feature                                      | Area            | What's missing                                                                                                                                           |
+| -------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Payment on delivery (COD)                    | Users and roles | The Collect payment on delivery permission exists, but not the flow: COD stops, the truck's Stripe reader (S710), external terminal, cash, driver report |
+| Yard scope on every screen                   | Users and roles | Only the pick queue, pick lists and quality checks follow a person's yards. The dispatch board, stock, orders, counter and rentals still show every yard |
+| Count-only receiving for Yard crew           | Users and roles | Yard crew should confirm received quantities and pallet returns without costs. The purchasing screens show costs, so Yard crew don't reach them yet      |
+| PIN switching on drivers' and techs' devices | Users and roles | Yard crew, Drivers and Service techs can be switched to by PIN, but the switch is only on the pick queue, not the driver app or fleet screens            |
+| Rental rates hidden from Service techs       | Users and roles | The fleet screens show rental rates, which Service techs shouldn't see                                                                                   |
+| QuickBooks page for Accounts                 | Users and roles | Accounts sees the connect and mapping controls. The server refuses them; the page should hide them                                                       |
+| Selling prices locked for Purchasing         | Users and roles | The product editor leaves price fields editable for Purchasing. The server ignores the changes; the fields should be disabled                            |
