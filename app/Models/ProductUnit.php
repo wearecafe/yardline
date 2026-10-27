@@ -21,7 +21,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property bool $is_base
  * @property bool $sellable
  * @property int $price_cents
- * @property string|null $variant_title
  * @property string|null $measured_by
  * @property string|null $increment
  * @property string|null $min_quantity
@@ -30,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read Product $product
  */
 #[Fillable([
-    'product_id', 'name', 'code', 'factor', 'is_base', 'sellable', 'price_cents', 'variant_title',
+    'product_id', 'name', 'code', 'factor', 'is_base', 'sellable', 'price_cents',
     'measured_by', 'increment', 'min_quantity', 'deposit_cents', 'position',
 ])]
 class ProductUnit extends Model

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Commerce\SyncsWithCommerce;
 use App\Tenancy\BelongsToTenant;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -38,7 +37,7 @@ use Illuminate\Notifications\Notifiable;
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */
-    use BelongsToTenant, HasFactory, Notifiable, SyncsWithCommerce;
+    use BelongsToTenant, HasFactory, Notifiable;
 
     /**
      * @var list<string>

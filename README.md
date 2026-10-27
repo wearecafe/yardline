@@ -55,7 +55,8 @@ set, scoped queries return nothing. Validate incoming IDs with
 modules and where each lives in the code.
 
 **Commerce.** Yardline owns organizations, customers, products, pricing
-and orders, and works without Shopify. Prices resolve in
+and orders, and is the only sales channel (counter, staff-entered orders
+and the contractor portal). There is no Shopify integration. Prices resolve in
 `App\Pricing\PriceResolver`: products exempt from price lists sell at
 retail; otherwise a contract price for the organization, then its price
 list (per selling unit, dated, best quantity break, or a $ / % category
@@ -88,16 +89,12 @@ the Stripe webhook marks them paid. Counter payments are recorded by
 hand. Tenants can have a Stripe Connect account ID; requests then go to
 that account.
 
-**Shopify** (`app/Commerce`). Shopify is a connector, not the source of
-truth. See [docs/shopify.md](docs/shopify.md).
-
 **Frontend.** Pages in `resources/js/pages`, Yardline components in
 `resources/js/components/yard`. Routes are typed with Wayfinder: import
 controllers from `@/actions/...` (generated at build time, not committed).
 
 ## Not built yet
 
-- Shopify order import and two-way sync (products and stock push today)
 - QuickBooks: vendors, purchase orders and bills (left out pending a decision)
 - Inviting staff into an existing business (sign-up creates a new one)
 - Refunds and Stripe Tax reversals on cancellation

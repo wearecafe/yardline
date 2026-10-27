@@ -54,5 +54,3 @@ See [Picking and loading on the yard kiosk](/help/yard-delivery/picking-on-the-k
 ## How units show up on orders
 
 Every order line keeps the unit sold (say, 3 tonnes) and converts it to base units. Stock, pick lists and reports always use the base quantity, so they stay right whichever unit was sold.
-
-> **Note** If you use Shopify, each selling unit becomes its own variant there. See [Connecting Shopify](/help/integrations/shopify).

@@ -16,7 +16,6 @@ export type EditorUnit = {
     is_base: boolean;
     sellable: boolean;
     price_cents: number;
-    variant_title: string | null;
     measured_by: string | null;
     increment: string | null;
     min_quantity: string | null;
@@ -31,7 +30,6 @@ type Row = {
     is_base: boolean;
     sellable: boolean;
     price: string;
-    variant_title: string;
     measured_by: string;
     increment: string;
     min_quantity: string;
@@ -75,7 +73,6 @@ export function ProductUnitsEditor({
             is_base: u.is_base,
             sellable: u.sellable,
             price: centsToInput(u.price_cents),
-            variant_title: u.variant_title ?? '',
             measured_by: u.measured_by ?? '',
             increment: u.increment ? trim(u.increment) : '',
             min_quantity: u.min_quantity ? trim(u.min_quantity) : '',
@@ -138,7 +135,6 @@ export function ProductUnitsEditor({
                         <tr>
                             <Th>Unit</Th>
                             <Th>Equals</Th>
-                            <Th>Shopify variant</Th>
                             <Th>How it's measured</Th>
                             <Th>For sale</Th>
                             <Th>Sold in steps of</Th>
@@ -190,19 +186,6 @@ export function ProductUnitsEditor({
                                             </span>
                                         </div>
                                     )}
-                                </Td>
-                                <Td>
-                                    <Input
-                                        aria-label="Shopify variant"
-                                        value={row.variant_title}
-                                        placeholder={`Per ${row.name.toLowerCase()}`}
-                                        onChange={(e) =>
-                                            update(i, {
-                                                variant_title: e.target.value,
-                                            })
-                                        }
-                                        className="min-w-32"
-                                    />
                                 </Td>
                                 <Td>
                                     <NativeSelect
@@ -349,7 +332,6 @@ export function ProductUnitsEditor({
                                     is_base: false,
                                     sellable: true,
                                     price: '',
-                                    variant_title: '',
                                     measured_by: '',
                                     increment: '',
                                     min_quantity: '',

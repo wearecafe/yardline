@@ -790,8 +790,7 @@ function RentalForm({
                         )}
 
                         <p className="text-xs text-muted-foreground">
-                            Rental revenue syncs to QuickBooks Online. It never
-                            goes through Shopify.
+                            Rental revenue syncs to QuickBooks Online.
                         </p>
                     </aside>
                 </form>

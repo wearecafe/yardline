@@ -74,8 +74,8 @@ class HelpCenter
             'icon' => 'clock',
         ],
         'integrations' => [
-            'title' => 'Shopify and integrations',
-            'summary' => 'Connecting Shopify, what syncs, and how card payments, tax and text messages are set up.',
+            'title' => 'Integrations',
+            'summary' => 'QuickBooks Online, and how card payments, tax and text messages are set up.',
             'icon' => 'plug',
         ],
         'for-customers' => [

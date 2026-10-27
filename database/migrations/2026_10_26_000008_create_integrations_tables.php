@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('integrations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
-            $table->string('provider'); // shopify
+            $table->string('provider'); // quickbooks
             $table->string('status')->default('connected');
             $table->string('external_account')->nullable(); // e.g. shop domain
             $table->text('credentials')->nullable(); // encrypted JSON

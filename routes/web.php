@@ -35,7 +35,6 @@ use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockLevelController;
 use App\Http\Controllers\StockTransferController;
-use App\Http\Controllers\Webhooks\ShopifyWebhookController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use App\Support\Demo;
 use Illuminate\Support\Facades\Route;
@@ -208,7 +207,6 @@ Route::get('q/{token}', [QuoteController::class, 'show'])->name('quotes.public')
 Route::post('q/{token}/accept', [QuoteController::class, 'accept'])->middleware('throttle:10,1')->name('quotes.accept');
 
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
-Route::post('webhooks/shopify', ShopifyWebhookController::class)->name('webhooks.shopify');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/rentals.php';

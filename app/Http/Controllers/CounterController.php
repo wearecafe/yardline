@@ -35,7 +35,7 @@ use Inertia\Response;
 
 /**
  * The counter sale screen: ring it up, take payment, hand it over, print
- * a receipt. For when Shopify POS isn't in use.
+ * a receipt. Yardline is the yard's point of sale.
  */
 class CounterController extends Controller
 {

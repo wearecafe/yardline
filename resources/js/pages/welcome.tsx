@@ -237,8 +237,8 @@ const compare: { feature: string; sheet: string; pos: string; erp: string }[] =
 
 const faqs: { q: string; a: string }[] = [
     {
-        q: 'Do I need Shopify?',
-        a: 'No. Yardline is the system of record for products, prices, accounts and orders, and works on its own. If you sell online with Shopify, Yardline pushes your products (every selling unit as a variant) and stock to it.',
+        q: 'Do I need a separate point of sale?',
+        a: 'No. Yardline is your counter, order desk and contractor portal in one, so products, prices, accounts and orders all live in one place.',
     },
     {
         q: 'Does it replace my accounting software?',
@@ -760,15 +760,7 @@ export default function Welcome({ demo, canRegister }: Props) {
                         <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
                             Works with what you already use
                         </h2>
-                        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                            <Integration
-                                name="Shopify"
-                                status="Available"
-                                tone="success"
-                            >
-                                Products, every selling unit as a variant, and
-                                stock pushed to your storefront.
-                            </Integration>
+                        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             <Integration
                                 name="Stripe"
                                 status="Available"

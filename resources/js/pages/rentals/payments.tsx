@@ -75,7 +75,7 @@ function RentalLink({ id, number }: { id: number; number: string }) {
 
 /**
  * Rental money only. Rentals are billed separately from goods and sync to
- * QuickBooks Online, never to Shopify.
+ * QuickBooks Online.
  */
 export default function RentalPayments({
     stats,

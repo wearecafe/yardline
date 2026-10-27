@@ -34,11 +34,6 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
-    'shopify' => [
-        // Client secret of the Shopify app; used to verify webhook HMACs.
-        'webhook_secret' => env('SHOPIFY_WEBHOOK_SECRET'),
-    ],
-
     'quickbooks' => [
         // Intuit developer app (developer.intuit.com) keys.
         'client_id' => env('QUICKBOOKS_CLIENT_ID'),
