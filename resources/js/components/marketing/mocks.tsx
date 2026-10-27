@@ -706,3 +706,79 @@ export function DriverMock() {
         </div>
     );
 }
+
+const crew: {
+    name: string;
+    role: string;
+    since: string;
+    tone: ChipTone;
+    status: string;
+}[] = [
+    {
+        name: 'Owen Barker',
+        role: 'Yard · counter tablet',
+        since: '6:58',
+        tone: 'success',
+        status: 'In',
+    },
+    {
+        name: 'Sam Reyes',
+        role: 'Driver · Boom 1',
+        since: '6:45',
+        tone: 'success',
+        status: 'In',
+    },
+    {
+        name: 'Ryan Patel',
+        role: 'Counter · phone',
+        since: '11:32',
+        tone: 'info',
+        status: 'On break',
+    },
+    {
+        name: 'Dev Moretti',
+        role: 'Yard · counter tablet',
+        since: 'yesterday',
+        tone: 'warning',
+        status: 'Missed clock-out',
+    },
+];
+
+export function TimeMock() {
+    return (
+        <Frame title="Who’s in · Waterdown yard" meta="Week of Oct 19">
+            <ul className="divide-y divide-border">
+                {crew.map((person) => (
+                    <li
+                        key={person.name}
+                        className="flex items-center justify-between gap-3 px-4 py-3"
+                    >
+                        <div className="min-w-0">
+                            <div className="truncate text-sm font-medium">
+                                {person.name}
+                            </div>
+                            <div className="truncate text-xs text-muted-foreground">
+                                {person.role} · since{' '}
+                                <span className="font-mono">
+                                    {person.since}
+                                </span>
+                            </div>
+                        </div>
+                        <Chip tone={person.tone}>{person.status}</Chip>
+                    </li>
+                ))}
+            </ul>
+            <div className="grid grid-cols-3 border-t border-border text-center">
+                <Figure value="312.5" label="Regular hrs" />
+                <Figure value="9.0" label="Overtime" />
+                <Figure value="1" label="To fix" />
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm">
+                <span className="text-muted-foreground">
+                    Pay period approved and locked
+                </span>
+                <Chip tone="success">Sent to QuickBooks</Chip>
+            </div>
+        </Frame>
+    );
+}

@@ -10,6 +10,7 @@ import {
     QueueMock,
     RentalMock,
     StockMock,
+    TimeMock,
 } from '@/components/marketing/mocks';
 import { Chip } from '@/components/yard/chip';
 import type { ChipTone } from '@/components/yard/chip';
@@ -26,6 +27,7 @@ const nav = [
     { href: '#drivers', label: 'Driver app' },
     { href: '#rentals', label: 'Rentals' },
     { href: '#portal', label: 'Contractor portal' },
+    { href: '#time', label: 'Time clock' },
     { href: '#faq', label: 'FAQ' },
     { href: '/help', label: 'Help' },
 ];
@@ -51,6 +53,12 @@ const pains = [
 
 const day: { time: string; who: string; title: string; body: string }[] = [
     {
+        time: '6:30',
+        who: 'Yard',
+        title: 'Owen clocks in at the counter tablet',
+        body: 'His PIN on the tablet by the door, no punch cards. Sam clocks in from the driver app on his phone before he heads out.',
+    },
+    {
         time: '6:45',
         who: 'Contractor',
         title: 'Mike reorders from the job site',
@@ -72,7 +80,7 @@ const day: { time: string; who: string; title: string; body: string }[] = [
         time: '8:15',
         who: 'Dispatch',
         title: 'Loaded on Boom 1, ETA texted',
-        body: 'Dragged onto the board at 9 o’clock. Mike gets a text with a two-hour window.',
+        body: 'Dragged onto the board at 9 o’clock, with Sam picked to drive Boom 1 today. Mike gets a text with a two-hour window.',
     },
     {
         time: '10:40',
@@ -89,8 +97,8 @@ const day: { time: string; who: string; title: string; body: string }[] = [
     {
         time: '4:30',
         who: 'Office',
-        title: 'Lisa runs statements',
-        body: 'Aging by account, statements emailed, and Halton’s pallet pickup scheduled for tomorrow.',
+        title: 'Lisa runs statements and approves hours',
+        body: 'Aging by account, statements emailed, and Halton’s pallet pickup scheduled for tomorrow. Friday she fixes one missed clock-out, approves the week and sends the hours to payroll.',
     },
 ];
 
@@ -100,8 +108,11 @@ const everything: { group: string; items: string[] }[] = [
         items: [
             'Selling units with conversion factors',
             'Fractional and bulk quantities',
+            'Units not sold on their own, rounded to the nearest mix',
             'Contract prices by organization',
             'Price lists with dates and quantity breaks',
+            'Category discounts in $ or %',
+            'Products exempt from discounts',
             'Quotes with expiry and online accept',
             'Walk-in counter checkout',
             'Credit limits, holds and overrides',
@@ -127,8 +138,10 @@ const everything: { group: string; items: string[] }[] = [
             'Pick queue and yard kiosk',
             'Bin locations',
             'Partial shipments',
-            'Trucks with capacity and boom',
+            'Truck capacities in tonnes, yards or pallets',
+            'Trucks for material, rentals or both',
             'Dispatch board by hour',
+            'Drivers picked per truck, per day',
             'Zone, distance or truckload fees',
             'ETA text messages',
             'Driver app on their own phone',
@@ -160,6 +173,7 @@ const everything: { group: string; items: string[] }[] = [
             'Check-out and check-in inspections',
             'Service intervals and lockouts',
             'Online booking page',
+            'Contractors book on their own account',
         ],
     },
     {
@@ -173,6 +187,19 @@ const everything: { group: string; items: string[] }[] = [
             'Card payments and payment links',
             'Sales tax by Stripe Tax',
             'Audit log of changes',
+        ],
+    },
+    {
+        group: 'Team',
+        items: [
+            'Owner invites admins and staff',
+            'Time clock on a tablet with PINs',
+            'Punches from phones and the driver app',
+            'Phone punches checked against each yard',
+            'Weekly overtime for Ontario and Quebec',
+            'Missed punches and short rests flagged',
+            'Corrections with a reason, originals kept',
+            'Payroll export to QuickBooks, ADP or CSV',
         ],
     },
 ];
@@ -222,6 +249,12 @@ const compare: { feature: string; sheet: string; pos: string; erp: string }[] =
             erp: 'Sometimes',
         },
         {
+            feature: 'Time clock and payroll hours for the crew',
+            sheet: 'Manual',
+            pos: 'Sometimes',
+            erp: 'Add-on',
+        },
+        {
             feature: 'Contractor self-serve portal',
             sheet: 'No',
             pos: 'No',
@@ -266,7 +299,15 @@ const faqs: { q: string; a: string }[] = [
     },
     {
         q: 'Who can change prices or credit limits?',
-        a: 'Owners and admins. Counter staff can sell and take payments but can’t change prices or override a credit hold, and every price and credit change is in the audit log.',
+        a: 'Owners and admins. Counter staff can sell and take payments but can’t change prices or override a credit hold, and every price and credit change is in the audit log. Products you mark exempt from discounts can only be repriced by the roles you choose, with a reason that’s logged on the order.',
+    },
+    {
+        q: 'We sell interlock by the layer and the pallet, never the single paver. Can it handle that?',
+        a: 'Yes. Switch off the units you don’t sell on their own and they still count stock. Ask for 300 sq ft and Yardline offers the nearest mix, like 2 pallets and 7 layers, rounding up or down as you choose for that product. Staff confirm it before it goes on the order, and the portal and patio calculator round the same way.',
+    },
+    {
+        q: 'Does it track hours for the yard crew and drivers?',
+        a: 'Yes, with the time and attendance add-on. Staff clock in on the counter tablet with a PIN, on their phone, or from the driver app. Yardline works out weekly overtime for Ontario and Quebec, flags missed punches, and exports approved hours to QuickBooks Online, ADP or a spreadsheet.',
     },
 ];
 
@@ -372,11 +413,11 @@ export default function Welcome({ demo, canRegister }: Props) {
                             />
                             <p className="mt-6 max-w-xl text-lg text-muted-foreground">
                                 Yardline runs the counter, the yard, the trucks,
-                                the rental fleet and the receivables in one
-                                system, built around how a supply yard actually
-                                sells: by the bag, the pallet, the tonne and the
-                                yard, on account, with a deposit on every
-                                pallet.
+                                the rental fleet, the crew’s hours and the
+                                receivables in one system, built around how a
+                                supply yard actually sells: by the bag, the
+                                pallet, the tonne and the yard, on account, with
+                                a deposit on every pallet.
                             </p>
                             <div className="mt-8 flex flex-wrap gap-3">
                                 {primary}
@@ -503,6 +544,9 @@ export default function Welcome({ demo, canRegister }: Props) {
                             points={[
                                 'Contract prices for a builder’s job beat the price list, which beats retail',
                                 'Price lists by selling unit, with quantity breaks and start and end dates',
+                                'Take $ or % off a whole category, like 10% off wall block for your builders',
+                                'Mark a product exempt and it always sells at its own price, discounts or not',
+                                'Sell interlock only by the layer or pallet; 300 sq ft rounds to the nearest mix',
                                 'Margin shown as you price; flagged when a supplier’s cost goes up',
                                 'Quotes hold their price until they expire and are accepted from a link',
                             ]}
@@ -513,7 +557,8 @@ export default function Welcome({ demo, canRegister }: Props) {
                             title="A dispatch board instead of a whiteboard"
                             body="Every delivery, rental drop and pallet pickup on one board, trucks down the side and hours across. Drag a stop onto a truck and the customer gets a text with their window."
                             points={[
-                                'Truck capacity and boom shown while you schedule',
+                                'Truck capacity in tonnes, yards or pallets, and boom, shown while you schedule',
+                                'Pick who drives each truck each day from the drivers allowed on it',
                                 'Delivery fees priced by zone, by distance or by truckload',
                                 'Partial loads tracked line by line until the order is complete',
                                 'Proof of delivery with a signature and photo, attached to the order',
@@ -531,6 +576,7 @@ export default function Welcome({ demo, canRegister }: Props) {
                                     '“On my way” with an ETA; rental drops and pallet pickups finished in a tap',
                                     'Dispatch sees where every truck was last seen, right on the board',
                                     'Optional for contractors: “2 stops before yours” in the portal, and the truck on a map once theirs is next',
+                                    'Clock in and out from the same app, if you use the time clock',
                                     'Nothing to install. It runs in the phone’s browser and adds to the home screen',
                                 ]}
                                 visual={<DriverMock />}
@@ -558,7 +604,8 @@ export default function Welcome({ demo, canRegister }: Props) {
                                     'Optional free Sunday with a Saturday pickup',
                                     'Agreements signed on a tablet or from a texted link, with damage waiver',
                                     'Hour meters and service intervals; units due for service are locked out',
-                                    'An online booking page for homeowners',
+                                    'An online booking page for homeowners, with a calendar of what’s free',
+                                    'Contractors signed in to the portal book on their own account, licence and insurance already on file',
                                 ]}
                                 visual={<RentalMock />}
                                 flip
@@ -576,6 +623,8 @@ export default function Welcome({ demo, canRegister }: Props) {
                                     'The truck on a map once their delivery is next (if you turn it on)',
                                     'Statement, open invoices and pallets on site',
                                     'Request a pallet pickup; it goes straight onto the dispatch board',
+                                    'Rent equipment on their account without calling the counter',
+                                    'Made for phones: tabs along the bottom and orders as cards',
                                 ]}
                                 visual={<PortalMock />}
                             />
@@ -594,6 +643,22 @@ export default function Welcome({ demo, canRegister }: Props) {
                             visual={<AgingMock />}
                             flip
                         />
+                        <section id="time" className="scroll-mt-20">
+                            <Feature
+                                eyebrow="Time and attendance · add-on"
+                                title="Hours from the yard, the counter and the cab"
+                                body="Retire the punch clock. The crew clocks in on the counter tablet with a PIN, office staff on their phone, and drivers from the same app that runs their deliveries. At the end of the period, approve the hours and send them to payroll."
+                                points={[
+                                    'Phone punches checked against each yard; drivers who take a truck home are excused',
+                                    'No signal? Punches wait on the phone and go through with the right time',
+                                    'Breaks, rounding and weekly overtime for Ontario and Quebec worked out for you',
+                                    'Missed clock-outs, long shifts and short rests flagged on Who’s in',
+                                    'Corrections need a reason, keep the original punch, and the employee can dispute them',
+                                    'Approve and lock each pay period, then export to QuickBooks Online, ADP or a spreadsheet',
+                                ]}
+                                visual={<TimeMock />}
+                            />
+                        </section>
                     </div>
 
                     {/* Devices */}
@@ -611,7 +676,8 @@ export default function Welcome({ demo, canRegister }: Props) {
                                     device="Desktop or tablet"
                                 >
                                     Ring up walk-ins, take orders on account,
-                                    quote jobs and take payments.
+                                    quote jobs and take payments. The same
+                                    tablet is the crew’s time clock.
                                 </Role>
                                 <Role title="Yard" device="Kiosk tablet">
                                     Big buttons for gloves: the pick queue,
@@ -620,12 +686,14 @@ export default function Welcome({ demo, canRegister }: Props) {
                                 </Role>
                                 <Role title="Drivers" device="Their phone">
                                     Their own run in order, directions and site
-                                    notes, a signature at the curb, and the
-                                    truck’s location shared with dispatch.
+                                    notes, a signature at the curb, the truck’s
+                                    location shared with dispatch, and their
+                                    clock-in.
                                 </Role>
                                 <Role title="Office" device="Desktop">
-                                    Prices, credit, receivables, purchasing and
-                                    reports, with every change logged.
+                                    Prices, credit, receivables, purchasing,
+                                    timesheets and reports, with every change
+                                    logged.
                                 </Role>
                             </div>
                         </div>
@@ -732,10 +800,10 @@ export default function Welcome({ demo, canRegister }: Props) {
                                 before and after.
                             </Point>
                             <Point title="Roles that match the yard">
-                                Owners set prices and credit. The office runs
-                                accounts. The counter sells. The yard picks and
-                                loads. Drivers see their own run and nothing
-                                else.
+                                The owner invites admins and staff and sets who
+                                can do what. The office runs accounts. The
+                                counter sells. The yard picks and loads. Drivers
+                                see their own run and nothing else.
                             </Point>
                             <Point title="In the cloud, nothing to install">
                                 Runs in the browser on any desktop, tablet or
@@ -783,7 +851,16 @@ export default function Welcome({ demo, canRegister }: Props) {
                                 tone="success"
                             >
                                 Invoices, payments, credits and rental invoices
-                                posted to your books as they happen.
+                                posted to your books as they happen, and
+                                approved hours sent as time activities.
+                            </Integration>
+                            <Integration
+                                name="ADP"
+                                status="Payroll export"
+                                tone="info"
+                            >
+                                Approved hours exported as an ADP import file at
+                                the end of each pay period.
                             </Integration>
                         </div>
                     </section>
@@ -798,8 +875,8 @@ export default function Welcome({ demo, canRegister }: Props) {
                             <ol className="mt-10 grid gap-6 md:grid-cols-3">
                                 <StepCard n="1" title="Set up your yards">
                                     Add your yards, bins, trucks and delivery
-                                    zones, and the people who work the counter
-                                    and the yard.
+                                    zones, and invite the people who work the
+                                    counter, the yard and the trucks.
                                 </StepCard>
                                 <StepCard n="2" title="Load your catalogue">
                                     Products with their selling units and
