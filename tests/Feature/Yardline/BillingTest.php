@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Yardline;
 
+use App\Access\UserAccounts;
 use App\Billing\BillingState;
 use App\Billing\ItemChanges;
 use App\Billing\Plan;
@@ -134,14 +135,25 @@ class BillingTest extends TestCase
         $tenant = $this->tenant();
         $this->put(route('billing.add-ons'), ['time' => true]);
 
+        $people = [];
+
         foreach (['Owen' => true, 'Priya' => true, 'Office cat' => false] as $name => $tracked) {
-            $user = User::factory()->create(['tenant_id' => $tenant->id, 'name' => $name]);
-            Employee::query()->create(['user_id' => $user->id, 'tracks_time' => $tracked]);
+            $people[$name] = User::factory()->create(['tenant_id' => $tenant->id, 'name' => $name]);
+            Employee::query()->create(['user_id' => $people[$name]->id, 'tracks_time' => $tracked]);
         }
+
+        // A user who isn't an employee isn't billed.
+        User::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Bookkeeper']);
 
         $tenant->refresh();
         $this->assertSame(2, Plan::for($tenant)->seats);
         $this->assertSame(74_900 + 19_900 + 2 * 500, $tenant->monthly_price_cents);
+
+        // Deactivating someone ends their employment and their seat.
+        UserAccounts::deactivate($people['Priya']);
+        $tenant->refresh();
+        $this->assertSame(1, Plan::for($tenant)->seats);
+        $this->assertSame(74_900 + 19_900 + 500, $tenant->monthly_price_cents);
     }
 
     public function test_a_trial_that_ended_locks_everyone_out_except_billing(): void

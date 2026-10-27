@@ -38,7 +38,9 @@ final readonly class Plan
     }
 
     /**
-     * People whose time the tenant tracks, billed per person.
+     * Users set up as employees who track time, billed per person: active
+     * employees with "Clocks in" on, whose user is still active. Users who
+     * aren't employees, or don't clock in, aren't billed.
      */
     public static function seatsFor(Tenant $tenant): int
     {
@@ -46,6 +48,7 @@ final readonly class Plan
             ->withoutGlobalScope(TenantScope::class)
             ->where('tenant_id', $tenant->id)
             ->tracked()
+            ->whereHas('user', fn ($q) => $q->whereNull('deactivated_at'))
             ->count();
     }
 

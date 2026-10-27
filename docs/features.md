@@ -489,8 +489,11 @@ account, never on a yard's connected account. Code is in `app/Billing`.
   by staff locks the tenant. Owners and admins land on Settings → Billing;
   everyone else on a paused page. Profile, security, sign-out and help
   still work, and the contractor portal and booking page close.
-- **Time and attendance seats** are active employees with "tracks time"
-  on. Adding, archiving or changing one queues `SyncSubscription`, which
+- **Time and attendance seats** are users set up as employees with
+  "Clocks in" on (`tracks_time`), whose employment hasn't ended and whose
+  user is active (`Plan::seatsFor`). Users who aren't employees aren't
+  billed. Adding, archiving or changing one, or deactivating their user,
+  queues `SyncSubscription`, which
   waits 30 seconds so a burst of changes becomes one update.
 - **Checkout's trial** must end at least 48 hours out, so a tenant
   subscribing in the last two days of their trial gets the difference
