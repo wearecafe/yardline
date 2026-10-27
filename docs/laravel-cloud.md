@@ -61,7 +61,18 @@ TWILIO_TOKEN=...
 TWILIO_FROM=+1...
 
 YARDLINE_FILES_DISK=s3       # once a bucket is attached
+
+VAPID_PUBLIC_KEY=...         # php artisan yardline:push:keys
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:support@yardrunner.ca
 ```
+
+Alerts on staff phones and tablets (web push) need a VAPID key pair. Run
+`php artisan yardline:push:keys` once, put the output in the environment
+and keep it: a new pair stops alerts on every device until each one opens
+YardRunner again. Without keys, alerts are written to the log and Settings →
+Alerts says they aren't set up. Alerts are queued notifications, so they need
+the queue worker running like QuickBooks sync does.
 
 Text messages (delivery ETAs, rental signing links and reminders) go
 through Twilio. With `YARDLINE_SMS_DRIVER=log` they're written to the log

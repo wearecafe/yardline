@@ -2,6 +2,7 @@
 
 namespace App\Fulfillment;
 
+use App\Alerts\StaffAlerts;
 use App\Enums\StopStatus;
 use App\Models\DriverPing;
 use App\Models\Order;
@@ -70,7 +71,13 @@ class DriverRun
             return;
         }
 
+        $was = TruckAssignment::query()->where('truck_id', $truck->id)->where('date', $day)->value('user_id');
+
         TruckAssignment::query()->updateOrCreate(['truck_id' => $truck->id, 'date' => $day], ['user_id' => $driver->id]);
+
+        if ((int) $was !== $driver->id) {
+            app(StaffAlerts::class)->runAssigned($truck, $day, $driver);
+        }
     }
 
     public function today(): CarbonImmutable

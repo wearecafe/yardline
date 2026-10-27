@@ -2,6 +2,7 @@
 
 namespace App\Orders;
 
+use App\Alerts\StaffAlerts;
 use App\Credit\CreditAssessment;
 use App\Credit\CreditCheck;
 use App\Enums\FulfillmentMethod;
@@ -108,6 +109,10 @@ class ConfirmOrder
         if ($settlement === Settlement::Account) {
             $this->commitTax->handle($order);
         }
+
+        // Yard crew at its yard hear about it, unless it never reaches the
+        // queue (a counter sale picked up on the spot).
+        app(StaffAlerts::class)->orderPlaced($order);
 
         return $order;
     }

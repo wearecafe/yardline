@@ -2,6 +2,7 @@
 
 namespace App\Fulfillment;
 
+use App\Alerts\StaffAlerts;
 use App\Audit\Audit;
 use App\Enums\OrderStatus;
 use App\Enums\Settlement;
@@ -62,6 +63,7 @@ class LoadShipment
             if ($settings->requiresCheck('loaded')) {
                 $shipment->forceFill(['status' => ShipmentStatus::Loaded, 'check_stage' => 'loaded'])->save();
                 Audit::record($shipment, 'loaded', note: 'Waiting for a quality check.');
+                app(StaffAlerts::class)->checkNeeded($shipment, $user);
 
                 return $shipment;
             }

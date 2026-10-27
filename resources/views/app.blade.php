@@ -34,6 +34,17 @@
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
+        {{-- The installable staff app. Not on the contractor portal or customers' public pages. --}}
+        @unless (str_starts_with($page['component'], 'portal/') || str_starts_with($page['component'], 'public/'))
+            <link rel="manifest" href="/manifest.webmanifest">
+            <meta name="theme-color" content="#f5f3ef" media="(prefers-color-scheme: light)">
+            <meta name="theme-color" content="#141210" media="(prefers-color-scheme: dark)">
+            <meta name="mobile-web-app-capable" content="yes">
+            <meta name="apple-mobile-web-app-capable" content="yes">
+            <meta name="apple-mobile-web-app-title" content="YardRunner">
+            <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        @endunless
+
         {{-- Link previews for public pages only (see App\Support\ShareMeta) --}}
         @if ($share = \App\Support\ShareMeta::for(request(), $page))
             <meta name="description" content="{{ $share['description'] }}">

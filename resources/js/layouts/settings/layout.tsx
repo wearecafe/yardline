@@ -1,4 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
+import AlertsController from '@/actions/App/Http/Controllers/Settings/AlertsController';
 import BillingController from '@/actions/App/Http/Controllers/Settings/BillingController';
 import BusinessController from '@/actions/App/Http/Controllers/Settings/BusinessController';
 import AuditController from '@/actions/App/Http/Controllers/Settings/AuditController';
@@ -35,6 +36,11 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Appearance',
         href: editAppearance(),
+        icon: null,
+    },
+    {
+        title: 'Alerts',
+        href: AlertsController.edit(),
         icon: null,
     },
 ];

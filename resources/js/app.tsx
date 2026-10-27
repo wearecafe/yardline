@@ -1,4 +1,5 @@
 import { createInertiaApp } from '@inertiajs/react';
+import { OfflineBanner } from '@/components/offline-banner';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -6,6 +7,7 @@ import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import DriverLayout from '@/layouts/driver-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { initializePwa } from '@/lib/pwa';
 
 const appName = import.meta.env.VITE_APP_NAME || 'YardRunner';
 
@@ -37,6 +39,7 @@ void createInertiaApp({
             <TooltipProvider delayDuration={0}>
                 {app}
                 <Toaster />
+                <OfflineBanner />
             </TooltipProvider>
         );
     },
@@ -47,3 +50,6 @@ void createInertiaApp({
 
 // This will set light / dark mode on load...
 initializeTheme();
+
+// The installable app: service worker, updates, install prompt.
+initializePwa();

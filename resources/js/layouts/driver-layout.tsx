@@ -3,6 +3,7 @@ import { Clock, LogOut, MapPin, MapPinOff, Settings } from 'lucide-react';
 import type { ReactNode } from 'react';
 import DriverController from '@/actions/App/Http/Controllers/DriverController';
 import MyTimeController from '@/actions/App/Http/Controllers/Time/MyTimeController';
+import { AlertsPrompt } from '@/components/alerts-prompt';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { useLocationSharing } from '@/hooks/use-location-sharing';
 import type { LocationSharing } from '@/hooks/use-location-sharing';
@@ -140,7 +141,10 @@ export default function DriverLayout({ children }: { children: ReactNode }) {
                     </Link>
                 </div>
             </header>
-            <main className="mx-auto max-w-lg px-4 py-4 pb-16">{children}</main>
+            <main className="mx-auto max-w-lg px-4 py-4 pb-16">
+                <AlertsPrompt className="mb-4" />
+                {children}
+            </main>
         </div>
     );
 }

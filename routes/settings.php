@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\AlertsController;
 use App\Http\Controllers\Settings\BillingController;
 use App\Http\Controllers\Settings\BusinessController;
 use App\Http\Controllers\Settings\DriverAccountsController;
@@ -31,6 +32,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('user-password.update');
 
     Route::inertia('settings/appearance', 'settings/appearance')->name('appearance.edit');
+
+    // Alerts on this phone or tablet (web push).
+    Route::get('settings/alerts', [AlertsController::class, 'edit'])->name('alerts.edit');
+    Route::post('settings/alerts/devices', [AlertsController::class, 'store'])->middleware('throttle:30,1')->name('alerts.devices.store');
+    Route::delete('settings/alerts/devices', [AlertsController::class, 'destroy'])->name('alerts.devices.destroy');
+    Route::post('settings/alerts/test', [AlertsController::class, 'test'])->middleware('throttle:6,1')->name('alerts.test');
 });
 
 Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function () {
