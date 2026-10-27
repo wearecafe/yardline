@@ -394,7 +394,7 @@ would return nothing). Health and churn risk are in `TenantHealth`.
 ## Billing
 
 What tenants pay YardRunner: a base subscription ($749 CAD a month),
-Rentals ($199 a month) and Time and attendance ($20 per person tracked a
+Rentals ($199 a month) and Time and attendance ($5 per person tracked a
 month), plus tax. Amounts and Stripe lookup keys are in
 `config/yardline.php` (`billing`); the marketing home page's pricing table
 reads them too. Billed through Stripe Billing on YardRunner's own Stripe
