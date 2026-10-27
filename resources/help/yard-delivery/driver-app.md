@@ -6,7 +6,7 @@ popular: true
 related: yard-delivery/setting-up-drivers, yard-delivery/truck-locations, yard-delivery/proof-of-delivery, getting-started/app-and-alerts
 ---
 
-Drivers sign in to YardRunner on their own phone and see one thing: the run for the truck they drive, in order. It runs in the phone's browser, and can be installed like an app so the run is one tap away.
+Drivers sign in to YardRunner on their own phone and see one thing: the run for the truck they drive, in order. It runs in the phone's browser. Adding it to the home screen from the browser puts the run one tap away, with no app store download.
 
 > **Tip** Install YardRunner on the driver's phone and turn on alerts from **Settings → Alerts**. The driver then hears when they're put on a truck and when a stop is added to today's run. On iPhone, alerts only work from the installed app. See [The app and alerts](/help/getting-started/app-and-alerts).
 
@@ -43,4 +43,4 @@ Positions are kept for 30 days and are only seen by your yard, and by contractor
 
 ## What drivers can't see
 
-Drivers see only their own truck's run. They can't open orders, prices, accounts, receivables, other trucks' runs or settings, apart from their own profile and password.
+Drivers see only their own truck's run. They can't open orders, prices, accounts, receivables, other trucks' runs or settings, apart from their own profile, password and alerts.

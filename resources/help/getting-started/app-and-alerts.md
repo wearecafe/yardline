@@ -1,20 +1,44 @@
 ---
 title: The app and alerts
-summary: Put YardRunner on a phone or tablet's home screen, and get alerts for new work even when it isn't open.
+summary: Add YardRunner to a phone or tablet's home screen from the browser, and get alerts for new work even when it isn't open.
 order: 6
 related: getting-started/staff-and-roles, yard-delivery/driver-app, yard-delivery/stages-and-checks
 ---
 
-YardRunner works in any browser, and it can also be installed like an app on a phone, tablet or computer. There's one app for everyone: when you open it, it goes straight to the home screen for your roles, so the same install works on the counter tablet, the yard tablet and a driver's phone.
+YardRunner runs in a web browser. You can also add it to the home screen of a phone or tablet, or install it on a computer, so it opens from its own icon. This is done from your browser: YardRunner isn't in the App Store or Google Play, and there's nothing to download.
 
-## Install the app
+## What installing does
 
-Go to **Settings → Alerts** on the device and look under **Install the app**.
+- YardRunner opens full screen from its own icon, without the browser's address bar.
+- It opens straight to the home screen for your roles, so the same install works on the counter tablet, the yard tablet and a driver's phone.
+- On iPhone and iPad, it's the only way to get [alerts](#turn-on-alerts).
 
-- **Chrome, Edge and Android:** select **Install YardRunner**. If you don't see the button, use the browser's menu and choose **Install app** or **Add to Home screen**. In Chrome and Edge it's also the install icon at the end of the address bar.
-- **iPhone and iPad:** in Safari, tap **Share**, choose **Add to Home Screen**, then **Add**. Open YardRunner from the home screen and sign in.
+It's the same YardRunner as in the browser, with the same screens. It still needs a signal to work (see [No connection](#no-connection)).
 
-The installed app opens full screen from its own icon. When there's a new version, a message says **A new version of YardRunner is ready**. Select **Reload** when you're at a good stopping point.
+## Add it to your home screen
+
+The steps depend on the device. **Settings → Alerts → Install the app** shows the steps for the device you're on.
+
+### iPhone and iPad
+
+1. Open YardRunner in **Safari** and sign in.
+2. Tap the **Share** button (the square with an arrow pointing up).
+3. Choose **Add to Home Screen**, then tap **Add**.
+4. Open YardRunner from the new icon on your home screen and sign in again.
+
+### Android
+
+1. Open YardRunner in **Chrome** and sign in.
+2. Go to **Settings → Alerts** and select **Install YardRunner**. If there's no button, tap the **⋮** menu and choose **Install app** or **Add to Home screen**.
+3. Open YardRunner from the new icon.
+
+### Computer
+
+In **Chrome** or **Edge**, select the install icon at the end of the address bar, or **Install YardRunner** under **Settings → Alerts**. YardRunner then opens in its own window.
+
+### Updates
+
+There's nothing to update by hand. When a new version is out, a message says **A new version of YardRunner is ready**. Select **Reload** when you're at a good stopping point.
 
 ## Turn on alerts
 
@@ -51,7 +75,7 @@ Alerts follow whoever is signed in. When someone else signs in on a shared table
 
 ## No connection
 
-If a phone or tablet loses signal, a strip along the bottom says **No connection** and changes won't save until it's back. Opening a screen with no signal shows a **No connection** page instead. Nothing already saved is lost, and the page reloads by itself when the signal comes back. YardRunner doesn't work offline yet, so wait for a signal before picking, delivering or taking payment.
+If a phone or tablet loses signal, a strip along the bottom says **No connection** and changes won't save until it's back. Opening a screen with no signal shows a **No connection** page instead. Nothing already saved is lost, and the page reloads by itself when the signal comes back. YardRunner doesn't work without a signal, so wait for one before picking, delivering or taking payment.
 
 ## If alerts won't turn on
 
