@@ -16,6 +16,7 @@ use App\Models\PalletMovement;
 use App\Models\Product;
 use App\Models\User;
 use App\Notifications\StatementMessage;
+use App\Tenancy\CurrentTenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -82,7 +83,8 @@ class ReceivablesTest extends TestCase
 
         $this->assertInstanceOf(Invoice::class, $invoice);
         $this->assertStringStartsWith('INV-', $invoice->number);
-        $this->assertSame(now()->addDays(30)->toDateString(), $invoice->due_on->toDateString());
+        // Net 30 from the yard's today, not UTC's (they differ after 8 pm in Toronto).
+        $this->assertSame(now(CurrentTenant::get()?->timezone ?? 'America/Toronto')->addDays(30)->toDateString(), $invoice->due_on->toDateString());
         $this->assertSame(11_300, $invoice->balanceCents());
 
         $this->travel(45)->days();
