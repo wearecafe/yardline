@@ -83,8 +83,10 @@ class TimeSettingsController extends Controller
 
         $wasEnabled = TimeSettings::for($tenant)->enabled;
         $settings = $tenant->settings ?? [];
+        $rules = $data;
+        unset($rules['yards']);
         $settings['time'] = [
-            ...collect($data)->except('yards')->all(),
+            ...$rules,
             'enabled' => (bool) ($data['enabled'] ?? false),
             'check_daily_rest' => (bool) ($data['check_daily_rest'] ?? false),
             'auto_meal_deduction' => (bool) ($data['auto_meal_deduction'] ?? false),
