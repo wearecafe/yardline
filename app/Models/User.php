@@ -79,6 +79,11 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return $this->hasMany(Truck::class, 'driver_id');
     }
 
+    public function canManageUsers(): bool
+    {
+        return $this->role->canManageUsers();
+    }
+
     public function canManageBusiness(): bool
     {
         return $this->role->canManageBusiness();

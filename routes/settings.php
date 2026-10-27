@@ -6,6 +6,7 @@ use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\QuickBooksController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\ShopifyController;
+use App\Http\Controllers\Settings\UserAccountsController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -49,6 +50,14 @@ Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function (
     Route::put('settings/quickbooks', [QuickBooksController::class, 'update'])->name('quickbooks.update');
     Route::delete('settings/quickbooks', [QuickBooksController::class, 'destroy'])->name('quickbooks.destroy');
     Route::post('settings/quickbooks/log/{sync}/resend', [QuickBooksController::class, 'resend'])->name('quickbooks.resend');
+});
+
+Route::middleware(['auth', 'verified', 'can:manage-users'])->group(function () {
+    Route::get('settings/users', [UserAccountsController::class, 'index'])->name('users.index');
+    Route::post('settings/users', [UserAccountsController::class, 'store'])->name('users.store');
+    Route::patch('settings/users/{user}', [UserAccountsController::class, 'update'])->name('users.update');
+    Route::post('settings/users/{user}/resend', [UserAccountsController::class, 'resend'])->name('users.resend');
+    Route::delete('settings/users/{user}', [UserAccountsController::class, 'destroy'])->name('users.destroy');
 });
 
 Route::get('.well-known/passkey-endpoints', function () {

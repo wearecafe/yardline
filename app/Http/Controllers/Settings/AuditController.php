@@ -10,7 +10,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * The audit log: changes to orders, prices and credit terms.
+ * The audit log: changes to orders, prices, credit terms and who can sign in.
  */
 class AuditController extends Controller
 {
@@ -23,6 +23,7 @@ class AuditController extends Controller
         'contract_price' => 'Contract prices',
         'organization' => 'Credit terms',
         'credit_note' => 'Credits',
+        'user' => 'Users',
     ];
 
     public function index(Request $request): Response

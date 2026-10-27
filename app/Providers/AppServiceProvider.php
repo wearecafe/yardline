@@ -153,6 +153,7 @@ class AppServiceProvider extends ServiceProvider
     protected function configureGates(): void
     {
         Gate::define('manage-business', fn (User $user) => $user->canManageBusiness());
+        Gate::define('manage-users', fn (User $user) => $user->canManageUsers());
         Gate::define('override-credit', fn (User $user) => $user->canManageBusiness());
     }
 }
