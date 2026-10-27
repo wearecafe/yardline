@@ -34,6 +34,24 @@
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
+        {{-- Link previews for public pages only (see App\Support\ShareMeta) --}}
+        @if ($share = \App\Support\ShareMeta::for(request(), $page))
+            <meta name="description" content="{{ $share['description'] }}">
+            <meta property="og:type" content="website">
+            <meta property="og:site_name" content="YardRunner">
+            <meta property="og:title" content="{{ $share['title'] }}">
+            <meta property="og:description" content="{{ $share['description'] }}">
+            <meta property="og:url" content="{{ $share['url'] }}">
+            <meta property="og:image" content="{{ $share['image'] }}">
+            <meta property="og:image:width" content="1200">
+            <meta property="og:image:height" content="630">
+            <meta property="og:image:alt" content="YardRunner: inventory, orders and rentals for masonry and landscape supply yards">
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:title" content="{{ $share['title'] }}">
+            <meta name="twitter:description" content="{{ $share['description'] }}">
+            <meta name="twitter:image" content="{{ $share['image'] }}">
+        @endif
+
         @fonts
 
         @viteReactRefresh
