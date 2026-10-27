@@ -2,6 +2,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Truck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import PortalController from '@/actions/App/Http/Controllers/Portal/PortalController';
+import { OrderLineList } from '@/components/yard/order-line-list';
 import { PortalLayout } from '@/components/yard/portal-layout';
 import { PortalOrderCards } from '@/components/yard/portal-order-cards';
 import { formatMoney } from '@/lib/format';
@@ -31,7 +32,8 @@ export type PortalOrder = {
     id: number;
     number: string;
     site: string;
-    items: string;
+    lines: { qty: string; name: string }[];
+    more_lines: number;
     status: string;
     total_cents: number;
     created_at: string;
@@ -336,7 +338,7 @@ export default function PortalHome({
                                     {orders.map((o) => (
                                         <tr
                                             key={o.id}
-                                            className="border-b border-secondary last:border-0"
+                                            className="border-b border-secondary align-top last:border-0"
                                         >
                                             <td className="px-5 py-3">
                                                 <Link
@@ -351,8 +353,11 @@ export default function PortalHome({
                                             <td className="px-3 py-3">
                                                 {o.site}
                                             </td>
-                                            <td className="px-3 py-3 text-subtle">
-                                                {o.items}
+                                            <td className="px-3 py-3">
+                                                <OrderLineList
+                                                    lines={o.lines}
+                                                    more={o.more_lines}
+                                                />
                                             </td>
                                             <td className="px-3 py-3">
                                                 <span

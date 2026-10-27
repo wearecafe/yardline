@@ -305,7 +305,8 @@ class PortalController extends Controller
                 'id' => $o->id,
                 'number' => $o->number,
                 'site' => $o->organizationLocation->name ?? implode(', ', array_filter([$o->delivery_address['line1'] ?? null, $o->delivery_address['city'] ?? null])) ?: 'Pickup',
-                'items' => $this->summary($o),
+                'lines' => $this->lineList($o),
+                'more_lines' => max(0, $o->lines->count() - 4),
                 'status' => $this->status($o),
                 'total_cents' => $o->amountDueCents(),
                 'created_at' => $o->created_at->toIso8601String(),
@@ -323,6 +324,19 @@ class PortalController extends Controller
             $order->status === OrderStatus::Fulfilled => 'Done',
             default => $order->fulfillment->value === 'delivery' ? 'Scheduling' : 'Confirmed',
         };
+    }
+
+    /**
+     * @return list<array{qty: string, name: string}>
+     */
+    private function lineList(Order $order, int $limit = 4): array
+    {
+        $order->loadMissing('lines');
+
+        return array_values($order->lines->take($limit)->map(fn (OrderLine $l) => [
+            'qty' => rtrim(rtrim(number_format((float) $l->quantity, 3, '.', ''), '0'), '.').' '.($l->unit === 'tonne' ? 't' : $l->unit),
+            'name' => $l->description,
+        ])->values()->all());
     }
 
     private function summary(Order $order): string
