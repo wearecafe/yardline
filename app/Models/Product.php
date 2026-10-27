@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Accounting\QuickBooks\SendsToQuickBooks;
 use App\Audit\Audited;
-use App\Commerce\SyncsWithCommerce;
 use App\Enums\ProductKind;
 use App\Enums\QuantityRounding;
 use App\Enums\RentalPeriod;
@@ -77,7 +76,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
-    use Audited, BelongsToTenant, HasFactory, SendsToQuickBooks, SyncsWithCommerce;
+    use Audited, BelongsToTenant, HasFactory, SendsToQuickBooks;
 
     /** Changes to these are written to the audit log. */
     public const AUDITED = ['price_cents', 'cost_cents', 'is_active', 'taxable', 'price_list_exempt', 'quantity_rounding'];

@@ -58,7 +58,6 @@ final class ProductEditor
                 'is_base' => $unit->is_base,
                 'sellable' => $unit->sellable,
                 'price_cents' => $unit->price_cents,
-                'variant_title' => $unit->variant_title,
                 'measured_by' => $unit->measured_by,
                 'increment' => $unit->increment,
                 'min_quantity' => $unit->min_quantity,

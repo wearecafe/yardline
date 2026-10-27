@@ -5,7 +5,6 @@ use App\Http\Controllers\Settings\DriverAccountsController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\QuickBooksController;
 use App\Http\Controllers\Settings\SecurityController;
-use App\Http\Controllers\Settings\ShopifyController;
 use App\Http\Controllers\Settings\UserAccountsController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
@@ -40,10 +39,6 @@ Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function (
     Route::put('settings/drivers/{driver}', [DriverAccountsController::class, 'update'])->name('drivers.update');
     Route::post('settings/drivers/{driver}/resend', [DriverAccountsController::class, 'resend'])->name('drivers.resend');
     Route::delete('settings/drivers/{driver}', [DriverAccountsController::class, 'destroy'])->name('drivers.destroy');
-
-    Route::get('settings/shopify', [ShopifyController::class, 'edit'])->name('shopify.edit');
-    Route::put('settings/shopify', [ShopifyController::class, 'update'])->name('shopify.update');
-    Route::delete('settings/shopify', [ShopifyController::class, 'destroy'])->name('shopify.destroy');
 
     Route::get('settings/quickbooks', [QuickBooksController::class, 'edit'])->name('quickbooks.edit');
     Route::post('settings/quickbooks/connect', [QuickBooksController::class, 'connect'])->name('quickbooks.connect');

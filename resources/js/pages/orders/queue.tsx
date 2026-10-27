@@ -162,9 +162,6 @@ export default function Queue({
                                                     Part shipped
                                                 </Chip>
                                             )}
-                                            {card.source === 'shopify' && (
-                                                <Chip tone="info">Shopify</Chip>
-                                            )}
                                             {card.picker && (
                                                 <span>· {card.picker}</span>
                                             )}

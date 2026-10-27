@@ -184,7 +184,7 @@
                             color: #a8a29e;
                         "
                     >
-                        Shopify and QuickBooks Online connected
+                        QuickBooks Online connected
                     </div>
                 </nav>
                 <main
@@ -250,7 +250,7 @@
                                     font-weight: 600;
                                 "
                             >
-                                Save and sync to Shopify
+                                Save product
                             </button>
                         </div>
                     </div>
@@ -330,15 +330,6 @@
                                                             #e7e5e4;
                                                     "
                                                 >
-                                                    Shopify variant
-                                                </th>
-                                                <th
-                                                    style="
-                                                        padding: 8px 10px;
-                                                        border-bottom: 1px solid
-                                                            #e7e5e4;
-                                                    "
-                                                >
                                                     How it's measured
                                                 </th>
                                             </tr>
@@ -371,16 +362,6 @@
                                                         "
                                                     >
                                                         {{u.equals}}
-                                                    </td>
-                                                    <td
-                                                        style="
-                                                            padding: 12px 10px;
-                                                            border-bottom: 1px
-                                                                solid #f5f5f4;
-                                                            color: #57534e;
-                                                        "
-                                                    >
-                                                        {{u.variant}}
                                                     </td>
                                                     <td
                                                         style="
@@ -441,9 +422,9 @@
                                             Price tiers
                                         </h2>
                                         <p style="margin: 0; color: #57534e">
-                                            Pushed to Shopify B2B catalogues, so
-                                            the till charges each customer their
-                                            price.
+                                            Applied at the counter, on quotes
+                                            and in the portal, so each customer
+                                            pays their price.
                                         </p>
                                     </div>
                                     <span
@@ -776,11 +757,11 @@
             renderVals() {
             return {
             units: [
-            { name: 'Tonne (base)', equals: '1 t', variant: 'Per tonne', measure: 'Truck scale weight' },
-            { name: 'Cubic yard', equals: '1.35 t', variant: 'Per yard', measure: 'Loader bucket count' },
-            { name: 'Half yard', equals: '0.675 t', variant: 'Half yard', measure: 'Loader bucket count' },
-            { name: 'Bulk bag', equals: '1 t', variant: 'Bulk bag', measure: 'Count, plus $25 bag deposit' },
-            { name: '25 kg bag', equals: '0.025 t', variant: '25 kg bag', measure: 'Count' }
+            { name: 'Tonne (base)', equals: '1 t', measure: 'Truck scale weight' },
+            { name: 'Cubic yard', equals: '1.35 t', measure: 'Loader bucket count' },
+            { name: 'Half yard', equals: '0.675 t', measure: 'Loader bucket count' },
+            { name: 'Bulk bag', equals: '1 t', measure: 'Count, plus $25 bag deposit' },
+            { name: '25 kg bag', equals: '0.025 t', measure: 'Count' }
             ],
             prices: [
             { unit: 'Tonne', retail: '$58.00', contractor: '$49.00', wholesale: '$44.00', margin: '36%' },

@@ -71,7 +71,6 @@ class ResetDemoYard extends Command
         'stock_lots',
         'price_list_items',
         'product_units',
-        'external_references',
         'integrations',
         'customers',
         'organizations',

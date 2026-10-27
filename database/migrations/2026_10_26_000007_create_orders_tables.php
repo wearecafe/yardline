@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('number', 30);
             $table->string('type')->default('sale'); // sale | rental
             $table->string('status')->default('draft');
-            $table->string('source')->default('yardline'); // yardline | shopify
+            $table->string('source')->default('yardline'); // yardline | counter | portal
             $table->foreignId('organization_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('customer_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('location_id')->constrained();

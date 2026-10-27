@@ -40,4 +40,4 @@ The sidebar groups Yardline into three sections.
 | Receivables   | See aging, statements and credits                                     |
 | Price lists   | Manage trade pricing                                                  |
 
-**Settings** (from your name at the bottom of the sidebar) has your profile and security, and for owners and admins, the business, delivery, rental, Shopify and audit log pages.
+**Settings** (from your name at the bottom of the sidebar) has your profile and security, and for owners and admins, the business, delivery, rental, QuickBooks and audit log pages.

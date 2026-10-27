@@ -6,7 +6,6 @@ import DriverAccountsController from '@/actions/App/Http/Controllers/Settings/Dr
 import QuickBooksController from '@/actions/App/Http/Controllers/Settings/QuickBooksController';
 import RentalSettingsController from '@/actions/App/Http/Controllers/Settings/RentalSettingsController';
 import TimeSettingsController from '@/actions/App/Http/Controllers/Settings/TimeSettingsController';
-import ShopifyController from '@/actions/App/Http/Controllers/Settings/ShopifyController';
 import UserAccountsController from '@/actions/App/Http/Controllers/Settings/UserAccountsController';
 import type { PropsWithChildren } from 'react';
 import Heading from '@/components/heading';
@@ -72,11 +71,6 @@ const businessNavItems: NavItem[] = [
     {
         title: 'Audit log',
         href: AuditController.index(),
-        icon: null,
-    },
-    {
-        title: 'Shopify',
-        href: ShopifyController.edit(),
         icon: null,
     },
     {

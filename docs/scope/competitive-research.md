@@ -119,7 +119,7 @@ Research done October 2026 to support building a modern inventory/ERP product fo
 
 ## 4b. Wider Landscape and Masonry Supply Yard Market
 
-**Product assumptions (Jon):** accounting goes through QuickBooks Online, not built in. Point of sale will likely run through Shopify. Focus areas: inventory, POS, equipment rental management and client-facing features.
+**Product assumptions (Jon):** accounting goes through QuickBooks Online, not built in. Point of sale is built into the app, with no Shopify integration. Focus areas: inventory, POS, equipment rental management and client-facing features.
 
 ### FlintPOS (closest direct competitor)
 
@@ -178,19 +178,19 @@ QuoteIQ, Projul, Workhand, GreenRoute, Builder Prime, True Pro and Werx serve la
 
 ### Equipment rental
 
-None of the yard-focused tools above advertise strong equipment rental management. CAVU sells rental as a separate vertical, and POS Highway only mentions repair and service tickets. **Open question:** do landscape and mason yards rent equipment (compactors, saws, skid steers, splitters) enough to justify a built-in rental module? The next research pass should cover dedicated rental software such as Point of Rental, Booqable, EZRentOut and Rentman, plus Shopify rental apps.
+None of the yard-focused tools above advertise strong equipment rental management. CAVU sells rental as a separate vertical, and POS Highway only mentions repair and service tickets. **Open question:** do landscape and mason yards rent equipment (compactors, saws, skid steers, splitters) enough to justify a built-in rental module? The next research pass should cover dedicated rental software such as Point of Rental, Booqable, EZRentOut and Rentman.
 
-### Shopify POS fit: what yards need that Shopify lacks natively
+### What yards need that a generic POS lacks
 
 - Fractional and bulk units (tons, yards, half-pallets) and weight-based sales from truck scales
 - Contractor accounts on credit terms, plus statements and AR (would sit in QuickBooks Online)
-- Contractor and wholesale price tiers (partly covered by Shopify B2B, which needs Shopify Plus)
+- Contractor and wholesale price tiers, and contract pricing per customer
 - Pallet deposits and returns
 - Delivery fees by zone or distance, and dispatch
 - Quotes that turn into orders
 - Rental contracts, availability and deposits
 
-These gaps are where the custom product would add value on top of Shopify.
+Generic retail POS systems (Shopify and similar) don't cover these natively, which is why the app runs its own point of sale instead of sitting on top of one.
 
 ### Equipment rental software (construction, landscape and heavy equipment only)
 
@@ -269,23 +269,24 @@ These are research-based hypotheses to test with yard owners.
 
 ## 8. Feature Scope for Mockups
 
-Shopify records every goods sale; the app manages inventory and fulfilment for those sales and runs the whole rental business itself, including payments.
+The app is the yard's complete system: it records every goods sale (counter, staff-entered orders and the contractor portal), manages inventory and fulfilment, and runs the whole rental business, including payments. QuickBooks Online receives the accounting.
 
 ### System boundaries
 
-| Area                                      | Shopify                               | The app                                                                                      | QuickBooks Online                    |
-| ----------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------ |
-| Goods sales (stone, block, mulch, pavers) | Checkout, payment, transaction record | Inventory, units of measure, contractor pricing pushed to Shopify, pick/pack lists, delivery | Receives sales from Shopify          |
-| Equipment rental                          | None                                  | Quotes, reservations, contracts, e-signing, payments, deposits, returns                      | Receives rental revenue from the app |
-| Customers                                 | Customer records for goods sales      | Contractor accounts, rental customers, ID and insurance on file                              | Customer balances and statements     |
+| Area                                      | The app                                                                                                              | QuickBooks Online                                 |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Goods sales (stone, block, mulch, pavers) | Counter POS, quotes, orders, pricing, tax, payments (Stripe), inventory, units of measure, pick/pack lists, delivery | Receives sales invoices and payments from the app |
+| Equipment rental                          | Quotes, reservations, contracts, e-signing, payments, deposits, returns                                              | Receives rental revenue from the app              |
+| Customers                                 | Contractor accounts, retail customers, rental customers, ID and insurance on file                                    | Customer balances and statements                  |
 
-### Module 1: Supply yard inventory and fulfilment
+### Module 1: Supply yard inventory, sales and fulfilment
 
 - **Product catalogue:** one product, many selling units (ton, yard, bag, pallet, each) with conversions
-- **Pricing:** retail, contractor and wholesale tiers plus customer-specific pricing, synced to Shopify (B2B catalogues or a POS extension) so the till charges the right price
+- **Pricing:** retail, contractor and wholesale tiers plus customer-specific pricing, applied the same way at the counter, on quotes and in the contractor portal
+- **Counter sales:** ring up sales, look up a contractor account, charge to account or take card payment, print or email receipts
 - **Stock:** live quantities by yard location, bulk stock tracked by weight or volume, cycle counts, adjustments, colour and lot tracking for pavers and block
 - **Receiving and purchasing:** purchase orders, receiving against supplier deliveries, supplier price list updates and cost-change alerts
-- **Order intake from Shopify:** each Shopify order arrives in the app and becomes a pick/pack list
+- **Order intake:** counter sales, staff-entered orders and contractor portal orders each become a pick/pack list
 - **Pick and load:** a yard-staff mobile view to pick, load and confirm quantities, with truck scale weights where used
 - **Delivery and dispatch:** delivery fees by zone or distance, a dispatch board for trucks and drivers, driver app with photo and signature proof of delivery, ETA texts to customers
 - **Pallets:** pallet deposits charged and tracked, returns credited
@@ -306,24 +307,25 @@ Shopify records every goods sale; the app manages inventory and fulfilment for t
 
 ### Open questions before mockups
 
-- [ ] Contractor pricing: going with Shopify Plus B2B catalogues (assumed supported at Shopify POS)
 - [ ] Does a rental customer who also buys goods get one account across both, and one statement?
 - [ ] Which payment processor for rentals, and how rental revenue syncs to QuickBooks Online
 - [ ] Damage waiver: built in or through a partner?
+- [ ] Online ordering for goods: contractor portal only, or also a public storefront?
 - [ ] Validate the rental module with 5 to 10 yard owners: which equipment they rent, and how often
 
 ## 9. Screens to Mock Up
 
-The first mockup pass covers six screens per module, ordered by how often staff use them.
+The first mockup pass covers six or seven screens per module, ordered by how often staff use them.
 
 ### Supply yard
 
-1. **Product editor:** one product with its selling units (ton, yard, bag, pallet), conversions, and the price tiers synced to Shopify B2B
-2. **Stock overview:** quantities by yard location, low-stock flags, lot and colour
-3. **Order queue:** Shopify orders arriving as pick/pack lists, with status from new to picked, loaded and delivered
-4. **Yard picker (mobile):** pick list, confirm quantities, scale weight, mark loaded
-5. **Dispatch board:** trucks and drivers by day, drag-and-drop deliveries
-6. **Contractor portal:** order history, reorder, delivery tracking
+1. **Counter sale:** customer or contractor lookup, line items with selling units, account or card payment, receipt
+2. **Product editor:** one product with its selling units (ton, yard, bag, pallet), conversions, and its price tiers
+3. **Stock overview:** quantities by yard location, low-stock flags, lot and colour
+4. **Order queue:** counter, staff-entered and portal orders as pick/pack lists, with status from new to picked, loaded and delivered
+5. **Yard picker (mobile):** pick list, confirm quantities, scale weight, mark loaded
+6. **Dispatch board:** trucks and drivers by day, drag-and-drop deliveries
+7. **Contractor portal:** order history, reorder, delivery tracking
 
 ### Equipment rental
 

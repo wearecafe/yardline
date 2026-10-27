@@ -675,7 +675,6 @@ class DemoYardSeeder extends Seeder
                     'name' => $name,
                     'factor' => $factor,
                     'price_cents' => $retail,
-                    'variant_title' => $name,
                     'measured_by' => $measure,
                     'increment' => $increment,
                     'deposit_cents' => $deposit,

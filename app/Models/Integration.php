@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * A tenant's connection to an outside system (Shopify).
+ * A tenant's connection to an outside system (QuickBooks Online).
  *
  * @property int $id
  * @property int $tenant_id

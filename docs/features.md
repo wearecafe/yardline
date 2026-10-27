@@ -39,7 +39,7 @@ hand. They give a reason, logged on the order with the price it replaced.
 Each selling unit has a **For sale** switch. A unit switched off still
 converts and can carry prices, but nothing sells in it on its own: order
 entry, the counter and the portal refuse it ("Square foot isn’t sold on its
-own"), and it isn't sent to Shopify. Use it for a base unit that only
+own"). Use it for a base unit that only
 counts stock, like square feet of interlock sold by the layer or the
 pallet. At least one unit has to stay for sale. **Sold in steps of** and
 **Minimum** still apply to the units that are.
@@ -213,8 +213,6 @@ Settings → Drivers.
 
 ## Integrations
 
-- **Shopify** pushes products (one variant per selling unit for sale) and stock.
-  Order import is not built yet. See [shopify.md](shopify.md).
 - **Stripe** for payments and **Stripe Tax** for tax. See
   [laravel-cloud.md](laravel-cloud.md).
 - **QuickBooks Online** receives invoices, payments, credit memos, refunds

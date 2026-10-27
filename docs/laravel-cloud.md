@@ -27,7 +27,7 @@
 6. Turn on the scheduler. With `YARDLINE_DEMO=true` it rebuilds the demo
    yard at 3:00 a.m. Toronto time every night, and only the demo yard.
 
-7. Turn on a queue worker for the app (Shopify sync runs on the queue).
+7. Turn on a queue worker for the app (QuickBooks sync runs on the queue).
    `QUEUE_CONNECTION=database` is fine to start.
 
 ## Environment
@@ -46,9 +46,6 @@ YARDLINE_PAYMENTS_DRIVER=stripe
 STRIPE_KEY=pk_live_...
 STRIPE_SECRET=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-
-SHOPIFY_API_VERSION=2026-07
-SHOPIFY_WEBHOOK_SECRET=...   # the Shopify app's client secret
 
 MAIL_MAILER=resend
 RESEND_API_KEY=re_...
@@ -95,10 +92,6 @@ environment can use Stripe test keys with the same drivers.
 See [quickbooks.md](quickbooks.md). Add `QUICKBOOKS_CLIENT_ID`,
 `QUICKBOOKS_CLIENT_SECRET` and `QUICKBOOKS_ENVIRONMENT=production`, and
 register `https://<your-domain>/settings/quickbooks/callback` with Intuit.
-
-## Shopify
-
-See [shopify.md](shopify.md).
 
 ## Demo yard
 
