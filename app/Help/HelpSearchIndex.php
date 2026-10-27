@@ -519,7 +519,7 @@ final class HelpSearchIndex
 
         if (strlen($piece) > $length) {
             $cut = strrpos(substr($piece, 0, $length), ' ');
-            $piece = rtrim(substr($piece, 0, $cut === false ? $length : $cut), " ,.;:").'…';
+            $piece = rtrim(substr($piece, 0, $cut === false ? $length : $cut), ' ,.;:').'…';
         }
 
         if ($start > 0) {
