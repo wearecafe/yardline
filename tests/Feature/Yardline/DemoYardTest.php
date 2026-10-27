@@ -212,9 +212,10 @@ class DemoYardTest extends TestCase
         $this->assertSame($before, CurrentTenant::run($tenant, fn () => DriverPing::query()->count()));
 
         // The scheduler moves the demo truck instead.
-        CurrentTenant::run($tenant, fn () => Truck::query()->whereNotNull('driver_id')->update(['last_located_at' => now()->subHour()]));
+        $truck = CurrentTenant::run($tenant, fn () => Truck::query()->where('name', 'Truck 2 · boom')->firstOrFail());
+        CurrentTenant::run($tenant, fn () => $truck->forceFill(['last_located_at' => now()->subHour()])->save());
         $this->artisan('yardline:demo:drive')->assertSuccessful();
-        $truck = CurrentTenant::run($tenant, fn () => Truck::query()->whereNotNull('driver_id')->firstOrFail());
+        CurrentTenant::run($tenant, fn () => $truck->refresh());
         $this->assertTrue($truck->last_located_at?->greaterThan(now()->subMinute()));
     }
 

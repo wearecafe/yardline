@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Fulfillment\DriverRun;
 use App\Pricing\PricingSettings;
 use App\Support\Demo;
 use App\Tenancy\CurrentTenant;
@@ -62,7 +63,8 @@ class HandleInertiaRequests extends Middleware
 
                 // The demo driver's position is simulated (yardline:demo:drive),
                 // so visitors' real locations are never asked for or kept.
-                return $user !== null && $user->isDriver() && ! Demo::isDemoUser($user) && $user->trucks()->exists();
+                return $user !== null && $user->isDriver() && ! Demo::isDemoUser($user)
+                    && $user->truckAssignments()->where('date', app(DriverRun::class)->today()->toDateString())->exists();
             },
             'tenant' => fn () => CurrentTenant::get()?->only('id', 'name', 'currency'),
             'isDemo' => fn () => Demo::isDemoUser($request->user()),

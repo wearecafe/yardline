@@ -10,7 +10,9 @@ use App\Models\Rental;
 use App\Models\Shipment;
 use App\Models\Stop;
 use App\Models\Truck;
+use App\Models\TruckAssignment;
 use App\Models\User;
+use App\Tenancy\CurrentTenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -22,20 +24,58 @@ use Illuminate\Support\Facades\DB;
 class DriverRun
 {
     /**
-     * Trucks whose run this user sees. Drivers see the trucks they drive;
-     * office and yard staff can open any truck's run.
+     * Trucks whose run this user sees on a day. Drivers see the trucks
+     * dispatch has them on that day; office and yard staff can open any
+     * truck's run.
      *
      * @return Collection<int, Truck>
      */
-    public function trucksFor(User $user): Collection
+    public function trucksFor(User $user, ?CarbonImmutable $date = null): Collection
     {
+        $day = ($date ?? $this->today())->toDateString();
+
         return Truck::query()
-            ->with('driver:id,name')
-            ->when($user->isDriver(), fn ($q) => $q->where('driver_id', $user->id))
+            ->with(['assignments' => fn ($q) => $q->where('date', $day)->with('driver:id,name,phone')])
+            ->when($user->isDriver(), fn ($q) => $q->whereHas('assignments', fn ($q) => $q->where('user_id', $user->id)->where('date', $day)))
             ->where('is_active', true)
             ->orderBy('position')
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * Who drives the truck on the day, if dispatch has picked someone.
+     */
+    public function driverOn(Truck $truck, CarbonImmutable|string $date): ?User
+    {
+        $day = is_string($date) ? $date : $date->toDateString();
+
+        if ($truck->relationLoaded('assignments')) {
+            return $truck->assignments->firstWhere('date', $day)?->driver;
+        }
+
+        return TruckAssignment::query()->with('driver')->where('truck_id', $truck->id)->where('date', $day)->first()?->driver;
+    }
+
+    /**
+     * Put a driver on a truck for the day, or take whoever's on it off.
+     */
+    public function assign(Truck $truck, CarbonImmutable|string $date, ?User $driver): void
+    {
+        $day = is_string($date) ? $date : $date->toDateString();
+
+        if ($driver === null) {
+            TruckAssignment::query()->where('truck_id', $truck->id)->where('date', $day)->delete();
+
+            return;
+        }
+
+        TruckAssignment::query()->updateOrCreate(['truck_id' => $truck->id, 'date' => $day], ['user_id' => $driver->id]);
+    }
+
+    public function today(): CarbonImmutable
+    {
+        return CarbonImmutable::today(CurrentTenant::get()->timezone ?? 'America/Toronto');
     }
 
     /**
@@ -85,7 +125,12 @@ class DriverRun
         }
 
         return $stop->truck_id !== null
-            && Truck::query()->whereKey($stop->truck_id)->where('driver_id', $user->id)->exists();
+            && $stop->date !== null
+            && TruckAssignment::query()
+                ->where('truck_id', $stop->truck_id)
+                ->where('user_id', $user->id)
+                ->where('date', $stop->date->toDateString())
+                ->exists();
     }
 
     public function canDeliver(?User $user, Shipment $shipment): bool
@@ -105,12 +150,12 @@ class DriverRun
 
     /**
      * Records where the driver's phone is, and keeps the latest position
-     * on the trucks they drive for the dispatch board.
+     * on the trucks they drive today for the dispatch board.
      */
     public function locate(User $user, float $latitude, float $longitude, ?int $accuracyM, ?float $speedKph, ?CarbonImmutable $at = null): DriverPing
     {
         $at ??= CarbonImmutable::now();
-        $trucks = $user->trucks()->get(['id']);
+        $trucks = $this->trucksFor($user);
 
         return DB::transaction(function () use ($user, $latitude, $longitude, $accuracyM, $speedKph, $at, $trucks) {
             $ping = DriverPing::query()->create([

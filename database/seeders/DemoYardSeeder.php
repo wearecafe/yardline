@@ -1464,25 +1464,48 @@ class DemoYardSeeder extends Seeder
             'portal_truck_location' => true,
         ]]]);
 
+        // Sam signs in on the demo; the other drivers are real accounts
+        // nobody enters, so the board and Settings → Drivers look lived in.
+        $sam = $this->users[self::DEMO_DRIVER];
+        $sam->update(['phone' => '905-555-0171']);
+        $run = app(DriverRun::class);
+        $today = $run->today();
+
         foreach ([
-            ['Truck 1 · tandem', 'material', 'Dave Kowalchuk', 14000, false],
-            ['Truck 2 · boom', 'material', 'Sam Rinaldi', 12000, true],
-            ['Truck 3 · tri-axle', 'material', 'Luis Moreno', 20000, false],
-            ['Float · equipment', 'equipment', 'Mike Tremblay', null, false],
-        ] as $position => [$name, $kind, $driver, $capacity, $boom]) {
-            $this->trucks[] = Truck::query()->create([
+            ['Truck 1 · tandem', 'material', 'Dave Kowalchuk', [['unit' => 't', 'amount' => 14], ['unit' => 'yd3', 'amount' => 12]], false],
+            ['Truck 2 · boom', 'material', 'Sam Rinaldi', [['unit' => 't', 'amount' => 12], ['unit' => 'pallet', 'amount' => 8]], true],
+            ['Truck 3 · tri-axle', 'material', 'Luis Moreno', [['unit' => 't', 'amount' => 20], ['unit' => 'yd3', 'amount' => 16]], false],
+            ['Float · equipment', 'both', 'Mike Tremblay', [], false],
+        ] as $position => [$name, $kind, $driverName, $capacities, $boom]) {
+            $truck = Truck::query()->create([
                 'name' => $name,
                 'kind' => $kind,
-                'driver_name' => $driver,
-                'driver_phone' => '905-555-01'.(70 + $position),
-                // Sam signs in to the driver app; the others are names on the board.
-                'driver_id' => $driver === 'Sam Rinaldi' ? $this->users[self::DEMO_DRIVER]->id : null,
-                'capacity_kg' => $capacity,
+                'capacities' => $capacities,
                 'has_boom' => $boom,
                 'location_id' => $this->waterdown->id,
                 'position' => $position,
             ]);
+            $this->trucks[] = $truck;
+
+            $driver = $driverName === $sam->name ? $sam : User::query()->create([
+                'tenant_id' => $tenant->id,
+                'name' => $driverName,
+                'email' => Str::slug($driverName, '.').'@example.com',
+                'phone' => '905-555-01'.(70 + $position),
+                'role' => UserRole::Driver,
+                'password' => Hash::make(Str::random(40)),
+            ]);
+            $driver->forceFill(['email_verified_at' => now()])->save();
+
+            // Each drives his own truck all week.
+            $truck->drivers()->attach($driver->id, ['tenant_id' => $tenant->id]);
+            for ($day = -1; $day <= 7; $day++) {
+                $run->assign($truck, $today->addDays($day), $driver);
+            }
         }
+
+        // Sam can cover Truck 1 too.
+        $this->trucks[0]->drivers()->attach($sam->id, ['tenant_id' => $tenant->id]);
 
         $bins = [
             'AGG-SCR' => 'Bay 4', 'AGG-34C' => 'Bay 5', 'AGG-RVR' => 'Bay 6', 'SOIL-3MX' => 'Bay 1', 'SOIL-GDN' => 'Bay 1B',

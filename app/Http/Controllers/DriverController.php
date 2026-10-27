@@ -28,8 +28,8 @@ use Inertia\Response;
 
 /**
  * The driver's phone: today's run in order, each stop's details, and
- * the moves a driver makes on the road. Drivers only see their own
- * truck; the office can open any truck's run.
+ * the moves a driver makes on the road. Drivers only see the truck
+ * dispatch has them on that day; the office can open any truck's run.
  */
 class DriverController extends Controller
 {
@@ -43,7 +43,7 @@ class DriverController extends Controller
             ? CarbonImmutable::parse($request->string('date')->toString(), $tz)->startOfDay()
             : $today;
 
-        $trucks = $run->trucksFor($user);
+        $trucks = $run->trucksFor($user, $date);
         $selected = $user->isDriver()
             ? $trucks
             : $trucks->where('id', $request->integer('truck') ?: $trucks->first()?->id)->values();
@@ -58,7 +58,7 @@ class DriverController extends Controller
             'isToday' => $date->equalTo($today),
             'prev' => $date->subDay()->toDateString(),
             'next' => $date->addDay()->toDateString(),
-            'trucks' => $trucks->map(fn (Truck $t) => ['id' => $t->id, 'name' => $t->name, 'driver' => $t->driverLabel()])->values(),
+            'trucks' => $trucks->map(fn (Truck $t) => ['id' => $t->id, 'name' => $t->name, 'driver' => $run->driverOn($t, $date)?->name])->values(),
             'truckIds' => $selected->modelKeys(),
             'canPickTruck' => ! $user->isDriver(),
             'stops' => $rows,

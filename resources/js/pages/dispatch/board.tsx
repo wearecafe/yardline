@@ -16,6 +16,62 @@ import { Input } from '@/components/ui/input';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
+/**
+ * Who drives the truck on this day: picked from the drivers ticked for
+ * it. That driver sees the truck's run on their phone.
+ */
+function TruckDriver({
+    truckId,
+    date,
+    driver,
+    drivers,
+}: {
+    truckId: number;
+    date: string;
+    driver: { id: number; name: string; phone: string | null } | null;
+    drivers: { id: number; name: string }[];
+}) {
+    if (drivers.length === 0 && !driver) {
+        return (
+            <div className="text-xs text-muted-foreground">
+                No drivers ticked for this truck
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-1 grid gap-0.5">
+            <select
+                aria-label="Driver for the day"
+                className="h-8 w-full rounded-md border border-input bg-card px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30"
+                value={driver ? String(driver.id) : ''}
+                onChange={(e) =>
+                    router.put(
+                        DispatchController.assignDriver.url(truckId),
+                        { date, user_id: e.target.value || null },
+                        { preserveScroll: true },
+                    )
+                }
+            >
+                <option value="">No driver</option>
+                {drivers.map((d) => (
+                    <option key={d.id} value={String(d.id)}>
+                        {d.name}
+                    </option>
+                ))}
+            </select>
+            {driver?.phone && (
+                <a
+                    href={`tel:${driver.phone}`}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                    {driver.phone}
+                </a>
+            )}
+        </div>
+    );
+}
+
 /** Where the driver's phone last put the truck, and how long ago. */
 function TruckLocation({
     location,
@@ -79,8 +135,9 @@ type Props = {
     trucks: {
         id: number;
         name: string;
-        driver: string | null;
-        signs_in: boolean;
+        driver: { id: number; name: string; phone: string | null } | null;
+        /** Drivers ticked for this truck under Settings → Drivers. */
+        drivers: { id: number; name: string }[];
         location: {
             latitude: number;
             longitude: number;
@@ -321,11 +378,17 @@ export default function Board({
                                         <div className="text-[13px] font-semibold">
                                             {truck.name}
                                         </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {[truck.driver, truck.capacity]
-                                                .filter(Boolean)
-                                                .join(' · ')}
-                                        </div>
+                                        <TruckDriver
+                                            truckId={truck.id}
+                                            date={date}
+                                            driver={truck.driver}
+                                            drivers={truck.drivers}
+                                        />
+                                        {truck.capacity && (
+                                            <div className="text-xs text-muted-foreground">
+                                                {truck.capacity}
+                                            </div>
+                                        )}
                                         {truck.location && (
                                             <TruckLocation
                                                 location={truck.location}

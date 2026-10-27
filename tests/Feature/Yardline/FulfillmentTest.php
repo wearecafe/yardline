@@ -138,7 +138,7 @@ class FulfillmentTest extends TestCase
 
     public function test_deliveries_go_from_plan_to_proof_of_delivery(): void
     {
-        $truck = Truck::query()->create(['name' => 'Truck 2 · boom', 'capacity_kg' => 12000, 'has_boom' => true]);
+        $truck = Truck::query()->create(['name' => 'Truck 2 · boom', 'capacities' => [['unit' => 't', 'amount' => 12]], 'has_boom' => true]);
         $customer = Customer::factory()->create(['organization_id' => $this->org->id, 'phone' => '905-555-0100']);
         $order = $this->confirmedOrder([
             'customer_id' => $customer->id,

@@ -5,18 +5,21 @@ namespace App\Http\Controllers;
 use App\Enums\StopStatus;
 use App\Fulfillment\DeliverySettings;
 use App\Fulfillment\Dispatch;
+use App\Fulfillment\DriverRun;
 use App\Models\Order;
 use App\Models\Organization;
 use App\Models\Rental;
 use App\Models\Shipment;
 use App\Models\Stop;
 use App\Models\Truck;
+use App\Models\User;
 use App\Orders\OrderRules;
 use App\Tenancy\CurrentTenant;
 use App\Tenancy\TenantRule;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -53,7 +56,15 @@ class DispatchController extends Controller
             Rental::class => ['organization:id,name', 'customer:id,first_name,last_name,phone', 'items'],
         ]);
 
-        $trucks = Truck::query()->with('driver:id,name')->where('is_active', true)->orderBy('position')->orderBy('name')->get();
+        $trucks = Truck::query()
+            ->with([
+                'assignments' => fn ($q) => $q->where('date', $date->toDateString())->with('driver:id,name,phone'),
+                'drivers' => fn ($q) => $q->orderBy('name'),
+            ])
+            ->where('is_active', true)
+            ->orderBy('position')
+            ->orderBy('name')
+            ->get();
         $scheduled = $stops->filter(fn (Stop $s) => $s->truck_id !== null && $s->starts_at !== null && $s->date?->toDateString() === $date->toDateString());
 
         return Inertia::render('dispatch/board', [
@@ -63,8 +74,8 @@ class DispatchController extends Controller
             'trucks' => $trucks->map(fn (Truck $truck) => [
                 'id' => $truck->id,
                 'name' => $truck->name,
-                'driver' => $truck->driverLabel(),
-                'signs_in' => $truck->driver_id !== null,
+                'driver' => ($driver = $truck->assignments->first()?->driver) ? $driver->only('id', 'name', 'phone') : null,
+                'drivers' => $truck->drivers->map(fn (User $d) => $d->only('id', 'name'))->values(),
                 'location' => $truck->lastLocation(),
                 'capacity' => $truck->capacityLabel(),
                 'kind' => $truck->kind,
@@ -77,6 +88,25 @@ class DispatchController extends Controller
             'counts' => ['trucks' => $trucks->count(), 'stops' => $scheduled->count()],
             'etaTexts' => DeliverySettings::current()->etaTexts,
         ]);
+    }
+
+    /**
+     * Who drives a truck on a day: one of the drivers able to drive it,
+     * or nobody.
+     */
+    public function assignDriver(Request $request, Truck $truck, DriverRun $run): RedirectResponse
+    {
+        $data = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+            'user_id' => ['nullable', 'integer', Rule::exists('driver_truck', 'user_id')->where('truck_id', $truck->id)->where('tenant_id', CurrentTenant::id())],
+        ], [
+            'user_id.exists' => 'Tick this truck for them under Settings → Drivers first.',
+        ]);
+
+        $driver = isset($data['user_id']) ? User::query()->where('tenant_id', CurrentTenant::id())->findOrFail((int) $data['user_id']) : null;
+        $run->assign($truck, $data['date'], $driver);
+
+        return back();
     }
 
     public function schedule(Request $request, Stop $stop, Dispatch $dispatch): RedirectResponse

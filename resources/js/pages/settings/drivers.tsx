@@ -14,11 +14,10 @@ type Driver = {
     id: number;
     name: string;
     email: string;
+    phone: string | null;
     joined: boolean;
     /** Trucks they're able to drive. */
     truck_ids: number[];
-    /** Trucks whose run they sign in to. */
-    signs_in_to: number[];
     last_seen: string | null;
 };
 
@@ -98,15 +97,15 @@ function TruckPicker({
                 </div>
             )}
             <p className="text-xs text-muted-foreground">
-                They sign in to a ticked truck's run if nobody else does yet.
-                Change who signs in under Delivery → Trucks.
+                Dispatch picks who drives each truck each day, from the drivers
+                ticked for it.
             </p>
             <InputError message={error} />
         </fieldset>
     );
 }
 
-function EditTrucks({
+function EditDriver({
     driver,
     trucks,
     onDone,
@@ -115,7 +114,10 @@ function EditTrucks({
     trucks: Truck[];
     onDone: () => void;
 }) {
-    const form = useForm({ truck_ids: driver.truck_ids });
+    const form = useForm({
+        phone: driver.phone ?? '',
+        truck_ids: driver.truck_ids,
+    });
 
     return (
         <form
@@ -128,6 +130,20 @@ function EditTrucks({
                 });
             }}
         >
+            <Field
+                label="Phone"
+                htmlFor={`driver-${driver.id}-phone`}
+                error={form.errors.phone}
+                className="sm:max-w-xs"
+            >
+                <Input
+                    id={`driver-${driver.id}-phone`}
+                    type="tel"
+                    autoComplete="off"
+                    value={form.data.phone}
+                    onChange={(e) => form.setData('phone', e.target.value)}
+                />
+            </Field>
             <TruckPicker
                 id={`driver-${driver.id}-trucks`}
                 trucks={trucks}
@@ -155,9 +171,7 @@ function EditTrucks({
 function truckSummary(driver: Driver, trucks: Truck[]): string {
     const names = trucks
         .filter((t) => driver.truck_ids.includes(t.id))
-        .map((t) =>
-            driver.signs_in_to.includes(t.id) ? `${t.name} (signs in)` : t.name,
-        );
+        .map((t) => t.name);
 
     return names.length > 0
         ? `Can drive ${names.join(', ')}`
@@ -165,15 +179,21 @@ function truckSummary(driver: Driver, trucks: Truck[]): string {
 }
 
 function AddDriver({ trucks }: Pick<Props, 'trucks'>) {
-    const form = useForm<{ name: string; email: string; truck_ids: number[] }>({
+    const form = useForm<{
+        name: string;
+        email: string;
+        phone: string;
+        truck_ids: number[];
+    }>({
         name: '',
         email: '',
+        phone: '',
         truck_ids: [],
     });
 
     return (
         <form
-            className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-4 sm:items-end"
+            className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-6 sm:items-end"
             onSubmit={(e) => {
                 e.preventDefault();
                 form.post(DriverAccountsController.store.url(), {
@@ -210,7 +230,22 @@ function AddDriver({ trucks }: Pick<Props, 'trucks'>) {
                     onChange={(e) => form.setData('email', e.target.value)}
                 />
             </Field>
-            <div className="sm:col-span-4">
+            <Field
+                label="Phone"
+                htmlFor="driver-phone"
+                error={form.errors.phone}
+                className="sm:col-span-2"
+            >
+                <Input
+                    id="driver-phone"
+                    type="tel"
+                    autoComplete="off"
+                    value={form.data.phone}
+                    onChange={(e) => form.setData('phone', e.target.value)}
+                    placeholder="905-555-0123"
+                />
+            </Field>
+            <div className="sm:col-span-6">
                 <TruckPicker
                     id="driver-new-trucks"
                     trucks={trucks}
@@ -219,7 +254,7 @@ function AddDriver({ trucks }: Pick<Props, 'trucks'>) {
                     error={form.errors.truck_ids}
                 />
             </div>
-            <div className="sm:col-span-4">
+            <div className="sm:col-span-6">
                 <Button type="submit" disabled={form.processing}>
                     Add driver
                 </Button>
@@ -241,7 +276,7 @@ export default function DriversSettings({ drivers, trucks }: Props) {
                     <Heading
                         variant="small"
                         title="Drivers"
-                        description="Drivers sign in on their phone and see only their own truck's run: stops in order, directions, proof of delivery. While their run is open, their phone shares its location with the dispatch board."
+                        description="Drivers sign in on their phone and see the run of the truck dispatch puts them on that day: stops in order, directions, proof of delivery. While their run is open, their phone shares its location with the dispatch board."
                     />
 
                     {drivers.length === 0 ? (
@@ -270,7 +305,9 @@ export default function DriversSettings({ drivers, trucks }: Props) {
                                             )}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
-                                            {d.email}
+                                            {[d.email, d.phone]
+                                                .filter(Boolean)
+                                                .join(' · ')}
                                             {' · '}
                                             {truckSummary(d, trucks)}
                                         </div>
@@ -288,7 +325,7 @@ export default function DriversSettings({ drivers, trucks }: Props) {
                                                 size="sm"
                                                 onClick={() => setEditing(d.id)}
                                             >
-                                                Edit trucks
+                                                Edit
                                             </Button>
                                         )}
                                         {!d.joined && (
@@ -334,7 +371,7 @@ export default function DriversSettings({ drivers, trucks }: Props) {
                                         </Button>
                                     </div>
                                     {editing === d.id && (
-                                        <EditTrucks
+                                        <EditDriver
                                             driver={d}
                                             trucks={trucks}
                                             onDone={() => setEditing(null)}
