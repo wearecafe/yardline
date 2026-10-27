@@ -22,7 +22,7 @@ export default function SetupLayout({ children }: { children: ReactNode }) {
     const position = setup.step === 'done' ? total : index + 1;
 
     return (
-        <div className="min-h-svh bg-background lg:grid lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <div className="min-h-svh bg-background lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:bg-[linear-gradient(to_right,#1c1f1d_18rem,var(--background)_18rem)]">
             <Head title={`Set up · ${setup.title}`} />
 
             {/* The rail: desktop only. */}

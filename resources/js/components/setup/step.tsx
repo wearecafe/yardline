@@ -25,8 +25,10 @@ export function StepHeader({
         <header className="mb-8">
             {index >= 0 && (
                 <p className="text-[13px] font-medium text-muted-foreground">
-                    Step {index + 1} of {setup.steps.length}
-                    <span aria-hidden> · </span>
+                    <span className="hidden lg:inline">
+                        Step {index + 1} of {setup.steps.length}
+                        <span aria-hidden> · </span>
+                    </span>
                     <span
                         className={
                             setup.required ? 'text-primary' : 'text-subtle'

@@ -18,6 +18,7 @@ use App\Payments\Connect\AccountStatus;
 use App\Support\Demo;
 use App\Tenancy\CurrentTenant;
 use App\Tenancy\TenantRule;
+use Closure;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -123,35 +124,64 @@ class SetupController extends Controller
             return to_route('setup.step', 'business');
         }
 
-        $rules = [
+        $input = (array) $request->input('yards', []);
+
+        // The row a "yards.N.field" attribute belongs to.
+        $row = function (string $attribute) use ($input): array {
+            $yard = $input[(int) explode('.', $attribute)[1]] ?? [];
+
+            return is_array($yard) ? $yard : [];
+        };
+
+        $data = $request->validate([
             'yards' => ['required', 'array', 'min:1', 'max:20'],
             'yards.*.id' => ['nullable', 'integer', TenantRule::exists('locations')],
             'yards.*.name' => ['required', 'string', 'max:255'],
-            'yards.*.code' => ['required', 'string', 'max:20', 'alpha_dash', 'distinct:ignore_case'],
+            'yards.*.code' => [
+                'required',
+                'string',
+                'max:20',
+                'alpha_dash',
+                'distinct:ignore_case',
+                // Unique in the business, the yard's own row aside.
+                function (string $attribute, mixed $value, Closure $fail) use ($row) {
+                    $id = $row($attribute)['id'] ?? null;
+                    $taken = Location::query()
+                        ->where('code', strtoupper((string) $value))
+                        ->when(is_numeric($id), fn ($q) => $q->whereKeyNot((int) $id))
+                        ->exists();
+
+                    if ($taken) {
+                        $fail('Another yard already uses this code.');
+                    }
+                },
+            ],
             'yards.*.address_line1' => ['required', 'string', 'max:255'],
             'yards.*.address_line2' => ['nullable', 'string', 'max:255'],
             'yards.*.city' => ['required', 'string', 'max:255'],
             'yards.*.country' => ['required', Rule::in(['CA', 'US'])],
-            'yards.*.region' => ['required', 'string', 'max:50'],
-            'yards.*.postal_code' => ['required', 'string', 'max:20'],
-        ];
-
-        // Each yard's code is unique in the business, its own row aside;
-        // provinces and postal codes are checked for Canadian yards.
-        foreach ((array) $request->input('yards', []) as $i => $yard) {
-            $id = is_array($yard) && is_numeric($yard['id'] ?? null) ? (int) $yard['id'] : null;
-            $rules["yards.{$i}.code"][] = TenantRule::unique('locations', 'code', $id);
-
-            if (is_array($yard) && ($yard['country'] ?? null) === 'CA') {
-                $rules["yards.{$i}.region"][] = Rule::in(array_keys(self::PROVINCES));
-                $rules["yards.{$i}.postal_code"][] = 'regex:/^[A-Za-z]\d[A-Za-z] ?\d[A-Za-z]\d$/';
-            }
-        }
-
-        $data = $request->validate($rules, [
-            'yards.*.postal_code.regex' => 'Enter a postal code like L7L 4X7.',
+            'yards.*.region' => [
+                'required',
+                'string',
+                'max:50',
+                function (string $attribute, mixed $value, Closure $fail) use ($row) {
+                    if (($row($attribute)['country'] ?? null) === 'CA' && ! isset(self::PROVINCES[strtoupper((string) $value)])) {
+                        $fail('Choose a province.');
+                    }
+                },
+            ],
+            'yards.*.postal_code' => [
+                'required',
+                'string',
+                'max:20',
+                function (string $attribute, mixed $value, Closure $fail) use ($row) {
+                    if (($row($attribute)['country'] ?? null) === 'CA' && ! preg_match('/^[A-Za-z]\d[A-Za-z] ?\d[A-Za-z]\d$/', trim((string) $value))) {
+                        $fail('Enter a postal code like L7L 4X7.');
+                    }
+                },
+            ],
+        ], [
             'yards.*.code.distinct' => 'Each yard needs its own code.',
-            'yards.*.code.unique' => 'Another yard already uses this code.',
             'yards.*.address_line1.required' => 'Enter the yard’s street address. Pickup orders are taxed here.',
         ]);
 
@@ -159,7 +189,7 @@ class SetupController extends Controller
             $hasDefault = Location::query()->where('is_default', true)->exists();
 
             foreach ($data['yards'] as $yard) {
-                $location = isset($yard['id']) ? Location::query()->findOrFail($yard['id']) : new Location;
+                $location = isset($yard['id']) ? Location::query()->findOrFail((int) $yard['id']) : new Location;
                 $location->fill([
                     'name' => $yard['name'],
                     'code' => strtoupper($yard['code']),
