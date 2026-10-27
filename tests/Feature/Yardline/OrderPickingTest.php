@@ -361,6 +361,9 @@ class OrderPickingTest extends TestCase
         $this->post(route('users.store'), ['name' => 'Lee', 'email' => 'lee@example.com', 'role' => 'picker'])->assertSessionHasNoErrors();
         $this->assertCount(2, User::query()->where('email', 'lee@example.com')->firstOrFail()->pickingYardIds());
 
+        // They've accepted the invite.
+        $picker->forceFill(['email_verified_at' => now()])->save();
+
         // Their PIN is the one they clock in with.
         $employee = Employee::query()->create(['user_id' => $picker->id, 'name' => 'Pat Picker']);
         $employee->setPin('4821');
