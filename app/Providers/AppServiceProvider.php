@@ -5,6 +5,13 @@ namespace App\Providers;
 use App\Billing\BillingGateway;
 use App\Billing\Gateways\FakeBillingGateway;
 use App\Billing\Gateways\StripeBillingGateway;
+use App\Email\BrandedMail;
+use App\Email\Domains\CloudflareDnsZone;
+use App\Email\Domains\DnsZone;
+use App\Email\Domains\DomainProvider;
+use App\Email\Domains\FakeDomainProvider;
+use App\Email\Domains\LocalDnsZone;
+use App\Email\Domains\ResendDomainProvider;
 use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\ContractPrice;
@@ -54,6 +61,8 @@ use App\Tax\StripeTaxCalculator;
 use App\Tax\TaxCalculator;
 use App\Time\TimeSettings;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
@@ -106,6 +115,15 @@ class AppServiceProvider extends ServiceProvider
             ? $app->make(StripeCardFees::class)
             : new EstimatedCardFees);
 
+        // Yards' own sending domains: the email service and YardRunner's DNS
+        // zone. The demo yard and local development simulate both.
+        $this->app->bind(DomainProvider::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardline.email.domains_driver') === 'resend'
+            ? $app->make(ResendDomainProvider::class)
+            : new FakeDomainProvider);
+        $this->app->bind(DnsZone::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardline.email.dns_driver') === 'cloudflare'
+            ? $app->make(CloudflareDnsZone::class)
+            : new LocalDnsZone);
+
         $this->app->bind(RentalSettings::class, fn () => RentalSettings::current());
         $this->app->bind(TimeSettings::class, fn () => TimeSettings::current());
 
@@ -151,6 +169,33 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureModels();
         $this->configureGates();
+        $this->configureMail();
+    }
+
+    /**
+     * Password reset and email verification come from YardRunner, in
+     * YardRunner's brand, like every other email to a yard's own users.
+     */
+    protected function configureMail(): void
+    {
+        ResetPassword::toMailUsing(function (object $notifiable, string $token) {
+            $email = method_exists($notifiable, 'getEmailForPasswordReset') ? $notifiable->getEmailForPasswordReset() : '';
+            $minutes = (int) config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60);
+
+            return BrandedMail::user($notifiable instanceof User ? $notifiable->tenant?->name : null)
+                ->subject('Reset your YardRunner password')
+                ->title('Reset your password')
+                ->line('We got a request to reset the password for your YardRunner account.')
+                ->action('Choose a new password', url(route('password.reset', ['token' => $token, 'email' => $email], false)))
+                ->line("The link works for {$minutes} minutes. If you didn’t ask for this, you can ignore it.");
+        });
+
+        VerifyEmail::toMailUsing(fn (object $notifiable, string $url) => BrandedMail::user($notifiable instanceof User ? $notifiable->tenant?->name : null)
+            ->subject('Confirm your email address')
+            ->title('Confirm your email address')
+            ->line('Confirm this is your email address to finish setting up YardRunner.')
+            ->action('Confirm email address', $url)
+            ->line('If you didn’t create an account, you can ignore this email.'));
     }
 
     /**

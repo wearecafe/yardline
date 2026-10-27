@@ -4,6 +4,9 @@ namespace Tests;
 
 use App\Accounting\QuickBooks\QuickBooks;
 use App\Audit\Audit;
+use App\Email\Domains\DnsLookup;
+use App\Email\Domains\FakeDomainProvider;
+use App\Email\Domains\LocalDnsZone;
 use App\Enums\UserRole;
 use App\Models\Location;
 use App\Models\Tenant;
@@ -20,6 +23,9 @@ abstract class TestCase extends BaseTestCase
         // Static state that would otherwise leak into the next test.
         Audit::$customerId = null;
         QuickBooks::forget();
+        DnsLookup::forget();
+        LocalDnsZone::$records = [];
+        FakeDomainProvider::$verifies = true;
 
         parent::tearDown();
     }

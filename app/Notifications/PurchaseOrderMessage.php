@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Email\MailGroup;
 use App\Models\PurchaseOrder;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -21,8 +22,13 @@ class PurchaseOrderMessage extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $po = $this->po;
-        $mail = (new MailMessage)
+        $mail = YardMail::for($po->tenant, MailGroup::Orders, $po->location)
             ->subject("Purchase order {$po->number} from {$po->tenant->name}")
+            ->title("Purchase order {$po->number}")
+            ->facts([
+                'Deliver to' => $po->location->name,
+                'Needed by' => $po->expected_on?->format('F j, Y'),
+            ])
             ->greeting('Hello'.($po->supplier->contact_name ? " {$po->supplier->contact_name}" : ''))
             ->line("Please supply the following to {$po->location->name}".($po->expected_on ? ' by '.$po->expected_on->format('F j') : '').':');
 

@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import AlertsController from '@/actions/App/Http/Controllers/Settings/AlertsController';
 import BillingController from '@/actions/App/Http/Controllers/Settings/BillingController';
+import BrandingController from '@/actions/App/Http/Controllers/Settings/BrandingController';
 import BusinessController from '@/actions/App/Http/Controllers/Settings/BusinessController';
 import AuditController from '@/actions/App/Http/Controllers/Settings/AuditController';
 import DeliverySettingsController from '@/actions/App/Http/Controllers/Settings/DeliverySettingsController';
@@ -10,6 +11,7 @@ import PaymentsController from '@/actions/App/Http/Controllers/Settings/Payments
 import QuickBooksController from '@/actions/App/Http/Controllers/Settings/QuickBooksController';
 import RoleSettingsController from '@/actions/App/Http/Controllers/Settings/RoleSettingsController';
 import RentalSettingsController from '@/actions/App/Http/Controllers/Settings/RentalSettingsController';
+import SendingDomainController from '@/actions/App/Http/Controllers/Settings/SendingDomainController';
 import TimeSettingsController from '@/actions/App/Http/Controllers/Settings/TimeSettingsController';
 import UserAccountsController from '@/actions/App/Http/Controllers/Settings/UserAccountsController';
 import type { PropsWithChildren } from 'react';
@@ -69,6 +71,16 @@ const businessNavItems: NavItem[] = [
     {
         title: 'Business',
         href: BusinessController.edit(),
+        icon: null,
+    },
+    {
+        title: 'Branding',
+        href: BrandingController.edit(),
+        icon: null,
+    },
+    {
+        title: 'Sending domain',
+        href: SendingDomainController.edit(),
         icon: null,
     },
     {

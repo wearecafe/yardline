@@ -40,6 +40,7 @@ type Props = {
         last_active_at: string | null;
         status_changed_at: string | null;
         staff_notes: string | null;
+        branding: { colour_system: boolean; sent_with_yardrunner: boolean };
         owner: { id: number; name: string; email: string } | null;
         health: Health;
     };
@@ -320,6 +321,59 @@ function Subscription({ tenant }: Pick<Props, 'tenant'>) {
                         {billing.suspended ? 'Restore access' : 'Suspend'}
                     </Button>
                 </div>
+            </div>
+        </Section>
+    );
+}
+
+function Branding({ tenant }: Pick<Props, 'tenant'>) {
+    const set = (key: 'colour_system' | 'sent_with_yardrunner', on: boolean) =>
+        router.patch(
+            TenantController.update.url(tenant.id),
+            { [key]: on },
+            { preserveScroll: true },
+        );
+
+    return (
+        <Section
+            title="Email branding"
+            description="Switches only staff can change. Each change goes in their audit log."
+        >
+            <div className="grid gap-4 text-sm">
+                <label className="flex items-start gap-2.5">
+                    <input
+                        type="checkbox"
+                        className="mt-0.5 size-4 rounded border-input accent-foreground"
+                        checked={tenant.branding.colour_system}
+                        onChange={(e) => set('colour_system', e.target.checked)}
+                    />
+                    <span className="grid gap-0.5">
+                        <span className="font-medium">Full colour system</span>
+                        <span className="text-xs text-muted-foreground">
+                            Off by default. When on, they can change every email
+                            colour under Settings → Branding, not just the
+                            primary. Turn on only when they ask.
+                        </span>
+                    </span>
+                </label>
+                <label className="flex items-start gap-2.5">
+                    <input
+                        type="checkbox"
+                        className="mt-0.5 size-4 rounded border-input accent-foreground"
+                        checked={tenant.branding.sent_with_yardrunner}
+                        onChange={(e) =>
+                            set('sent_with_yardrunner', e.target.checked)
+                        }
+                    />
+                    <span className="grid gap-0.5">
+                        <span className="font-medium">
+                            “Sent with YardRunner” footer
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                            On by default, on emails to their customers.
+                        </span>
+                    </span>
+                </label>
             </div>
         </Section>
     );
@@ -686,6 +740,7 @@ export default function ShowTenant({
 
                     <aside className="flex min-w-0 flex-[1_1_320px] flex-col gap-5">
                         <Subscription tenant={tenant} />
+                        <Branding tenant={tenant} />
                         <Notes tenant={tenant} />
                     </aside>
                 </div>

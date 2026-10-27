@@ -10,6 +10,7 @@ use App\Billing\BillingGateway;
 use App\Billing\BillingState;
 use App\Billing\Plan;
 use App\Billing\Trial;
+use App\Email\BrandSettings;
 use App\Enums\IntegrationProvider;
 use App\Enums\IntegrationStatus;
 use App\Enums\TenantStatus;
@@ -256,6 +257,10 @@ class TenantController extends Controller
                 'last_active_at' => $tenant->last_active_at?->toIso8601String(),
                 'status_changed_at' => $tenant->status_changed_at?->toIso8601String(),
                 'staff_notes' => $tenant->staff_notes,
+                'branding' => [
+                    'colour_system' => BrandSettings::for($tenant)->colourSystem,
+                    'sent_with_yardrunner' => BrandSettings::for($tenant)->sentWithYardRunner,
+                ],
                 'billing' => $this->billing($tenant),
                 'owner' => $users->first(fn (User $u) => $u->role === UserRole::Owner)?->only('id', 'name', 'email'),
                 'health' => TenantHealth::of($tenant, $orders['orders'], $prior['orders'], $integrations, $quickBooks, (int) ($webhooks[WebhookDelivery::FAILED] ?? 0)),
@@ -325,9 +330,25 @@ class TenantController extends Controller
             'trial_ends_at' => ['sometimes', 'required', 'date'],
             'suspended' => ['sometimes', 'boolean'],
             'staff_notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            // Branding switches only staff can change.
+            'colour_system' => ['sometimes', 'boolean'],
+            'sent_with_yardrunner' => ['sometimes', 'boolean'],
         ]);
 
         $trialMoved = false;
+        $brandChanges = [];
+
+        foreach (['colour_system' => 'colourSystem', 'sent_with_yardrunner' => 'sentWithYardRunner'] as $key => $property) {
+            if (array_key_exists($key, $data) && (bool) $data[$key] !== BrandSettings::for($tenant)->{$property}) {
+                $brandChanges[$key] = [BrandSettings::for($tenant)->{$property}, (bool) $data[$key]];
+            }
+        }
+
+        if ($brandChanges !== []) {
+            $settings = $tenant->settings ?? [];
+            $settings['branding'] = [...BrandSettings::for($tenant)->toArray(), ...array_map(fn (array $c) => $c[1], $brandChanges)];
+            $tenant->settings = $settings;
+        }
 
         if (array_key_exists('trial_ends_at', $data)) {
             if ($tenant->billing()->subscribed && $tenant->subscription_status !== 'trialing') {
@@ -357,8 +378,12 @@ class TenantController extends Controller
         $changes = [];
 
         foreach (array_keys($tenant->getDirty()) as $field) {
-            $changes[$field] = [$this->auditValue($tenant->getOriginal($field)), $this->auditValue($tenant->getAttribute($field))];
+            if ($field !== 'settings') {
+                $changes[$field] = [$this->auditValue($tenant->getOriginal($field)), $this->auditValue($tenant->getAttribute($field))];
+            }
         }
+
+        $changes = [...$changes, ...$brandChanges];
 
         // Notes are private to staff: say they changed, not what they say.
         if (isset($changes['staff_notes'])) {

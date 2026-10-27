@@ -2,23 +2,21 @@
 
 namespace App\Notifications;
 
+use App\Email\BrandedMail;
+use App\Email\BrandedMessage;
+use App\Email\MailGroup;
+use App\Models\Location;
 use App\Models\Tenant;
-use Illuminate\Notifications\Messages\MailMessage;
 
 /**
- * Customer emails go out from YardRunner's verified sending address under the
- * yard's name, with replies routed to the yard when it has set an address.
+ * Customer emails: the yard's brand, from the yard's mailbox for that kind
+ * of email (or YardRunner's address under the yard's name until the yard
+ * connects its own domain), with replies routed to the yard.
  */
 class YardMail
 {
-    public static function for(Tenant $tenant): MailMessage
+    public static function for(Tenant $tenant, MailGroup $group = MailGroup::Main, ?Location $yard = null): BrandedMessage
     {
-        $mail = (new MailMessage)->from((string) config('mail.from.address'), $tenant->name);
-
-        if (($replyTo = $tenant->replyToEmail()) !== null) {
-            $mail->replyTo($replyTo, $tenant->name);
-        }
-
-        return $mail;
+        return BrandedMail::customer($tenant, $group, $yard);
     }
 }

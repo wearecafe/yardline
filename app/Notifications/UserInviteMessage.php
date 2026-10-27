@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Email\BrandedMail;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -23,8 +24,9 @@ class UserInviteMessage extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return BrandedMail::user($this->business, "You're getting this because {$this->business} added you to YardRunner.")
             ->subject("You've been added to {$this->business} on YardRunner")
+            ->title("Join {$this->business} on YardRunner")
             ->greeting('Hello')
             ->line("{$this->business} has added you to YardRunner as {$this->role}.")
             ->line('Choose a password to get started. The link works for 60 minutes; ask the owner for a new one if it runs out.')

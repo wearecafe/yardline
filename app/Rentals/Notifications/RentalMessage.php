@@ -2,6 +2,7 @@
 
 namespace App\Rentals\Notifications;
 
+use App\Email\MailGroup;
 use App\Models\Rental;
 use App\Notifications\Channels\SmsChannel;
 use App\Notifications\Channels\SmsMessage;
@@ -39,8 +40,9 @@ class RentalMessage extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $mail = YardMail::for($this->rental->tenant)
+        $mail = YardMail::for($this->rental->tenant, MailGroup::Rentals, $this->rental->location)
             ->subject($this->subject)
+            ->facts(['Rental' => $this->rental->number])
             ->greeting('Hello')
             ->line($this->text);
 

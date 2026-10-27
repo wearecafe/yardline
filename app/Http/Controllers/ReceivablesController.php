@@ -92,7 +92,7 @@ class ReceivablesController extends Controller
 
         if (! Demo::isCurrentTenant()) {
             Notification::route('mail', (string) $organization->email)
-                ->notify(new StatementMessage($data, CurrentTenant::get()->name ?? 'YardRunner', $this->render($data)));
+                ->notify(new StatementMessage($data, $organization->tenant, $this->render($data)));
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Statement sent to {$organization->email}."]);
