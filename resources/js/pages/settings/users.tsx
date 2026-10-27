@@ -7,15 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Chip } from '@/components/yard/chip';
 import { Checkbox, Field, NativeSelect } from '@/components/yard/field';
-
-type Yard = { id: number; name: string };
-
-type RoleOption = {
-    value: string;
-    label: string;
-    description: string;
-    yard_scoped: boolean;
-};
+import {
+    RolePicker,
+    scoped,
+    timeOnly,
+    YardPicker,
+} from '@/components/yard/people-pickers';
+import type { RoleOption, Yard } from '@/components/yard/people-pickers';
 
 type PermissionOption = {
     value: string;
@@ -28,10 +26,11 @@ type PermissionOption = {
 type UserAccount = {
     id: number;
     name: string;
-    email: string;
+    email: string | null;
     role: string;
     roles: string[];
     joined: boolean;
+    signs_in: boolean;
     is_you: boolean;
     manageable: boolean;
     yard_scoped: boolean;
@@ -56,83 +55,6 @@ const ownerRole = { value: 'owner', label: 'Owner' };
 
 function roleLabel(roles: RoleOption[], value: string): string {
     return [...roles, ownerRole].find((r) => r.value === value)?.label ?? value;
-}
-
-function scoped(roles: RoleOption[], values: string[]): boolean {
-    return (
-        values.length > 0 &&
-        !values.includes('admin') &&
-        values.every(
-            (v) => roles.find((r) => r.value === v)?.yard_scoped ?? true,
-        )
-    );
-}
-
-/** Ticks the roles someone holds. */
-function RolePicker({
-    id,
-    roles,
-    value,
-    onChange,
-}: {
-    id: string;
-    roles: RoleOption[];
-    value: string[];
-    onChange: (values: string[]) => void;
-}) {
-    return (
-        <div className="grid gap-3 sm:grid-cols-2">
-            {roles.map((role) => (
-                <Checkbox
-                    key={role.value}
-                    id={`${id}-${role.value}`}
-                    label={role.label}
-                    hint={role.description}
-                    checked={value.includes(role.value)}
-                    onChange={(on) =>
-                        onChange(
-                            on
-                                ? [...value, role.value]
-                                : value.filter((v) => v !== role.value),
-                        )
-                    }
-                />
-            ))}
-        </div>
-    );
-}
-
-/** Ticks the yards someone works. */
-function YardPicker({
-    id,
-    locations,
-    value,
-    onChange,
-}: {
-    id: string;
-    locations: Yard[];
-    value: number[];
-    onChange: (ids: number[]) => void;
-}) {
-    return (
-        <div className="flex flex-wrap gap-x-5 gap-y-2">
-            {locations.map((yard) => (
-                <Checkbox
-                    key={yard.id}
-                    id={`${id}-${yard.id}`}
-                    label={yard.name}
-                    checked={value.includes(yard.id)}
-                    onChange={(on) =>
-                        onChange(
-                            on
-                                ? [...value, yard.id]
-                                : value.filter((v) => v !== yard.id),
-                        )
-                    }
-                />
-            ))}
-        </div>
-    );
 }
 
 /** Each permission: what their roles give, or granted or removed on them. */
@@ -219,6 +141,7 @@ function EditUser({
     onDone: () => void;
 }) {
     const form = useForm({
+        email: '',
         roles: user.roles,
         location_ids: user.yards,
         permissions: user.permissions as Record<string, Override>,
@@ -228,6 +151,10 @@ function EditUser({
     // Send every permission, so ones set back to "from their roles" clear.
     const payload = () => ({
         ...form.data,
+        email:
+            user.signs_in || form.data.email === ''
+                ? undefined
+                : form.data.email,
         permissions: Object.fromEntries(
             permissions.map((p) => [
                 p.value,
@@ -261,6 +188,26 @@ function EditUser({
                 />
             </Field>
 
+            {!user.signs_in && (
+                <Field
+                    label="Email"
+                    htmlFor={`edit-email-${user.id}`}
+                    error={form.errors.email}
+                    hint={
+                        timeOnly(form.data.roles)
+                            ? 'Optional. With one, they can sign in to see their own hours.'
+                            : 'They need one to sign in. We’ll email them a link to choose a password.'
+                    }
+                >
+                    <Input
+                        id={`edit-email-${user.id}`}
+                        type="email"
+                        value={form.data.email}
+                        onChange={(e) => form.setData('email', e.target.value)}
+                    />
+                </Field>
+            )}
+
             {scoped(roles, form.data.roles) && (
                 <Field
                     label="Yards they work"
@@ -277,19 +224,21 @@ function EditUser({
                 </Field>
             )}
 
-            <Field
-                label="Permissions"
-                htmlFor={`edit-perms-${user.id}`}
-                hint="Each one follows their roles unless you grant or remove it for this person."
-            >
-                <PermissionPicker
-                    id={`edit-perms-${user.id}`}
-                    permissions={permissions}
-                    roles={form.data.roles}
-                    value={form.data.permissions}
-                    onChange={(value) => form.setData('permissions', value)}
-                />
-            </Field>
+            {!timeOnly(form.data.roles) && (
+                <Field
+                    label="Permissions"
+                    htmlFor={`edit-perms-${user.id}`}
+                    hint="Each one follows their roles unless you grant or remove it for this person."
+                >
+                    <PermissionPicker
+                        id={`edit-perms-${user.id}`}
+                        permissions={permissions}
+                        roles={form.data.roles}
+                        value={form.data.permissions}
+                        onChange={(value) => form.setData('permissions', value)}
+                    />
+                </Field>
+            )}
 
             <div className="flex gap-2">
                 <Button
@@ -350,11 +299,16 @@ function AddUser({ roles, locations }: Pick<Props, 'roles' | 'locations'>) {
                     label="Email"
                     htmlFor="user-email"
                     error={form.errors.email}
+                    hint={
+                        timeOnly(form.data.roles)
+                            ? 'Optional. Without one they clock in at the counter tablet with a PIN and never sign in.'
+                            : undefined
+                    }
                 >
                     <Input
                         id="user-email"
                         type="email"
-                        required
+                        required={!timeOnly(form.data.roles)}
                         value={form.data.email}
                         onChange={(e) => form.setData('email', e.target.value)}
                     />
@@ -441,12 +395,13 @@ export default function UsersSettings({
                                                 (you)
                                             </span>
                                         )}
-                                        {!u.joined && (
+                                        {u.signs_in && !u.joined && (
                                             <Chip tone="warning">Invited</Chip>
                                         )}
                                     </div>
                                     <div className="truncate text-sm text-muted-foreground">
-                                        {u.email}
+                                        {u.email ??
+                                            'No sign-in. Clocks in at the counter tablet.'}
                                     </div>
                                     <div className="mt-1 flex flex-wrap gap-1">
                                         {u.roles.map((r) => (
@@ -493,7 +448,7 @@ export default function UsersSettings({
                                                 ? 'Close'
                                                 : 'Roles and access'}
                                         </Button>
-                                        {!u.joined && (
+                                        {u.signs_in && !u.joined && (
                                             <Button
                                                 variant="outline"
                                                 size="sm"

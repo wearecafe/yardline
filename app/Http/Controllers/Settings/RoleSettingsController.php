@@ -23,6 +23,25 @@ use Inertia\Response;
  */
 class RoleSettingsController extends Controller
 {
+    /**
+     * Roles the business sets permissions and refund limits for. Time &
+     * attendance only has neither.
+     *
+     * @return list<UserRole>
+     */
+    private static function configurable(): array
+    {
+        $roles = [];
+
+        foreach (UserRole::cases() as $role) {
+            if ($role !== UserRole::TimeOnly) {
+                $roles[] = $role;
+            }
+        }
+
+        return $roles;
+    }
+
     public function edit(Request $request): Response
     {
         /** @var User $actor */
@@ -37,7 +56,7 @@ class RoleSettingsController extends Controller
                 'editable' => $role !== UserRole::Owner,
                 'permissions' => array_map(fn (Permission $p) => $p->value, $access->permissionsFor($role)),
                 'refund_limit_cents' => $access->refundLimit($role),
-            ], UserRole::cases()),
+            ], self::configurable()),
             'permissions' => array_map(fn (Permission $p) => [
                 'value' => $p->value,
                 'label' => $p->label(),
@@ -55,7 +74,8 @@ class RoleSettingsController extends Controller
         $tenant = CurrentTenant::get();
         abort_if($tenant === null, 404);
 
-        $roleValues = array_map(fn (UserRole $r) => $r->value, UserRole::assignable());
+        // Time & attendance only never gives permissions or refunds.
+        $roleValues = array_map(fn (UserRole $r) => $r->value, array_filter(UserRole::assignable(), fn (UserRole $r) => $r !== UserRole::TimeOnly));
         $permissionValues = array_map(fn (Permission $p) => $p->value, Permission::cases());
 
         $data = $request->validate([

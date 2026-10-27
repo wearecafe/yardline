@@ -46,7 +46,7 @@ class TimesheetController extends Controller
             return [
                 'id' => $e->id,
                 'name' => $e->name,
-                'job_title' => $e->job_title,
+                'role' => $e->roleLabel(),
                 'yard' => $e->location?->name,
                 'archived' => $e->archived_at !== null,
                 'regular' => $regular,
@@ -107,7 +107,7 @@ class TimesheetController extends Controller
             'employee' => [
                 'id' => $employee->id,
                 'name' => $employee->name,
-                'job_title' => $employee->job_title,
+                'role' => $employee->roleLabel(),
                 'yard' => $employee->location?->name,
                 'pay_type' => Employee::PAY_TYPES[$employee->pay_type] ?? $employee->pay_type,
                 'earns_overtime' => $employee->earnsOvertime(),

@@ -84,6 +84,10 @@ final readonly class AccessSettings
             return Permission::cases();
         }
 
+        if ($role === UserRole::TimeOnly) {
+            return [];
+        }
+
         return $this->rolePermissions[$role->value]
             ?? array_values(array_filter(Permission::cases(), fn (Permission $p) => in_array($role, $p->defaultRoles(), true)));
     }
@@ -111,6 +115,10 @@ final readonly class AccessSettings
     {
         if ($role === UserRole::Owner) {
             return null;
+        }
+
+        if ($role === UserRole::TimeOnly) {
+            return 0;
         }
 
         if (array_key_exists($role->value, $this->refundLimits)) {

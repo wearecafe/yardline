@@ -41,6 +41,13 @@ enum UserRole: string
     case ServiceTech = 'service_tech';
 
     /**
+     * Clocks in and out and nothing else. Can't be held with another role.
+     * Without an email they never sign in and punch only at the counter
+     * tablet with their PIN; with one, they see their own time.
+     */
+    case TimeOnly = 'time_only';
+
+    /**
      * A role value, including the ones used before roles were split by job.
      */
     public static function fromValue(?string $value): ?self
@@ -66,6 +73,7 @@ enum UserRole: string
             self::Purchasing => 'Purchasing & inventory',
             self::Accounts => 'Accounts',
             self::ServiceTech => 'Service tech',
+            self::TimeOnly => 'Time & attendance only',
         };
     }
 
@@ -83,6 +91,7 @@ enum UserRole: string
             self::Purchasing => 'Purchase orders, receiving, stock counts and products (not selling prices).',
             self::Accounts => 'Invoices, statements, credit limits, refunds and QuickBooks sync errors.',
             self::ServiceTech => 'Fleet maintenance, repairs and hour meters.',
+            self::TimeOnly => 'Clocks in and out with a PIN. No other screens; an email is optional.',
         };
     }
 

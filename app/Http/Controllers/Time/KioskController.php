@@ -42,7 +42,7 @@ class KioskController extends Controller
         $people = Employee::query()
             ->tracked()
             ->with('location:id,name')
-            ->orderBy('name')
+            ->orderByName()
             ->get()
             ->map(function (Employee $e) use ($clock, $settings, $now) {
                 $status = $clock->status($e, $now);
@@ -51,7 +51,6 @@ class KioskController extends Controller
                 return [
                     'id' => $e->id,
                     'name' => $e->name,
-                    'job_title' => $e->job_title,
                     'yard_id' => $e->location_id,
                     'has_pin' => $e->hasPin(),
                     'state' => $status['state']->value,

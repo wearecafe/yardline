@@ -25,7 +25,7 @@ import type { PayPeriodInfo } from '@/types/time';
 type Row = {
     id: number;
     name: string;
-    job_title: string | null;
+    role: string | null;
     yard: string | null;
     archived: boolean;
     regular_label: string;
@@ -247,7 +247,7 @@ export default function Timesheets({
                                         </Link>
                                         <div className="text-xs text-muted-foreground">
                                             {[
-                                                r.job_title,
+                                                r.role,
                                                 r.yard,
                                                 r.archived
                                                     ? 'No longer here'

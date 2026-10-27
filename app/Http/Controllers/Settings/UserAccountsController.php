@@ -3,23 +3,19 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Access\AccessSettings;
+use App\Access\UserAccounts;
 use App\Audit\Audit;
 use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Models\Employee;
 use App\Models\Location;
 use App\Models\User;
-use App\Notifications\UserInviteMessage;
 use App\Reports\ReportSettings;
 use App\Tenancy\CurrentTenant;
-use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -53,6 +49,8 @@ class UserAccountsController extends Controller
                     'role' => $user->role->value,
                     'roles' => array_map(fn (UserRole $r) => $r->value, $user->roleList()),
                     'joined' => $user->email_verified_at !== null,
+                    // Time & attendance only people without an email never sign in.
+                    'signs_in' => $user->email !== null,
                     'is_you' => $user->id === $actor->id,
                     'manageable' => $this->manageable($user, $actor),
                     'yard_scoped' => $user->isYardScoped(),
@@ -112,37 +110,20 @@ class UserAccountsController extends Controller
         $actor = $request->user();
 
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-            ...$this->roleRules(required: true),
-            ...$this->yardRules(),
+            ...UserAccounts::rules(),
             ...$this->permissionRules(),
         ]);
 
         $user = DB::transaction(function () use ($data, $actor) {
-            $user = new User([
-                'tenant_id' => CurrentTenant::id(),
-                'name' => $data['name'],
-                'email' => $data['email'],
-                // Replaced when they choose their own from the emailed link.
-                'password' => Hash::make(Str::random(40)),
-            ]);
-            $user->setRoles($this->roles($data))->save();
-
-            Audit::record($user, 'created', ['roles' => [null, $this->roleLabels($user)]]);
-
-            // People who work only some yards start with every yard.
-            $this->saveYards($user, [
-                'location_ids' => $data['location_ids'] ?? Location::query()->pluck('id')->all(),
-            ], audit: false);
+            $user = UserAccounts::create($data);
             $this->savePermissions($user, $data, $actor);
 
             return $user;
         });
 
-        $this->invite($user);
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => "Sent {$user->name} a link to choose a password."]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => $user->canSignIn()
+            ? "Sent {$user->name} a link to choose a password."
+            : "Added {$user->name}. They clock in at the counter tablet once they have a PIN (Team → Employees)."]);
 
         return back();
     }
@@ -155,12 +136,19 @@ class UserAccountsController extends Controller
 
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            ...$this->roleRules(required: false),
-            ...$this->yardRules(),
+            // Only for someone who doesn't have one yet (Time & attendance only).
+            'email' => [$user->email === null ? 'nullable' : 'prohibited', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            ...UserAccounts::roleRules(required: false),
+            ...UserAccounts::yardRules(),
             ...$this->permissionRules(),
         ]);
 
-        $changed = DB::transaction(function () use ($user, $data, $actor) {
+        $email = filled($data['email'] ?? null) ? (string) $data['email'] : $user->email;
+        UserAccounts::ensureRolesFit(isset($data['roles']) ? UserAccounts::roles($data) : $user->roleList(), $email);
+
+        $invite = false;
+
+        $changed = DB::transaction(function () use ($user, $data, $actor, $email, &$invite) {
             $changes = [];
 
             if (isset($data['name']) && $data['name'] !== $user->name) {
@@ -168,10 +156,16 @@ class UserAccountsController extends Controller
                 $user->name = $data['name'];
             }
 
+            if ($email !== $user->email) {
+                $changes['email'] = [$user->email, $email];
+                $user->email = $email;
+                $invite = true;
+            }
+
             if (isset($data['roles'])) {
-                $before = $this->roleLabels($user);
-                $user->setRoles($this->roles($data));
-                $after = $this->roleLabels($user);
+                $before = UserAccounts::roleLabels($user);
+                $user->setRoles(UserAccounts::roles($data));
+                $after = UserAccounts::roleLabels($user);
 
                 if ($before !== $after) {
                     $changes['roles'] = [$before, $after];
@@ -189,7 +183,9 @@ class UserAccountsController extends Controller
             return $changes !== [] || $yards || $permissions;
         });
 
-        if ($changed) {
+        if ($invite && UserAccounts::invite($user)) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => "Updated {$user->name} and sent them a link to choose a password."]);
+        } elseif ($changed) {
             Inertia::flash('toast', ['type' => 'success', 'message' => "Updated {$user->name}."]);
         }
 
@@ -199,7 +195,7 @@ class UserAccountsController extends Controller
     public function resend(Request $request, User $user): RedirectResponse
     {
         $this->ensureManageable($user, $request->user());
-        $this->invite($user);
+        abort_unless(UserAccounts::invite($user), 422, 'They don’t have an email to send a link to.');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Sent {$user->name} a new link."]);
 
@@ -210,8 +206,18 @@ class UserAccountsController extends Controller
     {
         $this->ensureManageable($user, $request->user());
 
+        // Anyone with hours on file is deactivated instead, so their
+        // timesheets keep their name, and their employment ends.
+        if (Employee::query()->where('user_id', $user->id)->exists()) {
+            UserAccounts::deactivate($user);
+
+            Inertia::flash('toast', ['type' => 'success', 'message' => "{$user->name} can no longer sign in or clock in. Their hours stay on file."]);
+
+            return back();
+        }
+
         DB::transaction(function () use ($user) {
-            Audit::record($user, 'deleted', ['roles' => [$this->roleLabels($user), null]]);
+            Audit::record($user, 'deleted', ['roles' => [UserAccounts::roleLabels($user), null]]);
             DB::table('sessions')->where('user_id', $user->id)->delete();
             $user->delete();
         });
@@ -246,28 +252,6 @@ class UserAccountsController extends Controller
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    private function roleRules(bool $required): array
-    {
-        return [
-            'roles' => [$required ? 'required' : 'sometimes', 'array', 'min:1'],
-            'roles.*' => ['string', Rule::in(array_map(fn (UserRole $r) => $r->value, UserRole::assignable()))],
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function yardRules(): array
-    {
-        return [
-            'location_ids' => ['sometimes', 'array'],
-            'location_ids.*' => ['integer', TenantRule::exists('locations')],
-        ];
-    }
-
-    /**
      * Each permission: true to grant it, false to remove it, null to
      * follow their roles.
      *
@@ -279,23 +263,6 @@ class UserAccountsController extends Controller
             'permissions' => ['sometimes', 'array'],
             ...collect(Permission::cases())->mapWithKeys(fn (Permission $p) => ["permissions.{$p->value}" => ['nullable', 'boolean']])->all(),
         ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     * @return list<UserRole>
-     */
-    private function roles(array $data): array
-    {
-        return array_values(array_filter(array_map(
-            fn ($value) => UserRole::fromValue((string) $value),
-            (array) ($data['roles'] ?? []),
-        )));
-    }
-
-    private function roleLabels(User $user): string
-    {
-        return implode(', ', array_map(fn (UserRole $r) => $r->label(), $user->roleList()));
     }
 
     /**
@@ -385,13 +352,5 @@ class UserAccountsController extends Controller
         Audit::record($user, 'permissions changed', $changes);
 
         return true;
-    }
-
-    private function invite(User $user): void
-    {
-        $token = Password::broker()->createToken($user);
-        $url = route('password.reset', ['token' => $token, 'email' => $user->email]);
-
-        $user->notify(new UserInviteMessage($url, CurrentTenant::get()->name ?? config('app.name'), $this->roleLabels($user)));
     }
 }

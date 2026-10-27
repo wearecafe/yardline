@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\YardRunner;
 
+use App\Access\RouteAccess;
 use App\Accounting\QuickBooks\QuickBooks;
 use App\Enums\AdjustmentAction;
 use App\Enums\IntegrationProvider;
@@ -20,6 +21,7 @@ use App\Models\TimePunch;
 use App\Models\Timesheet;
 use App\Models\User;
 use App\Notifications\TimeCorrectionMessage;
+use App\Notifications\UserInviteMessage;
 use App\Tenancy\CurrentTenant;
 use App\Time\Geofence;
 use App\Time\PayPeriods;
@@ -188,7 +190,7 @@ class TimeAndAttendanceTest extends TestCase
         $this->assertFalse($this->employee($this->owner)->tracks_time);
         $this->assertSame('salaried', $this->employee($this->owner)->pay_type);
         $this->assertTrue($this->employee($this->owen)->tracks_time);
-        $this->assertSame('Driver', $this->employee($this->sam)->job_title);
+        $this->assertSame('Sam Rinaldi', $this->employee($this->sam)->name);
 
         // The yard's position is kept for checking phone punches.
         $this->assertSame(250, $this->yard->refresh()->geofence_m);
@@ -204,14 +206,16 @@ class TimeAndAttendanceTest extends TestCase
         $this->enable();
 
         $this->actingAs($this->owner)->post(route('time.employees.store'), [
-            'name' => 'Dave Kowalski',
-            'job_title' => 'Yard hand',
+            'new_user' => ['name' => 'Dave Kowalski', 'email' => null, 'roles' => ['time_only'], 'location_ids' => [$this->yard->id]],
+            'location_id' => $this->yard->id,
             'pay_type' => 'hourly',
             'tracks_time' => true,
             'pin' => '4321',
         ])->assertSessionHasNoErrors();
-        $dave = Employee::query()->where('name', 'Dave Kowalski')->firstOrFail();
-        $this->assertNull($dave->user_id);
+        $daveUser = User::query()->where('name', 'Dave Kowalski')->sole();
+        $dave = $this->employee($daveUser);
+        $this->assertTrue($daveUser->isTimeOnly());
+        $this->assertNull($daveUser->email);
         $this->assertNotSame('4321', $dave->pin_hash);
 
         // The counter tablet is signed in as whoever is at the counter.
@@ -236,6 +240,145 @@ class TimeAndAttendanceTest extends TestCase
         $this->get(route('time.kiosk'))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('kiosk/time-clock')
             ->where('people', fn ($people) => collect($people)->firstWhere('name', 'Dave Kowalski')['state'] === 'working'));
+    }
+
+    public function test_every_employee_is_a_user(): void
+    {
+        Notification::fake();
+        $this->enable();
+        $this->employee($this->owen)->delete();
+
+        // Someone who already signs in.
+        $this->actingAs($this->owner)->post(route('time.employees.store'), [
+            'user_id' => $this->owen->id,
+            'pay_type' => 'hourly',
+            'payroll_id' => '1003',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('1003', $this->employee($this->owen)->payroll_id);
+        $this->assertSame('Owen Bakker', $this->employee($this->owen)->name);
+
+        // Not twice.
+        $this->post(route('time.employees.store'), ['user_id' => $this->owen->id, 'pay_type' => 'hourly'])
+            ->assertSessionHasErrors('user_id');
+
+        // Or a new user, who gets a link to choose a password.
+        $this->post(route('time.employees.store'), [
+            'new_user' => ['name' => 'Jess Palmer', 'email' => 'jess@example.com', 'roles' => ['yard_crew'], 'location_ids' => [$this->yard->id]],
+            'pay_type' => 'hourly',
+        ])->assertSessionHasNoErrors();
+        $jess = User::query()->where('email', 'jess@example.com')->sole();
+        $this->assertTrue($jess->hasRole(UserRole::YardCrew));
+        $this->assertSame([$this->yard->id], $jess->yardIds());
+        $this->assertSame('Jess Palmer', $this->employee($jess)->name);
+        Notification::assertSentTo($jess, UserInviteMessage::class);
+
+        // Picking someone or adding someone is required.
+        $this->post(route('time.employees.store'), ['pay_type' => 'hourly'])->assertSessionHasErrors('user_id');
+        $this->assertSame(4, Employee::query()->count());
+    }
+
+    public function test_time_and_attendance_only_stands_alone_and_needs_no_email(): void
+    {
+        $this->enable();
+
+        $this->actingAs($this->owner)->post(route('time.employees.store'), [
+            'new_user' => ['name' => 'Marco Silva', 'roles' => ['time_only', 'sales']],
+            'pay_type' => 'hourly',
+        ])->assertSessionHasErrors('new_user.roles');
+
+        // Anyone who does more than clock in needs an email to sign in with.
+        $this->post(route('time.employees.store'), [
+            'new_user' => ['name' => 'Marco Silva', 'roles' => ['yard_crew']],
+            'pay_type' => 'hourly',
+        ])->assertSessionHasErrors('new_user.email');
+        $this->assertFalse(User::query()->where('name', 'Marco Silva')->exists());
+
+        $this->post(route('time.employees.store'), [
+            'new_user' => ['name' => 'Marco Silva', 'roles' => ['time_only']],
+            'pay_type' => 'hourly',
+            'pin' => '4444',
+        ])->assertSessionHasNoErrors();
+        $marco = User::query()->where('name', 'Marco Silva')->sole();
+
+        // Nothing but their own time, whatever's granted on them.
+        $marco->forceFill(['permissions' => ['override_credit' => true]])->save();
+        $this->assertSame([], $marco->refresh()->permissionList());
+        $this->assertSame('time.self.show', RouteAccess::home($marco));
+        $this->assertFalse(RouteAccess::allowsRoute($marco, 'orders.queue'));
+        $this->assertFalse(RouteAccess::allowsRoute($marco, 'time.kiosk'));
+    }
+
+    public function test_only_people_who_manage_users_add_users_who_sign_in(): void
+    {
+        $this->enable();
+        $accounts = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Accounts]);
+        $accounts->forceFill(['permissions' => ['approve_timesheets' => true]])->save();
+
+        $this->actingAs($accounts)->post(route('time.employees.store'), [
+            'new_user' => ['name' => 'Jess Palmer', 'email' => 'jess@example.com', 'roles' => ['sales']],
+            'pay_type' => 'hourly',
+        ])->assertSessionHasErrors('new_user.roles.0');
+
+        $this->post(route('time.employees.store'), [
+            'new_user' => ['name' => 'Dave Kowalski', 'roles' => ['time_only']],
+            'pay_type' => 'hourly',
+        ])->assertSessionHasNoErrors();
+    }
+
+    public function test_a_home_yard_is_one_they_work(): void
+    {
+        $this->enable();
+        $other = Location::factory()->create(['tenant_id' => $this->tenant->id, 'name' => 'Stoney Creek']);
+        $this->owen->setYards([$this->yard->id]);
+        $owen = $this->employee($this->owen);
+
+        $this->actingAs($this->owner)->put(route('time.employees.update', $owen), ['location_id' => $other->id, 'pay_type' => 'hourly'])
+            ->assertSessionHasErrors('location_id');
+        $this->put(route('time.employees.update', $owen), ['location_id' => $this->yard->id, 'pay_type' => 'hourly'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame($this->yard->id, $owen->refresh()->location_id);
+
+        // The owner works every yard.
+        $this->put(route('time.employees.update', $this->employee($this->owner)), ['location_id' => $other->id, 'pay_type' => 'salaried'])
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_deactivating_a_user_ends_their_employment_and_keeps_their_hours(): void
+    {
+        $this->enable();
+        $this->punch($this->owen, PunchType::In, '2026-10-19 07:00');
+        $this->punch($this->owen, PunchType::Out, '2026-10-19 15:00');
+        $employee = $this->employee($this->owen);
+
+        $this->actingAs($this->owner)->delete(route('users.destroy', $this->owen))->assertRedirect();
+
+        // Still on file, with their name, but they can't sign in or clock in.
+        $this->assertNotNull(User::query()->withoutGlobalScope(User::ACTIVE)->find($this->owen->id)?->deactivated_at);
+        $this->assertNull(User::query()->find($this->owen->id));
+        $employee->refresh();
+        $this->assertNotNull($employee->archived_at);
+        $this->assertSame('Owen Bakker', $employee->name);
+        $this->assertSame(2, TimePunch::query()->where('employee_id', $employee->id)->count());
+
+        $this->get(route('time.timesheets.show', $employee))->assertOk();
+        $this->post(route('logout'));
+        $this->post(route('login'), ['email' => $this->owen->email, 'password' => 'password']);
+        $this->assertGuest();
+
+        // Bringing them back brings back their user.
+        $this->actingAs($this->owner)->post(route('time.employees.restore', $employee))->assertSessionHasNoErrors();
+        $this->assertNull($this->owen->refresh()->deactivated_at);
+        $this->assertNull($employee->refresh()->archived_at);
+    }
+
+    public function test_ending_employment_keeps_their_user(): void
+    {
+        $this->enable();
+
+        $this->actingAs($this->owner)->post(route('time.employees.archive', $this->employee($this->owen)))->assertSessionHasNoErrors();
+
+        $this->assertNotNull($this->employee($this->owen)->archived_at);
+        $this->assertNull($this->owen->refresh()->deactivated_at);
     }
 
     public function test_wrong_pins_lock_the_time_clock_for_a_while(): void

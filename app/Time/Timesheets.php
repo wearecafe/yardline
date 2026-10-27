@@ -42,9 +42,9 @@ class Timesheets
         $withSheets = Timesheet::query()->where('pay_period_id', $period->id)->pluck('employee_id');
 
         return Employee::query()
-            ->with('user:id,name,role', 'location:id,name')
+            ->with('location:id,name')
             ->where(fn ($q) => $q->where(fn ($q) => $q->whereNull('archived_at')->where('tracks_time', true))->orWhereIn('id', $withSheets))
-            ->orderBy('name')
+            ->orderByName()
             ->get();
     }
 

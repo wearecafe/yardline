@@ -157,7 +157,8 @@ class RolesAndPermissionsTest extends TestCase
 
         $this->get(route('roles.edit'))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('settings/roles')
-            ->has('roles', count(UserRole::cases())));
+            // Time & attendance only has nothing to set.
+            ->has('roles', count(UserRole::cases()) - 1));
 
         $this->put(route('roles.update'), [
             'role_permissions' => ['sales' => ['set_manual_prices']],

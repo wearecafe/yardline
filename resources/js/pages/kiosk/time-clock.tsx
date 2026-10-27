@@ -9,7 +9,6 @@ import type { ClockStateValue, PunchKind } from '@/types/time';
 type Person = {
     id: number;
     name: string;
-    job_title: string | null;
     yard_id: number | null;
     has_pin: boolean;
     state: ClockStateValue;
