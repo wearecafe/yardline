@@ -1,7 +1,7 @@
 ---
 title: The audit log
 summary: See who changed orders, prices and credit terms, and when.
-order: 6
+order: 7
 related: getting-started/staff-and-roles
 ---
 

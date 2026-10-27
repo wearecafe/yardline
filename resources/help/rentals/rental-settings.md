@@ -26,3 +26,5 @@ When **Text reminders** is ticked on a rental, the customer gets:
 - a pickup reminder the day before,
 - a return reminder at the time you set, and
 - an overdue notice once a day while it's late.
+
+Whatever the rental's **Text reminders** setting, the rental desk at its yard also gets an overdue [alert](/help/getting-started/app-and-alerts) once a day while it's late, on any device where they've turned alerts on.
