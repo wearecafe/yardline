@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Time\Concerns\UsesTime;
 use App\Models\Employee;
 use App\Models\Location;
-use App\Models\Truck;
+use App\Models\TruckAssignment;
 use App\Time\Geofence;
 use App\Time\TimeClock;
 use App\Time\TimeSettings;
@@ -35,7 +35,12 @@ class WhosInController extends Controller
         $today = CarbonImmutable::now($tz)->startOfDay();
         $calculator = TimesheetCalculator::make();
         $threshold = $settings->weeklyOvertimeHours * 60;
-        $trucks = Truck::query()->whereNotNull('driver_id')->get(['id', 'name', 'driver_id']);
+        // The truck each driver has today, from the dispatch board.
+        $trucks = TruckAssignment::query()
+            ->with('truck:id,name')
+            ->where('date', $today->toDateString())
+            ->get()
+            ->mapWithKeys(fn (TruckAssignment $a) => [$a->user_id => $a->truck->name]);
 
         $rows = Employee::query()
             ->tracked()
@@ -67,7 +72,7 @@ class WhosInController extends Controller
                         default => $last->source->label(),
                     },
                     'away' => $last?->geofence === Geofence::OUTSIDE && $status['state'] !== ClockState::Out,
-                    'truck' => $trucks->firstWhere('driver_id', $e->user_id)?->name,
+                    'truck' => $e->user_id !== null ? $trucks->get($e->user_id) : null,
                     'today_minutes' => $day !== null ? $day->regularMinutes + $day->overtimeMinutes : 0,
                     'today_label' => TimesheetCalculator::hours($day !== null ? $day->regularMinutes + $day->overtimeMinutes : 0),
                     'week_minutes' => $weekMinutes,
