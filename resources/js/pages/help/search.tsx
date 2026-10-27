@@ -1,21 +1,43 @@
 import { Link } from '@inertiajs/react';
 import HelpLayout, {
-    articleUrl,
     Crumbs,
     HelpSearch,
     SupportCard,
 } from '@/components/help/help-layout';
-import type {
-    HelpArticleSummary,
-    HelpSharedProps,
-} from '@/components/help/help-layout';
-
-type Result = HelpArticleSummary & { categoryTitle: string; snippet: string };
+import type { HelpSharedProps } from '@/components/help/help-layout';
+import { Marked, resultUrl } from '@/components/help/help-search';
+import type { HelpSearchResult } from '@/components/help/help-search';
 
 type Props = HelpSharedProps & {
     query: string;
-    results: Result[];
+    results: HelpSearchResult[];
 };
+
+function ResultList({ results }: { results: HelpSearchResult[] }) {
+    return (
+        <ul className="mt-4 divide-y rounded-xl border bg-card">
+            {results.map((result) => (
+                <li key={resultUrl(result)}>
+                    <Link
+                        href={resultUrl(result)}
+                        className="group block px-5 py-4 hover:bg-secondary/50"
+                    >
+                        <span className="text-xs text-muted-foreground">
+                            {result.categoryTitle}
+                            {result.section && ` › ${result.section.title}`}
+                        </span>
+                        <span className="mt-0.5 block font-medium group-hover:text-primary">
+                            <Marked parts={result.titleParts} />
+                        </span>
+                        <span className="mt-1 block text-sm text-muted-foreground">
+                            <Marked parts={result.snippetParts} />
+                        </span>
+                    </Link>
+                </li>
+            ))}
+        </ul>
+    );
+}
 
 export default function HelpSearchPage({
     query,
@@ -23,6 +45,9 @@ export default function HelpSearchPage({
     nav,
     supportEmail,
 }: Props) {
+    const complete = results.filter((result) => result.complete);
+    const partial = results.filter((result) => !result.complete);
+
     return (
         <HelpLayout
             title={query ? `“${query}” · Help` : 'Search · Help'}
@@ -38,39 +63,33 @@ export default function HelpSearchPage({
                     ]}
                 />
                 <div className="mt-6">
-                    <HelpSearch key={query} defaultValue={query} size="lg" />
+                    <HelpSearch
+                        key={query}
+                        defaultValue={query}
+                        size="lg"
+                        autoFocus={query === ''}
+                    />
                 </div>
 
                 {query !== '' && (
                     <p className="mt-6 text-sm text-muted-foreground">
                         {results.length === 0
                             ? `No articles match “${query}”. Try fewer or different words.`
-                            : `${results.length} ${results.length === 1 ? 'article' : 'articles'} for “${query}”`}
+                            : complete.length === 0
+                              ? `No articles have all of “${query}”. These have most of it.`
+                              : `${complete.length} ${complete.length === 1 ? 'article' : 'articles'} for “${query}”`}
                     </p>
                 )}
 
-                {results.length > 0 && (
-                    <ul className="mt-4 divide-y rounded-xl border bg-card">
-                        {results.map((result) => (
-                            <li key={articleUrl(result)}>
-                                <Link
-                                    href={articleUrl(result)}
-                                    className="group block px-5 py-4 hover:bg-secondary/50"
-                                >
-                                    <span className="text-xs text-muted-foreground">
-                                        {result.categoryTitle}
-                                    </span>
-                                    <span className="mt-0.5 block font-medium group-hover:text-primary">
-                                        {result.title}
-                                    </span>
-                                    <span className="mt-1 block text-sm text-muted-foreground">
-                                        {result.snippet}
-                                    </span>
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
+                {complete.length > 0 && <ResultList results={complete} />}
+
+                {complete.length > 0 && partial.length > 0 && (
+                    <h2 className="mt-8 text-sm font-medium text-muted-foreground">
+                        Close matches
+                    </h2>
                 )}
+
+                {partial.length > 0 && <ResultList results={partial} />}
 
                 <div className="mt-12">
                     <SupportCard email={supportEmail} />

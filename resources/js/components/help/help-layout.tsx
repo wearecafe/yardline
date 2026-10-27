@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     Clock,
     Boxes,
@@ -15,11 +15,12 @@ import {
     Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useId } from 'react';
 import type { ReactNode } from 'react';
 import AppLogoIcon from '@/components/app-logo-icon';
-import { cn } from '@/lib/utils';
+import { articleUrl, HelpSearch } from '@/components/help/help-search';
 import { dashboard, login } from '@/routes';
+
+export { articleUrl, HelpSearch };
 
 export type HelpNavItem = { slug: string; title: string };
 
@@ -59,60 +60,6 @@ export function CategoryIcon({
     const Icon = icons[name] ?? LifeBuoy;
 
     return <Icon className={className} aria-hidden />;
-}
-
-export function articleUrl(article: { category: string; slug: string }) {
-    return `/help/${article.category}/${article.slug}`;
-}
-
-export function HelpSearch({
-    defaultValue = '',
-    size = 'md',
-}: {
-    defaultValue?: string;
-    size?: 'md' | 'lg';
-}) {
-    const id = useId();
-
-    return (
-        <form
-            action="/help/search"
-            method="get"
-            role="search"
-            className="relative w-full"
-            onSubmit={(event) => {
-                event.preventDefault();
-                const q = new FormData(event.currentTarget).get('q');
-                router.get('/help/search', {
-                    q: typeof q === 'string' ? q : '',
-                });
-            }}
-        >
-            <label htmlFor={id} className="sr-only">
-                Search help articles
-            </label>
-            <Search
-                className={cn(
-                    'pointer-events-none absolute top-1/2 -translate-y-1/2 text-muted-foreground',
-                    size === 'lg' ? 'left-4 size-5' : 'left-3 size-4',
-                )}
-                aria-hidden
-            />
-            <input
-                id={id}
-                name="q"
-                type="search"
-                defaultValue={defaultValue}
-                placeholder="Search for pallet deposits, credit limits, HST…"
-                className={cn(
-                    'w-full rounded-lg border border-input bg-background shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40',
-                    size === 'lg'
-                        ? 'h-14 pr-4 pl-12 text-base'
-                        : 'h-10 pr-3 pl-9 text-sm',
-                )}
-            />
-        </form>
-    );
 }
 
 export function SupportCard({ email }: { email: string | null }) {

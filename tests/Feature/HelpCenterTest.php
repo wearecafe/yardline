@@ -94,6 +94,40 @@ class HelpCenterTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->has('results', 0));
     }
 
+    public function test_search_forgives_typos_and_knows_yard_words(): void
+    {
+        $this->get('/help/search?q=palet+depsoit')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('results.0.slug', 'pallet-deposits')
+                ->where('results.0.complete', true)
+                ->has('results.0.titleParts')
+                ->has('results.0.snippetParts'));
+
+        $this->get('/help/search?q=hst')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('results.0.slug', 'sales-tax'));
+
+        $this->get('/help/search?q=recievables')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('results.0.slug', 'receivables-and-statements'));
+    }
+
+    public function test_suggestions_as_you_type(): void
+    {
+        $this->getJson('/help/suggest?q=pall')
+            ->assertOk()
+            ->assertJsonPath('query', 'pall')
+            ->assertJsonPath('results.0.slug', 'pallet-deposits')
+            ->assertJsonStructure(['results' => [['category', 'slug', 'title', 'categoryTitle', 'titleParts', 'snippetParts', 'section', 'complete']]]);
+
+        $this->assertLessThanOrEqual(6, count($this->getJson('/help/suggest?q=order')->json('results')));
+
+        $this->getJson('/help/suggest?q=')
+            ->assertOk()
+            ->assertJsonPath('results', []);
+    }
+
     public function test_articles_get_heading_anchors_and_callouts(): void
     {
         $dir = storage_path('framework/testing/help-'.uniqid());

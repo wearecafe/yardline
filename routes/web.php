@@ -59,6 +59,7 @@ Route::get('start', [PwaController::class, 'start'])->name('pwa.start');
 Route::controller(HelpController::class)->prefix('help')->name('help.')->group(function () {
     Route::get('/', 'index')->name('index');
     Route::get('search', 'search')->name('search');
+    Route::get('suggest', 'suggest')->middleware('throttle:120,1')->name('suggest');
     Route::get('{category}', 'category')->where('category', '[a-z0-9-]+')->name('category');
     Route::get('{category}/{article}', 'article')->where(['category' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->name('article');
 });

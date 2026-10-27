@@ -88,6 +88,8 @@ class HelpCenter
     /** @var array<string, HelpArticle>|null */
     private ?array $articles = null;
 
+    private ?HelpSearchIndex $index = null;
+
     public function __construct(private readonly ?string $root = null) {}
 
     /**
@@ -161,48 +163,26 @@ class HelpCenter
     }
 
     /**
-     * Articles that mention every word, best matches first: words in the
-     * title count most, then the summary, then the body.
+     * Articles matching the query, best first. See HelpSearchIndex for how
+     * words are matched and ranked.
      *
-     * @return list<array{article: HelpArticle, snippet: string}>
+     * @return list<array{
+     *     article: HelpArticle,
+     *     snippet: string,
+     *     snippetParts: list<array{text: string, hit: bool}>,
+     *     titleParts: list<array{text: string, hit: bool}>,
+     *     section: array{id: string, title: string}|null,
+     *     complete: bool,
+     * }>
      */
     public function search(string $query, int $limit = 20): array
     {
-        $words = array_values(array_filter(preg_split('/\s+/', Str::lower(trim($query))) ?: []));
-
-        if ($words === []) {
-            return [];
-        }
-
-        $scored = [];
-
-        foreach ($this->all() as $article) {
-            $title = Str::lower($article->title);
-            $summary = Str::lower($article->summary);
-            $body = Str::lower($article->text);
-            $score = 0;
-
-            foreach ($words as $word) {
-                $inTitle = str_contains($title, $word);
-                $inSummary = str_contains($summary, $word);
-                $inBody = str_contains($body, $word);
-
-                if (! $inTitle && ! $inSummary && ! $inBody) {
-                    continue 2;
-                }
-
-                $score += ($inTitle ? 10 : 0) + ($inSummary ? 4 : 0) + ($inBody ? 1 : 0);
-            }
-
-            $scored[] = ['score' => $score, 'article' => $article, 'snippet' => $this->snippet($article->text, $words)];
-        }
-
-        usort($scored, fn (array $a, array $b) => $b['score'] <=> $a['score']);
-
-        return array_map(
-            fn (array $row) => ['article' => $row['article'], 'snippet' => $row['snippet']],
-            array_slice($scored, 0, $limit),
+        $this->index ??= new HelpSearchIndex(
+            $this->all(),
+            array_map(fn (array $category) => $category['title'], self::CATEGORIES),
         );
+
+        return $this->index->search($query, $limit);
     }
 
     /**
@@ -276,7 +256,7 @@ class HelpCenter
             order: (int) ($meta['order'] ?? 100),
             popular: in_array(Str::lower($meta['popular'] ?? ''), ['true', 'yes', '1'], true),
             html: $this->callouts($html),
-            text: trim((string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($html)))),
+            text: trim((string) preg_replace('/\s+/u', ' ', html_entity_decode((string) preg_replace('/<[^>]+>/', ' ', $html)))),
             toc: $toc,
             related: array_values(array_filter(array_map('trim', explode(',', $meta['related'] ?? '')))),
         );
@@ -316,29 +296,5 @@ class HelpCenter
             fn (array $m) => '<blockquote class="callout callout-'.Str::slug($m[1]).'"><p><strong>'.$m[1].'</strong>',
             $html,
         );
-    }
-
-    /**
-     * @param  list<string>  $words
-     */
-    private function snippet(string $text, array $words): string
-    {
-        $lower = Str::lower($text);
-        $at = null;
-
-        foreach ($words as $word) {
-            $position = strpos($lower, $word);
-            if ($position !== false) {
-                $at = $at === null ? $position : min($at, $position);
-            }
-        }
-
-        if ($at === null || $at < 60) {
-            return Str::limit($text, 180);
-        }
-
-        $start = (int) strrpos(substr($text, 0, $at - 40), ' ');
-
-        return '…'.Str::limit(ltrim(substr($text, $start)), 180);
     }
 }

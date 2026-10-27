@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Help\HelpArticle;
 use App\Help\HelpCenter;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -75,19 +77,47 @@ class HelpController extends Controller
 
     public function search(Request $request): Response
     {
-        $query = trim((string) $request->string('q'));
-
-        $results = array_map(fn (array $row) => [
-            ...$row['article']->summaryArray(),
-            'categoryTitle' => $this->help->category($row['article']->category)['title'] ?? '',
-            'snippet' => $row['snippet'],
-        ], $this->help->search($query));
+        $query = $this->query($request);
 
         return Inertia::render('help/search', [
             ...$this->shared(),
             'query' => $query,
-            'results' => $results,
+            'results' => $this->results($query, 20),
         ]);
+    }
+
+    /**
+     * Results as you type in the search box: the top few, as JSON.
+     */
+    public function suggest(Request $request): JsonResponse
+    {
+        $query = $this->query($request);
+
+        return response()->json([
+            'query' => $query,
+            'results' => $this->results($query, 6),
+        ]);
+    }
+
+    private function query(Request $request): string
+    {
+        return Str::limit(trim((string) $request->string('q')), 100, '');
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function results(string $query, int $limit): array
+    {
+        return array_map(fn (array $row) => [
+            ...$row['article']->summaryArray(),
+            'categoryTitle' => $this->help->category($row['article']->category)['title'] ?? '',
+            'snippet' => $row['snippet'],
+            'snippetParts' => $row['snippetParts'],
+            'titleParts' => $row['titleParts'],
+            'section' => $row['section'],
+            'complete' => $row['complete'],
+        ], $this->help->search($query, $limit));
     }
 
     /**
