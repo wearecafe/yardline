@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Alerts\StaffAlerts;
 use App\Enums\RentalStatus;
 use App\Models\Rental;
 use App\Models\Tenant;
@@ -21,13 +22,13 @@ class SendRentalReminders extends Command
 
     protected $description = 'Send rental pickup, return and overdue reminders';
 
-    public function handle(RentalNotifier $notifier): int
+    public function handle(RentalNotifier $notifier, StaffAlerts $alerts): int
     {
         $sent = 0;
 
         // Only businesses with the Rentals add-on on.
         foreach (Tenant::query()->where('rentals_enabled', true)->cursor() as $tenant) {
-            $sent += CurrentTenant::run($tenant, function () use ($tenant, $notifier) {
+            $sent += CurrentTenant::run($tenant, function () use ($tenant, $notifier, $alerts) {
                 $settings = RentalSettings::for($tenant);
                 $count = 0;
 
@@ -57,6 +58,8 @@ class SendRentalReminders extends Command
 
                 foreach ($overdue as $rental) {
                     $count += (int) $notifier->send($rental, 'overdue');
+                    // And the rental desk at its yard, on their phones.
+                    $alerts->rentalOverdue($rental);
                 }
 
                 return $count;

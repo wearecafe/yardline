@@ -2,6 +2,7 @@
 
 namespace App\Fulfillment;
 
+use App\Alerts\StaffAlerts;
 use App\Audit\Audit;
 use App\Enums\Permission;
 use App\Enums\ShipmentStatus;
@@ -25,7 +26,10 @@ use Illuminate\Support\Facades\DB;
  */
 class PickingFlow
 {
-    public function __construct(private readonly LoadShipment $load) {}
+    public function __construct(
+        private readonly LoadShipment $load,
+        private readonly StaffAlerts $alerts,
+    ) {}
 
     /**
      * Every line is pulled and staged.
@@ -60,6 +64,10 @@ class PickingFlow
             ])->save();
 
             Audit::record($shipment, 'picked', note: $check ? 'Waiting for a quality check.' : null);
+
+            if ($check) {
+                $this->alerts->checkNeeded($shipment, $user);
+            }
 
             // With the Loaded stage off, a picked load goes straight out.
             if (! $check && ! $settings->stageOn('loaded')) {
@@ -111,11 +119,13 @@ class PickingFlow
         $stage = $this->ensureCanCheck($shipment, $user);
 
         return DB::transaction(function () use ($shipment, $user, $stage, $reason) {
+            $completedBy = $this->completedBy($shipment, $stage);
+
             $shipment->checks()->create([
                 'stage' => $stage,
                 'outcome' => ShipmentCheck::REJECTED,
                 'user_id' => $user->id,
-                'completed_by' => $this->completedBy($shipment, $stage),
+                'completed_by' => $completedBy,
                 'reason' => $reason,
             ]);
 
@@ -132,6 +142,7 @@ class PickingFlow
             ])->save();
 
             Audit::record($shipment, 'check rejected', note: ucfirst($stage).": {$reason}");
+            $this->alerts->checkRejected($shipment, $completedBy, $user, $reason);
 
             return $shipment;
         });

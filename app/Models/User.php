@@ -104,6 +104,16 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
+     * Devices where they turned on alerts.
+     *
+     * @return HasMany<PushSubscription, $this>
+     */
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
+    /**
      * Where this driver's phone has been.
      *
      * @return HasMany<DriverPing, $this>

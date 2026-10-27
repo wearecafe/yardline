@@ -31,6 +31,8 @@ final class RouteAccess
         'user-password.update',
         'user-profile-information.*',
         'appearance.edit',
+        'alerts.*',
+        'pwa.start',
         'password.*',
         'two-factor.*',
         'passkey*',

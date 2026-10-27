@@ -39,6 +39,8 @@ declare module '@inertiajs/core' {
             shareLocation: boolean;
             time: SharedTimeStatus;
             modules: { rentals: boolean };
+            /** Web push: the server key, and whether their roles get alerts. Null when alerts aren't set up here. */
+            push: { key: string; alerts: boolean } | null;
             billing: SharedBilling | null;
             sidebarOpen: boolean;
             [key: string]: unknown;

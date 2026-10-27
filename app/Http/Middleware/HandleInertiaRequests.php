@@ -3,10 +3,12 @@
 namespace App\Http\Middleware;
 
 use App\Access\RouteAccess;
+use App\Alerts\StaffAlerts;
 use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Fulfillment\DriverRun;
 use App\Models\User;
+use App\Notifications\Channels\WebPushChannel;
 use App\Support\Demo;
 use App\Tenancy\CurrentTenant;
 use App\Time\TimeStatus;
@@ -117,6 +119,18 @@ class HandleInertiaRequests extends Middleware
                 ];
             },
             'isDemo' => fn () => Demo::isDemoUser($request->user()),
+            // Web push: the server's public key, so the app can keep this
+            // device's alerts current, and whether this person's roles get
+            // any (null: alerts aren't set up here).
+            'push' => function () use ($request) {
+                $user = $request->user();
+
+                if (! $user instanceof User || $user->tenant_id === null || ! WebPushChannel::configured() || Demo::isCurrentTenant()) {
+                    return null;
+                }
+
+                return ['key' => (string) config('yardline.push.public_key'), 'alerts' => StaffAlerts::for($user) !== []];
+            },
             'portal_flash' => fn () => $request->hasSession() ? $request->session()->get('portal_flash') : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

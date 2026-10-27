@@ -2,6 +2,7 @@
 
 namespace App\Fulfillment;
 
+use App\Alerts\StaffAlerts;
 use App\Enums\ShipmentStatus;
 use App\Enums\StopStatus;
 use App\Models\Order;
@@ -30,6 +31,8 @@ class Dispatch
         }
 
         $scheduled = $truck !== null && $date !== null && $time !== null;
+        $wasTruckId = $stop->truck_id;
+        $wasDate = $stop->date?->toDateString();
 
         $stop->forceFill([
             'truck_id' => $truck?->id,
@@ -38,6 +41,9 @@ class Dispatch
             'duration_minutes' => $minutes ?? $stop->duration_minutes,
             'status' => $stop->status === StopStatus::EnRoute ? StopStatus::EnRoute : ($scheduled ? StopStatus::Scheduled : StopStatus::Unscheduled),
         ])->save();
+
+        // Added to today's run after the day started: tell its driver.
+        app(StaffAlerts::class)->stopScheduled($stop, $wasTruckId, $wasDate);
 
         return $stop;
     }

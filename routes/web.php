@@ -32,6 +32,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductUnitController;
 use App\Http\Controllers\ProfitReportController;
 use App\Http\Controllers\PurchasingController;
+use App\Http\Controllers\PwaController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\ReceivablesController;
 use App\Http\Controllers\ReturnController;
@@ -50,6 +51,9 @@ Route::get('/', fn () => Inertia::render('welcome', [
     'canRegister' => Features::enabled(Features::registration()),
     'pricing' => Plan::catalog(),
 ]))->name('home');
+
+// Where the installed app opens: each person's home screen for their roles.
+Route::get('start', [PwaController::class, 'start'])->name('pwa.start');
 
 // The public help center. Articles are Markdown in resources/help.
 Route::controller(HelpController::class)->prefix('help')->name('help.')->group(function () {

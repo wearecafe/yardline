@@ -1,4 +1,5 @@
 import { usePage } from '@inertiajs/react';
+import { AlertsPrompt } from '@/components/alerts-prompt';
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -23,6 +24,7 @@ export default function AppSidebarLayout({
                     </p>
                 )}
                 <BillingBanner />
+                <AlertsPrompt className="mx-4 mt-4" />
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 {children}
             </AppContent>

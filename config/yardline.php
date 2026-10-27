@@ -65,6 +65,17 @@ return [
     ],
 
     /*
+    | Web push alerts on staff phones and tablets (the installed app). Make a
+    | key pair with `php artisan yardline:push:keys`. With no keys, alerts are
+    | logged instead of sent.
+    */
+    'push' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+        'subject' => env('VAPID_SUBJECT', 'mailto:support@yardrunner.ca'),
+    ],
+
+    /*
     | Where the public help center (/help) sends people who need more help.
     | Leave blank to hide the contact links.
     */

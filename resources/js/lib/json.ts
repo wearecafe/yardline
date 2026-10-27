@@ -41,6 +41,16 @@ export async function getJson<T>(
     return (await response.json()) as T;
 }
 
+/** Laravel's CSRF header, from the XSRF-TOKEN cookie. */
+function xsrfHeader(): Record<string, string> {
+    const token = document.cookie
+        .split('; ')
+        .find((c) => c.startsWith('XSRF-TOKEN='))
+        ?.slice('XSRF-TOKEN='.length);
+
+    return token ? { 'X-XSRF-TOKEN': decodeURIComponent(token) } : {};
+}
+
 /**
  * POST JSON in the background (no page visit), with Laravel's CSRF cookie.
  */
@@ -48,17 +58,24 @@ export async function postJson(
     url: string,
     body: Record<string, unknown>,
 ): Promise<Response> {
-    const token = document.cookie
-        .split('; ')
-        .find((c) => c.startsWith('XSRF-TOKEN='))
-        ?.slice('XSRF-TOKEN='.length);
+    return sendJson('POST', url, body);
+}
 
+/**
+ * Send JSON in the background with any method (no page visit), with
+ * Laravel's CSRF cookie.
+ */
+export async function sendJson(
+    method: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    url: string,
+    body: Record<string, unknown>,
+): Promise<Response> {
     return fetch(url, {
-        method: 'POST',
+        method,
         headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
-            ...(token ? { 'X-XSRF-TOKEN': decodeURIComponent(token) } : {}),
+            ...xsrfHeader(),
         },
         credentials: 'same-origin',
         body: JSON.stringify(body),
