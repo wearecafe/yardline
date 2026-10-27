@@ -361,6 +361,14 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
         </Link>
     ) : null;
 
+    // The trial button repeats at a few decision points down the page.
+    const trialCta =
+        canRegister && !signedIn ? (
+            <Link href={register()} className={ctaPrimary}>
+                Start your free trial
+            </Link>
+        ) : null;
+
     return (
         <>
             <Head title="YardRunner: inventory, orders and rentals for masonry and landscape supply yards" />
@@ -708,6 +716,15 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                                     </tbody>
                                 </table>
                             </div>
+                            {trialCta && (
+                                <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border p-6 sm:px-8">
+                                    <p className="text-sm font-medium">
+                                        See how it compares with your own
+                                        catalogue and accounts.
+                                    </p>
+                                    {trialCta}
+                                </div>
+                            )}
                         </div>
                     </section>
 
@@ -778,6 +795,15 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                                     take your first order.
                                 </StepCard>
                             </ol>
+                            {trialCta && (
+                                <div className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-2">
+                                    {trialCta}
+                                    <p className="text-sm text-muted-foreground">
+                                        {pricing.trial_days} days free with the
+                                        add-ons switched on. No card to start.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </section>
 
@@ -920,16 +946,7 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                         </div>
                     </section>
 
-                    <PricingSection
-                        pricing={pricing}
-                        cta={
-                            canRegister && !signedIn ? (
-                                <Link href={register()} className={ctaPrimary}>
-                                    Start your free trial
-                                </Link>
-                            ) : null
-                        }
-                    />
+                    <PricingSection pricing={pricing} cta={trialCta} />
 
                     {/* FAQ */}
                     <section
