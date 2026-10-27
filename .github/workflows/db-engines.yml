@@ -1,0 +1,58 @@
+name: db-engines
+
+# Temporary: runs the profit report and demo tests on Postgres and MySQL,
+# the databases Laravel Cloud offers, to find the demo's 500.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [pgsql, mysql]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: testing
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testing
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "mysqladmin ping -ppassword" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DB_CONNECTION: ${{ matrix.db }}
+      DB_HOST: 127.0.0.1
+      DB_PORT: ${{ matrix.db == 'pgsql' && '5432' || '3306' }}
+      DB_DATABASE: testing
+      DB_USERNAME: ${{ matrix.db == 'pgsql' && 'postgres' || 'root' }}
+      DB_PASSWORD: password
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+          extensions: pdo_pgsql, pdo_mysql
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - run: composer install --no-interaction --no-progress
+      - run: cp .env.example .env && php artisan key:generate
+      - run: npm install && npm run build
+      - run: php artisan config:clear && php artisan test --compact --filter='ProfitReportTest|DemoYardTest'
