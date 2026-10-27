@@ -204,7 +204,7 @@ class TimesheetCalculator
                         break;
                     }
 
-                    $open->breaks[] = [$punch->punched_at, null];
+                    $open->startBreak($punch->punched_at);
                     $open->punches[] = $punch;
                     break;
 
@@ -214,7 +214,7 @@ class TimesheetCalculator
                         break;
                     }
 
-                    $open->breaks[array_key_last($open->breaks)][1] = $punch->punched_at;
+                    $open->endBreak($punch->punched_at);
                     $open->punches[] = $punch;
                     break;
 
@@ -225,7 +225,7 @@ class TimesheetCalculator
                     }
 
                     if ($open->onBreak()) {
-                        $open->breaks[array_key_last($open->breaks)][1] = $punch->punched_at;
+                        $open->endBreak($punch->punched_at);
                     }
 
                     $open->out = $punch;

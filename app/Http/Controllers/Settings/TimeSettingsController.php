@@ -24,18 +24,31 @@ class TimeSettingsController extends Controller
 {
     public function edit(): Response
     {
-        $options = fn (array $values) => collect($values)->map(fn ($label, $value) => ['value' => (string) $value, 'label' => $label])->values();
-
         return Inertia::render('settings/time', [
             'settings' => TimeSettings::current()->toArray(),
-            'provinces' => $options(TimeSettings::PROVINCES),
+            'provinces' => self::options(TimeSettings::PROVINCES),
             'defaults' => collect(array_keys(TimeSettings::PROVINCES))->mapWithKeys(fn (string $p) => [$p => TimeSettings::forProvince($p)->toArray()]),
-            'frequencies' => $options(TimeSettings::FREQUENCIES),
-            'photoModes' => $options(TimeSettings::PHOTO),
-            'weekdays' => $options(TimeSettings::WEEKDAYS),
+            'frequencies' => self::options(TimeSettings::FREQUENCIES),
+            'photoModes' => self::options(TimeSettings::PHOTO),
+            'weekdays' => self::options(TimeSettings::WEEKDAYS),
             'yards' => Location::query()->orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'latitude', 'longitude', 'geofence_m']),
             'tracked' => Employee::query()->tracked()->count(),
         ]);
+    }
+
+    /**
+     * @param  array<int|string, string>  $values
+     * @return list<array{value: string, label: string}>
+     */
+    private static function options(array $values): array
+    {
+        $options = [];
+
+        foreach ($values as $value => $label) {
+            $options[] = ['value' => (string) $value, 'label' => $label];
+        }
+
+        return $options;
     }
 
     public function update(Request $request): RedirectResponse

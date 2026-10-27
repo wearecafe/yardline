@@ -34,6 +34,27 @@ final class Shift
 
     public function __construct(public TimePunch $in) {}
 
+    public function startBreak(CarbonImmutable $at): void
+    {
+        $this->breaks[] = [$at, null];
+    }
+
+    /**
+     * Ends the break in progress at a time.
+     */
+    public function endBreak(CarbonImmutable $at): void
+    {
+        $breaks = $this->breaks;
+        $last = array_pop($breaks);
+
+        if ($last === null) {
+            return;
+        }
+
+        $breaks[] = [$last[0], $at];
+        $this->breaks = $breaks;
+    }
+
     public function onBreak(): bool
     {
         $last = $this->breaks === [] ? null : $this->breaks[array_key_last($this->breaks)];

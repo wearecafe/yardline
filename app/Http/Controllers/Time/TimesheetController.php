@@ -13,8 +13,8 @@ use App\Models\PayrollExport;
 use App\Models\Timesheet;
 use App\Models\User;
 use App\Time\PayrollExporter;
-use App\Time\Timesheets;
 use App\Time\TimesheetCalculator;
+use App\Time\Timesheets;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -37,10 +37,10 @@ class TimesheetController extends Controller
         $rows = $timesheets->people($period)->map(function (Employee $e) use ($period, $calculator, $sheets, $timesheets) {
             /** @var Timesheet|null $sheet */
             $sheet = $sheets->get($e->id);
-            $approved = $sheet?->isApproved() ?? false;
             $result = $calculator->forPeriod($e, $period);
-            $regular = $approved ? (int) $sheet?->regular_minutes : $result->regularMinutes;
-            $overtime = $approved ? (int) $sheet?->overtime_minutes : $result->overtimeMinutes;
+            $approved = $sheet !== null && $sheet->isApproved();
+            $regular = $sheet !== null && $approved ? (int) $sheet->regular_minutes : $result->regularMinutes;
+            $overtime = $sheet !== null && $approved ? (int) $sheet->overtime_minutes : $result->overtimeMinutes;
             $exceptions = $result->exceptions();
 
             return [

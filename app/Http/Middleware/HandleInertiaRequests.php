@@ -4,8 +4,8 @@ namespace App\Http\Middleware;
 
 use App\Pricing\PricingSettings;
 use App\Support\Demo;
-use App\Time\TimeStatus;
 use App\Tenancy\CurrentTenant;
+use App\Time\TimeStatus;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 

@@ -16,8 +16,8 @@ use App\Models\User;
 use App\Time\Geofence;
 use App\Time\PayPeriods;
 use App\Time\PayrollExporter;
-use App\Time\Timesheets;
 use App\Time\TimeSettings;
+use App\Time\Timesheets;
 use Carbon\CarbonImmutable;
 
 /**
@@ -116,15 +116,15 @@ final class DemoTimeSeeder
      */
     private function history(CarbonImmutable $from, PayPeriod $current): void
     {
-        // [key, start, lunch?, end, source]
+        // [key, start, end, source]
         $plans = [
-            ['owen', '06:45', true, '16:15', PunchSource::Kiosk],
-            ['ryan', '07:00', true, '15:30', PunchSource::Kiosk],
-            ['sam', '06:30', true, '15:00', PunchSource::Driver],
-            ['dave', '07:00', true, '15:30', PunchSource::Kiosk],
-            ['marco', '07:00', true, '15:30', PunchSource::Kiosk],
-            ['priya', '06:45', true, '15:15', PunchSource::Kiosk],
-            ['lisa', '08:30', true, '16:30', PunchSource::Mobile],
+            ['owen', '06:45', '16:15', PunchSource::Kiosk],
+            ['ryan', '07:00', '15:30', PunchSource::Kiosk],
+            ['sam', '06:30', '15:00', PunchSource::Driver],
+            ['dave', '07:00', '15:30', PunchSource::Kiosk],
+            ['marco', '07:00', '15:30', PunchSource::Kiosk],
+            ['priya', '06:45', '15:15', PunchSource::Kiosk],
+            ['lisa', '08:30', '16:30', PunchSource::Mobile],
         ];
 
         $index = 0;
@@ -136,7 +136,7 @@ final class DemoTimeSeeder
                 continue;
             }
 
-            foreach ($plans as $p => [$key, $start, $lunch, $end, $source]) {
+            foreach ($plans as $p => [$key, $start, $end, $source]) {
                 // Saturday mornings: the yard crew and the counter only.
                 if ($day->isSaturday() && ! in_array($key, ['owen', 'ryan', 'dave'], true)) {
                     continue;
@@ -151,7 +151,7 @@ final class DemoTimeSeeder
                 $this->punch($key, PunchType::In, $in, $source);
 
                 // Lunch in the middle of the day, so neither half runs past five hours.
-                if ($lunch && ! $day->isSaturday()) {
+                if (! $day->isSaturday()) {
                     $lunchAt = $in->addSeconds(intdiv($out->getTimestamp() - $in->getTimestamp(), 2))->subMinutes(15);
                     $this->punch($key, PunchType::BreakStart, $lunchAt, $source);
                     $this->punch($key, PunchType::BreakEnd, $lunchAt->addMinutes(30), $source);
