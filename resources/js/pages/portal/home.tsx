@@ -1,10 +1,11 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Truck } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PortalController from '@/actions/App/Http/Controllers/Portal/PortalController';
 import { PortalLayout } from '@/components/yard/portal-layout';
 import { PortalOrderCards } from '@/components/yard/portal-order-cards';
 import { formatMoney } from '@/lib/format';
+import { getJson } from '@/lib/json';
 import { cn } from '@/lib/utils';
 
 type CalcProduct = {
@@ -15,7 +16,16 @@ type CalcProduct = {
     factor: number;
     per_pallet: number | null;
     price_cents: number;
+    rounds?: boolean;
 } | null;
+
+type MixLine = {
+    product_id: number;
+    unit_id: number;
+    unit: string;
+    quantity: number;
+    price_cents: number;
+};
 
 export type PortalOrder = {
     id: number;
@@ -107,18 +117,67 @@ export default function PortalHome({
     const inches = Number(depth) || 0;
     const roundHalf = (n: number) => Math.ceil(n * 2) / 2;
 
+    // Pavers that round come back from the yard as a mix (pallets and
+    // layers) at this account's prices; the rest are worked out here.
+    const roundsPavers = Boolean(calculator.pavers?.rounds);
+    const [paverMix, setPaverMix] = useState<MixLine[]>([]);
+
+    useEffect(() => {
+        if (!roundsPavers || !(sqft > 0)) {
+            setPaverMix([]);
+
+            return;
+        }
+
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => {
+            getJson<{ lines: MixLine[] }>(
+                PortalController.pavers.url(),
+                { area: sqft },
+                controller.signal,
+            )
+                .then((result) => setPaverMix(result.lines))
+                .catch(() => {});
+        }, 300);
+
+        return () => {
+            window.clearTimeout(timer);
+            controller.abort();
+        };
+    }, [roundsPavers, sqft]);
+
+    const pavers = calculator.pavers;
+    const paverRows =
+        pavers && roundsPavers
+            ? paverMix.map((line, i) => ({
+                  product: {
+                      ...pavers,
+                      unit_id: line.unit_id,
+                      unit: line.unit,
+                      price_cents: line.price_cents,
+                  },
+                  label:
+                      i === 0
+                          ? `${pavers.name} (+${Math.round(constants.waste * 100)}% waste)`
+                          : '',
+                  quantity: line.quantity,
+              }))
+            : [];
+
     const rows = [
-        calculator.pavers && {
-            product: calculator.pavers,
-            label: `${calculator.pavers.name} (+${Math.round(constants.waste * 100)}% waste)`,
-            quantity:
-                calculator.pavers.per_pallet && calculator.pavers.factor > 1
-                    ? Math.ceil(
-                          (sqft * (1 + constants.waste)) /
-                              calculator.pavers.factor,
-                      )
-                    : Math.ceil(sqft * (1 + constants.waste)),
-        },
+        ...paverRows,
+        !roundsPavers &&
+            calculator.pavers && {
+                product: calculator.pavers,
+                label: `${calculator.pavers.name} (+${Math.round(constants.waste * 100)}% waste)`,
+                quantity:
+                    calculator.pavers.per_pallet && calculator.pavers.factor > 1
+                        ? Math.ceil(
+                              (sqft * (1 + constants.waste)) /
+                                  calculator.pavers.factor,
+                          )
+                        : Math.ceil(sqft * (1 + constants.waste)),
+            },
         calculator.base && {
             product: calculator.base,
             label: calculator.base.name,
@@ -161,7 +220,9 @@ export default function PortalHome({
                 ? r.quantity === 1
                     ? 'bag'
                     : 'bags'
-                : r.product.unit.toLowerCase();
+                : r.product.unit.includes('(')
+                  ? `${r.product.unit.replace(/\s*\(.*\)$/, '').toLowerCase()}${r.quantity === 1 ? '' : 's'}`
+                  : r.product.unit.toLowerCase();
 
     return (
         <PortalLayout active="home" bookingUrl={bookingUrl}>
@@ -356,7 +417,7 @@ export default function PortalHome({
                         <ul className="grid gap-2">
                             {rows.map((r) => (
                                 <li
-                                    key={r.product.id}
+                                    key={`${r.product.id}-${r.product.unit_id}`}
                                     className="flex justify-between gap-3 border-b border-secondary pb-2 text-sm last:border-0"
                                 >
                                     <span>{r.label}</span>

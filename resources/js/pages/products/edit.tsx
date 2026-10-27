@@ -25,6 +25,8 @@ type Props = {
     categories: string[];
     priceLists: { id: number; name: string }[];
     measures: { value: string; label: string }[];
+    rounding: string;
+    roundingOptions: Option[];
     stock: {
         on_hand: string;
         reorder_point: string | null;
@@ -121,15 +123,20 @@ export default function EditProduct(props: Props) {
                     <div className="flex min-w-0 flex-[999_1_640px] flex-col gap-5">
                         {!isRental && (
                             <ProductUnitsEditor
-                                key={editorUnits
-                                    .map((u) => `${u.id}:${u.price_cents}`)
-                                    .join(',')}
+                                key={`${props.rounding}|${editorUnits
+                                    .map(
+                                        (u) =>
+                                            `${u.id}:${u.price_cents}:${u.sellable}`,
+                                    )
+                                    .join(',')}`}
                                 productId={product.id}
                                 baseUnit={base}
                                 units={editorUnits}
                                 priceLists={priceLists}
                                 measures={measures}
                                 costCents={product.cost_cents}
+                                rounding={props.rounding}
+                                roundingOptions={props.roundingOptions}
                             />
                         )}
                         <ProductForm

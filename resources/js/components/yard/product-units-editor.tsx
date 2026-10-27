@@ -14,6 +14,7 @@ export type EditorUnit = {
     name: string;
     factor: string;
     is_base: boolean;
+    sellable: boolean;
     price_cents: number;
     variant_title: string | null;
     measured_by: string | null;
@@ -28,6 +29,7 @@ type Row = {
     name: string;
     factor: string;
     is_base: boolean;
+    sellable: boolean;
     price: string;
     variant_title: string;
     measured_by: string;
@@ -52,6 +54,8 @@ export function ProductUnitsEditor({
     priceLists,
     measures,
     costCents,
+    rounding,
+    roundingOptions,
 }: {
     productId: number;
     baseUnit: string;
@@ -59,13 +63,17 @@ export function ProductUnitsEditor({
     priceLists: { id: number; name: string }[];
     measures: { value: string; label: string }[];
     costCents: number | null;
+    rounding: string;
+    roundingOptions: { value: string; label: string }[];
 }) {
-    const form = useForm<{ units: Row[] }>({
+    const form = useForm<{ rounding: string; units: Row[] }>({
+        rounding,
         units: units.map((u) => ({
             id: u.id,
             name: u.name,
             factor: trim(u.factor),
             is_base: u.is_base,
+            sellable: u.sellable,
             price: centsToInput(u.price_cents),
             variant_title: u.variant_title ?? '',
             measured_by: u.measured_by ?? '',
@@ -125,14 +133,16 @@ export function ProductUnitsEditor({
                 description={`One product, many ways to sell it. Stock is counted in ${baseUnit.toLowerCase()}s; every sale converts back to it.`}
                 flush
             >
-                <Table minWidth={760}>
+                <Table minWidth={920}>
                     <thead>
                         <tr>
                             <Th>Unit</Th>
                             <Th>Equals</Th>
                             <Th>Shopify variant</Th>
                             <Th>How it's measured</Th>
+                            <Th>For sale</Th>
                             <Th>Sold in steps of</Th>
+                            <Th>Minimum</Th>
                             <Th>Deposit</Th>
                             <Th className="w-10">
                                 <span className="sr-only">Remove</span>
@@ -216,6 +226,19 @@ export function ProductUnitsEditor({
                                     </NativeSelect>
                                 </Td>
                                 <Td>
+                                    <input
+                                        type="checkbox"
+                                        aria-label={`Sell ${row.name || 'this unit'} on its own`}
+                                        className="size-4 rounded border-input accent-foreground"
+                                        checked={row.sellable}
+                                        onChange={(e) =>
+                                            update(i, {
+                                                sellable: e.target.checked,
+                                            })
+                                        }
+                                    />
+                                </Td>
+                                <Td>
                                     <Input
                                         aria-label="Sold in steps of"
                                         inputMode="decimal"
@@ -224,6 +247,20 @@ export function ProductUnitsEditor({
                                         onChange={(e) =>
                                             update(i, {
                                                 increment: e.target.value,
+                                            })
+                                        }
+                                        className="figure w-20"
+                                    />
+                                </Td>
+                                <Td>
+                                    <Input
+                                        aria-label="Minimum"
+                                        inputMode="decimal"
+                                        placeholder="None"
+                                        value={row.min_quantity}
+                                        onChange={(e) =>
+                                            update(i, {
+                                                min_quantity: e.target.value,
                                             })
                                         }
                                         className="figure w-20"
@@ -267,6 +304,37 @@ export function ProductUnitsEditor({
                         ))}
                     </tbody>
                 </Table>
+                <div className="grid gap-1.5 border-t border-border px-4 py-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:gap-x-3">
+                    <label
+                        htmlFor="quantity_rounding"
+                        className="text-sm font-medium"
+                    >
+                        When a quantity doesn't fit
+                    </label>
+                    <NativeSelect
+                        id="quantity_rounding"
+                        value={form.data.rounding}
+                        onChange={(e) =>
+                            form.setData('rounding', e.target.value)
+                        }
+                        className="w-auto"
+                    >
+                        {roundingOptions.map((o) => (
+                            <option key={o.value} value={o.value}>
+                                {o.label}
+                            </option>
+                        ))}
+                    </NativeSelect>
+                    <p className="text-xs text-muted-foreground sm:col-span-2">
+                        {form.data.rounding === 'off'
+                            ? 'Quantities that aren’t in whole steps of a unit for sale are refused.'
+                            : `Staff are offered the nearest mix of units for sale ${
+                                  form.data.rounding === 'up'
+                                      ? 'at or above'
+                                      : 'at or below'
+                              } what they asked for, e.g. 300 ${baseUnit.toLowerCase()} as pallets plus layers, and accept it before it goes on the order.`}
+                    </p>
+                </div>
                 <div className="border-t border-border px-4 py-3">
                     <Button
                         type="button"
@@ -279,6 +347,7 @@ export function ProductUnitsEditor({
                                     name: '',
                                     factor: '1',
                                     is_base: false,
+                                    sellable: true,
                                     price: '',
                                     variant_title: '',
                                     measured_by: '',
@@ -327,6 +396,11 @@ export function ProductUnitsEditor({
                             <tr key={row.id ?? `new-${i}`}>
                                 <Td className="font-medium">
                                     {row.name || 'New unit'}
+                                    {!row.sellable && (
+                                        <span className="block text-xs font-normal text-muted-foreground">
+                                            Not sold on its own
+                                        </span>
+                                    )}
                                 </Td>
                                 <Td numeric>
                                     <Input

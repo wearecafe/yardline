@@ -316,10 +316,13 @@ export type OrderProduct = Pick<
         id: number;
         name: string;
         is_base: boolean;
+        sellable: boolean;
         factor: string;
         increment: string | null;
         min_quantity: string | null;
         price_cents: number;
         price_source: string;
     }[];
+    default_unit_id: number | null;
+    rounding: 'off' | 'up' | 'down';
 };

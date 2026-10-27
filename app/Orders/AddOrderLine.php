@@ -17,7 +17,13 @@ class AddOrderLine
         private readonly RecalculateOrder $recalculate,
     ) {}
 
-    public function handle(Order $order, Product $product, string|float $quantity, ?int $unitPriceCents = null, ?ProductUnit $unit = null): OrderLine
+    /**
+     * With $round, a quantity that doesn't fit the product's sellable units
+     * goes on as the mix its rounding setting offers (one line per unit),
+     * and the first of those lines is returned. Staff accept the mix first;
+     * see QuantityFit.
+     */
+    public function handle(Order $order, Product $product, string|float $quantity, ?int $unitPriceCents = null, ?ProductUnit $unit = null, bool $round = false): OrderLine
     {
         if (! $order->isDraft()) {
             OrderRules::fail('Only draft orders can be changed.');
@@ -44,7 +50,24 @@ class AddOrderLine
         $unit ??= $product->baseUnit;
 
         if ($unit !== null && ($problem = $unit->quantityProblem($quantity)) !== null) {
-            OrderRules::fail($problem, 'quantity');
+            $fit = $round ? QuantityFit::check($product, $unit, $quantity) : null;
+
+            if ($fit === null || ! $fit->canRound()) {
+                OrderRules::fail($fit?->problem ?? $problem, 'quantity');
+            }
+
+            if ($unitPriceCents !== null) {
+                OrderRules::fail('Rounded lines take their own prices. Change a price once the lines are on the order.', 'unit_price');
+            }
+
+            return DB::transaction(function () use ($order, $product, $fit) {
+                $lines = array_map(
+                    fn (array $line) => $this->handle($order, $product, (string) $line['quantity'], null, $line['unit']),
+                    $fit->lines,
+                );
+
+                return $lines[0];
+            });
         }
 
         return DB::transaction(function () use ($order, $product, $quantity, $unitPriceCents, $unit) {

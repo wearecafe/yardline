@@ -2,9 +2,11 @@
 
 namespace App\Portal;
 
+use App\Enums\QuantityRounding;
 use App\Models\Organization;
 use App\Models\Product;
 use App\Models\ProductUnit;
+use App\Orders\QuantityFit;
 use App\Pricing\PriceResolver;
 
 /**
@@ -45,7 +47,7 @@ class MaterialCalculator
             ->orderBy('id')
             ->first();
 
-        $pavers = Product::query()->with('units')->where('kind', 'sale')->where('is_active', true)->whereLike('name', '%paver%')->whereNotNull('per_pallet')->orderBy('id')->first();
+        $pavers = $this->pavers();
 
         return [
             'pavers' => $this->describe($pavers, $organization, preferPallet: true),
@@ -53,6 +55,37 @@ class MaterialCalculator
             'bedding' => $this->describe($find('screenings', 'bedding sand', 'concrete sand'), $organization),
             'polymeric' => $this->describe($find('Polymeric'), $organization),
         ];
+    }
+
+    /**
+     * The pavers the calculator prices: the first paver sold with pallets.
+     */
+    public function pavers(): ?Product
+    {
+        return Product::query()->with('units')->where('kind', 'sale')->where('is_active', true)->whereLike('name', '%paver%')->whereNotNull('per_pallet')->orderBy('id')->first();
+    }
+
+    /**
+     * Pavers for an area as the product's rounding mix of units, with
+     * waste, at the account's prices. Empty when the area can't be sold.
+     *
+     * @return list<array{product_id: int, unit_id: int, unit: string, quantity: float, price_cents: int}>
+     */
+    public function mix(Product $pavers, float $area, ?Organization $organization): array
+    {
+        $fit = QuantityFit::check($pavers, null, round($area * (1 + self::WASTE), 3));
+
+        $lines = $fit->fits()
+            ? [['unit' => $fit->unit, 'quantity' => $fit->quantity]]
+            : $fit->lines;
+
+        return array_map(fn (array $line) => [
+            'product_id' => $pavers->id,
+            'unit_id' => $line['unit']->id,
+            'unit' => $line['unit']->name,
+            'quantity' => $line['quantity'],
+            'price_cents' => $this->prices->unitPrice($pavers, $organization, $line['quantity'], $line['unit'])->cents,
+        ], $lines);
     }
 
     /**
@@ -64,9 +97,10 @@ class MaterialCalculator
             return null;
         }
 
+        $sellable = $product->sellableUnits();
         $unit = $preferPallet
-            ? ($product->units->first(fn (ProductUnit $u) => str_contains(strtolower($u->name), 'pallet')) ?? $product->units->firstWhere('is_base', true))
-            : $product->units->firstWhere('is_base', true);
+            ? ($sellable->first(fn (ProductUnit $u) => str_contains(strtolower($u->name), 'pallet')) ?? $product->defaultSellingUnit())
+            : $product->defaultSellingUnit();
 
         return [
             'id' => $product->id,
@@ -75,6 +109,9 @@ class MaterialCalculator
             'unit' => $unit->name ?? $product->unit->label(),
             'factor' => (float) ($unit->factor ?? 1),
             'per_pallet' => $product->per_pallet !== null ? (float) $product->per_pallet : null,
+            // Pavers that round are priced as a mix of units (pallets and
+            // layers) from mix() as the area changes.
+            'rounds' => $product->quantity_rounding !== QuantityRounding::Off,
             'price_cents' => $this->prices->unitPrice($product, $organization, 1, $unit)->cents,
         ];
     }

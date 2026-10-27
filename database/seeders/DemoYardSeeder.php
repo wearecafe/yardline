@@ -8,6 +8,7 @@ use App\Enums\MaintenanceKind;
 use App\Enums\PaymentTender;
 use App\Enums\PaymentTerms;
 use App\Enums\ProductKind;
+use App\Enums\QuantityRounding;
 use App\Enums\RentalPeriod;
 use App\Enums\RentalTender;
 use App\Enums\Settlement;
@@ -32,6 +33,7 @@ use App\Models\Organization;
 use App\Models\OrganizationLocation;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\ProductUnit;
 use App\Models\PurchaseOrder;
 use App\Models\Rental;
 use App\Models\RentalUnit;
@@ -212,6 +214,7 @@ class DemoYardSeeder extends Seeder
                 $this->rentals();
                 $this->portalActivity();
                 $this->auditHistory();
+                $this->pavers80ByLayer();
             });
         });
 
@@ -219,6 +222,20 @@ class DemoYardSeeder extends Seeder
     }
 
     // ------------------------------------------------------- portal + audit
+
+    /**
+     * The 80 mm pavers sell by the layer or the pallet, never a single
+     * paver: square feet only count stock, and an area that doesn't come
+     * to whole layers rounds up to the next one. Set last, so the older
+     * demo orders that sold them by the square foot could be built.
+     */
+    private function pavers80ByLayer(): void
+    {
+        $pavers = $this->products['PAV-80NT'];
+
+        ProductUnit::query()->where('product_id', $pavers->id)->where('is_base', true)->update(['sellable' => false]);
+        Product::query()->whereKey($pavers->id)->update(['quantity_rounding' => QuantityRounding::Up->value]);
+    }
 
     /**
      * What contractors have done in the portal: a reorder waiting for the
@@ -639,6 +656,10 @@ class DemoYardSeeder extends Seeder
                 ['Bag, 2 cu ft', 0.074, 799, null, 'count', 1, 0],
             ],
             'PAV-60CH' => [['Pallet (115 sq ft)', 115, 59900, 54900, 'count', 1, 0]],
+            'PAV-80NT' => [
+                ['Pallet (90 sq ft)', 90, 52900, 48500, 'count', 1, 0],
+                ['Layer (9 sq ft)', 9, 5490, 4990, 'count', 1, 0],
+            ],
             'WAL-STD' => [['Pallet (48 blocks)', 48, 59900, 53900, 'count', 1, 0]],
         ];
 

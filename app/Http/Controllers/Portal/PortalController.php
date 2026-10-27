@@ -32,6 +32,7 @@ use App\Tenancy\TenantRule;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -181,6 +182,20 @@ class PortalController extends Controller
         return to_route('portal.order', $draft)->with('portal_flash', "Sent to the yard as {$draft->number}. We'll confirm it with you.");
     }
 
+    /**
+     * Pavers for an area, as the mix of units the product rounds to.
+     */
+    public function pavers(Request $request, MaterialCalculator $calculator): JsonResponse
+    {
+        $customer = $this->customer($request);
+        $data = $request->validate(['area' => ['required', 'numeric', 'gt:0', 'max:100000']]);
+        $pavers = $calculator->pavers();
+
+        return response()->json([
+            'lines' => $pavers !== null ? $calculator->mix($pavers, (float) $data['area'], $customer->organization) : [],
+        ]);
+    }
+
     public function statement(Request $request, Statement $statement): Response
     {
         $org = $this->customer($request)->organization;
@@ -258,7 +273,10 @@ class PortalController extends Controller
             ], $staff);
 
             foreach ($lines as $line) {
-                app(AddOrderLine::class)->handle($order, $line['product'], $line['quantity'], null, $line['unit']);
+                // A unit no longer sold on its own (or a quantity that no
+                // longer fits) is rounded by the product's setting; the
+                // counter sees the lines before confirming the draft.
+                app(AddOrderLine::class)->handle($order, $line['product'], $line['quantity'], null, $line['unit'], round: true);
             }
 
             return $order->refresh();

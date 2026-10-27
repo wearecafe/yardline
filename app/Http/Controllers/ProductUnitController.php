@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuantityRounding;
 use App\Models\PriceList;
 use App\Models\PriceListItem;
 use App\Models\Product;
 use App\Models\ProductUnit;
 use App\Orders\OrderRules;
+use App\Orders\QuantityFit;
 use App\Support\Money;
+use App\Tenancy\TenantRule;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,8 +27,10 @@ class ProductUnitController extends Controller
     public function sync(Request $request, Product $product): RedirectResponse
     {
         $data = $request->validate([
+            'rounding' => ['nullable', Rule::enum(QuantityRounding::class)],
             'units' => ['required', 'array', 'min:1', 'max:20'],
             'units.*.id' => ['nullable', 'integer'],
+            'units.*.sellable' => ['boolean'],
             'units.*.name' => ['required', 'string', 'max:60', 'distinct:ignore_case'],
             'units.*.factor' => ['required', 'numeric', 'gt:0', 'max:1000000'],
             'units.*.price' => ['required', 'numeric', 'min:0', 'max:9999999'],
@@ -36,6 +42,10 @@ class ProductUnitController extends Controller
             'units.*.tiers' => ['array'],
             'units.*.tiers.*' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
         ]);
+
+        if (! collect($data['units'])->contains(fn (array $row) => (bool) ($row['sellable'] ?? true))) {
+            OrderRules::fail('Leave at least one unit for sale.', 'units');
+        }
 
         $existing = $product->units()->get()->keyBy('id');
         $priceLists = PriceList::query()->pluck('id')->all();
@@ -55,6 +65,7 @@ class ProductUnitController extends Controller
                 $unit->fill([
                     'name' => $row['name'],
                     'factor' => $isBase ? 1 : $row['factor'],
+                    'sellable' => (bool) ($row['sellable'] ?? true),
                     'price_cents' => (int) Money::parse($row['price']),
                     'variant_title' => $row['variant_title'] ?? null,
                     'measured_by' => $row['measured_by'] ?? null,
@@ -86,6 +97,10 @@ class ProductUnitController extends Controller
             }
 
             ProductUnit::query()->whereIn('id', $removed->all())->delete();
+
+            if (isset($data['rounding'])) {
+                $product->forceFill(['quantity_rounding' => $data['rounding']])->save();
+            }
         });
 
         $product->touch(); // pushes the new variants when a commerce channel is connected
@@ -93,6 +108,26 @@ class ProductUnitController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Units and prices saved.']);
 
         return back();
+    }
+
+    /**
+     * Whether a quantity can go on an order as asked, and the rounded mix
+     * of sellable units to offer when it can't.
+     */
+    public function fit(Request $request, Product $product): JsonResponse
+    {
+        $data = $request->validate([
+            'quantity' => ['required', 'numeric', 'min:0.001', 'max:999999'],
+            'product_unit_id' => ['nullable', TenantRule::exists('product_units')],
+        ]);
+
+        $unit = isset($data['product_unit_id']) ? $product->units()->find((int) $data['product_unit_id']) : null;
+
+        if (isset($data['product_unit_id']) && $unit === null) {
+            OrderRules::fail('That unit isn’t one of this product’s selling units.', 'product_unit_id');
+        }
+
+        return response()->json(QuantityFit::check($product, $unit, $data['quantity'])->toArray());
     }
 
     /**

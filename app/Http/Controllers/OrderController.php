@@ -7,6 +7,7 @@ use App\Enums\FulfillmentMethod;
 use App\Enums\OrderType;
 use App\Enums\PaymentTender;
 use App\Enums\ProductKind;
+use App\Enums\QuantityRounding;
 use App\Fulfillment\DeliverySettings;
 use App\Http\Controllers\Settings\AuditController;
 use App\Models\Customer;
@@ -272,13 +273,19 @@ class OrderController extends Controller
             ->pluck('on_hand', 'product_id');
 
         return $products->map(function (Product $product) use ($order, $onHand) {
-            $units = $product->units->map(function (ProductUnit $unit) use ($product, $order) {
+            // Units for sale, plus the base unit as a way to enter an amount
+            // (300 sq ft) when the product rounds to its sellable units.
+            $rounds = $product->quantity_rounding !== QuantityRounding::Off;
+            $offered = $product->units->filter(fn (ProductUnit $unit) => $unit->sellable || ($unit->is_base && $rounds));
+
+            $units = $offered->map(function (ProductUnit $unit) use ($product, $order) {
                 $price = $this->prices->unitPrice($product, $order->organization, 1, $unit);
 
                 return [
                     'id' => $unit->id,
                     'name' => $unit->name,
                     'is_base' => $unit->is_base,
+                    'sellable' => $unit->sellable,
                     'factor' => $unit->factor,
                     'increment' => $unit->increment,
                     'min_quantity' => $unit->min_quantity,
@@ -293,6 +300,8 @@ class OrderController extends Controller
                 'price_cents' => $base['price_cents'] ?? $product->price_cents,
                 'contract_price' => ($base['price_source'] ?? 'list') !== 'list',
                 'units' => $units->all(),
+                'default_unit_id' => $product->defaultSellingUnit()?->id,
+                'rounding' => $product->quantity_rounding->value,
                 'on_hand' => $product->track_inventory ? ($onHand[$product->id] ?? '0.000') : null,
             ];
         })->values()->all();

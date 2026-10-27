@@ -2,10 +2,13 @@ import { Head, router, useForm } from '@inertiajs/react';
 import { Minus, Plus, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import CounterController from '@/actions/App/Http/Controllers/CounterController';
+import ProductUnitController from '@/actions/App/Http/Controllers/ProductUnitController';
 import InputError from '@/components/input-error';
 import { Combobox } from '@/components/yard/combobox';
 import { NativeSelect } from '@/components/yard/field';
 import { PageBody, PageHeader } from '@/components/yard/page-header';
+import { checkFit, RoundingPrompt } from '@/components/yard/rounding-prompt';
+import type { FitResult } from '@/components/yard/rounding-prompt';
 import { ToggleButtons } from '@/components/yard/toggle-buttons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,8 +21,10 @@ type Unit = {
     id: number;
     name: string;
     is_base: boolean;
+    sellable: boolean;
     price_cents: number;
     increment: string | null;
+    min_quantity: string | null;
 };
 type Product = {
     id: number;
@@ -28,6 +33,8 @@ type Product = {
     category: string;
     on_hand: string | null;
     units: Unit[];
+    default_unit_id: number | null;
+    rounding: 'off' | 'up' | 'down';
 };
 type CartLine = {
     key: string;
@@ -79,6 +86,8 @@ export default function Counter({
     const [prices, setPrices] = useState<
         Record<number, { price_cents: number; source: string }>
     >({});
+    // Rounding offers for cart lines that don't fit a unit for sale.
+    const [fits, setFits] = useState<Record<string, FitResult>>({});
 
     const form = useForm<{
         location_id: number;
@@ -148,6 +157,70 @@ export default function Counter({
         return () => controller.abort();
     }, [form.data.organization_id, form.data.lines]);
 
+    // Lines of products that round, entered in an amount that doesn't fit
+    // a unit for sale, get the mix to accept before checkout.
+    useEffect(() => {
+        const pending = form.data.lines.filter((line) => {
+            const product = byId.get(line.product_id);
+            const unit = product?.units.find(
+                (u) => u.id === line.product_unit_id,
+            );
+
+            return (
+                product !== undefined &&
+                product.rounding !== 'off' &&
+                Number(line.quantity) > 0 &&
+                !fitsUnit(unit, Number(line.quantity))
+            );
+        });
+
+        if (pending.length === 0) {
+            setFits({});
+
+            return;
+        }
+
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => {
+            Promise.all(
+                pending.map((line) =>
+                    checkFit(
+                        ProductUnitController.fit.url(line.product_id),
+                        line.quantity,
+                        line.product_unit_id,
+                        controller.signal,
+                    ).then((fit) => [line.key, fit] as const),
+                ),
+            )
+                .then((results) => setFits(Object.fromEntries(results)))
+                .catch(() => {});
+        }, 300);
+
+        return () => {
+            window.clearTimeout(timer);
+            controller.abort();
+        };
+    }, [form.data.lines, byId]);
+
+    function acceptRounding(i: number, fit: FitResult) {
+        const line = form.data.lines[i];
+
+        if (!fit.proposal) {
+            return;
+        }
+
+        form.setData('lines', [
+            ...form.data.lines.slice(0, i),
+            ...fit.proposal.lines.map((rounded, n) => ({
+                key: `${line.key}-${n}`,
+                product_id: line.product_id,
+                product_unit_id: rounded.product_unit_id,
+                quantity: rounded.quantity,
+            })),
+            ...form.data.lines.slice(i + 1),
+        ]);
+    }
+
     function unitOf(line: CartLine): Unit | undefined {
         return byId
             .get(line.product_id)
@@ -159,7 +232,10 @@ export default function Counter({
     }
 
     function add(product: Product) {
-        const base = product.units.find((u) => u.is_base) ?? product.units[0];
+        const base =
+            product.units.find((u) => u.id === product.default_unit_id) ??
+            product.units.find((u) => u.is_base) ??
+            product.units[0];
         const existing = form.data.lines.findIndex(
             (l) => l.product_id === product.id && l.product_unit_id === base.id,
         );
@@ -453,7 +529,9 @@ export default function Counter({
                                                             key={u.id}
                                                             value={u.id}
                                                         >
-                                                            {u.name}
+                                                            {u.sellable
+                                                                ? u.name
+                                                                : `${u.name} (rounds)`}
                                                         </option>
                                                     ))}
                                                 </NativeSelect>
@@ -484,6 +562,29 @@ export default function Counter({
                                                 errors[`lines.${i}.quantity`]
                                             }
                                         />
+                                        {fits[line.key]?.proposal && (
+                                            <RoundingPrompt
+                                                fit={fits[line.key]}
+                                                onAccept={() =>
+                                                    acceptRounding(
+                                                        i,
+                                                        fits[line.key],
+                                                    )
+                                                }
+                                                onCancel={() => setQty(i, '')}
+                                            />
+                                        )}
+                                        {fits[line.key] &&
+                                            !fits[line.key].fits &&
+                                            !fits[line.key].proposal && (
+                                                <InputError
+                                                    message={
+                                                        fits[line.key]
+                                                            .problem ??
+                                                        undefined
+                                                    }
+                                                />
+                                            )}
                                     </li>
                                 );
                             })}
@@ -628,3 +729,28 @@ export default function Counter({
 Counter.layout = {
     breadcrumbs: [{ title: 'Counter', href: CounterController.show.url() }],
 };
+
+/**
+ * Whether a quantity can be sold in a unit as it is: for sale, in whole
+ * steps and at least the minimum. The server checks again at checkout.
+ */
+function fitsUnit(unit: Unit | undefined, quantity: number): boolean {
+    if (!unit || !unit.sellable) {
+        return false;
+    }
+
+    const min = Number(unit.min_quantity ?? 0);
+    const step = Number(unit.increment ?? 0);
+
+    if (min > 0 && quantity + 1e-9 < min) {
+        return false;
+    }
+
+    if (step > 0) {
+        const steps = quantity / step;
+
+        return Math.abs(steps - Math.round(steps)) < 1e-6;
+    }
+
+    return true;
+}
