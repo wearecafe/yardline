@@ -28,6 +28,13 @@ type Props = {
     }[];
     weight_kg: number;
     deposits: { label: string } | null;
+    sign_offs: {
+        id: number;
+        stage: string;
+        outcome: 'signed_off' | 'rejected';
+        by: string | null;
+        at: string;
+    }[];
 };
 
 /**
@@ -39,7 +46,10 @@ export default function PickTicket({
     items,
     weight_kg,
     deposits,
+    sign_offs,
 }: Props) {
+    const checked = sign_offs.filter((c) => c.outcome === 'signed_off');
+
     useEffect(() => {
         const t = setTimeout(() => window.print(), 300);
 
@@ -122,6 +132,16 @@ export default function PickTicket({
                         `Load ≈ ${(weight_kg / 1000).toFixed(1)} t`}
                     {deposits && ` · Deposits ${deposits.label}`}
                 </p>
+                {checked.length > 0 && (
+                    <ul className="mt-4 text-sm">
+                        {checked.map((c) => (
+                            <li key={c.id}>
+                                {c.stage} checked by {c.by ?? 'someone'},{' '}
+                                {formatDateTime(c.at)}
+                            </li>
+                        ))}
+                    </ul>
+                )}
                 <div className="mt-10 grid grid-cols-2 gap-8 text-sm">
                     <div className="border-t border-black pt-1">Picked by</div>
                     <div className="border-t border-black pt-1">Checked by</div>

@@ -283,6 +283,16 @@ export type Order = {
         pod_name: string | null;
         weight_kg: string | null;
         picker: { id: number; name: string } | null;
+        check_stage: 'picked' | 'loaded' | null;
+        checks?: {
+            id: number;
+            stage: 'picked' | 'loaded';
+            outcome: 'signed_off' | 'rejected';
+            reason: string | null;
+            notes: string | null;
+            created_at: string;
+            user: { id: number; name: string } | null;
+        }[];
         lines: {
             id: number;
             quantity: string;

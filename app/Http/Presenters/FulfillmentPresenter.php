@@ -5,9 +5,11 @@ namespace App\Http\Presenters;
 use App\Models\Order;
 use App\Models\OrderLine;
 use App\Models\Shipment;
+use App\Models\ShipmentCheck;
 use App\Models\ShipmentLine;
 use App\Models\StockLevel;
 use App\Models\StockLot;
+use App\Support\Files;
 use App\Support\Money;
 use Illuminate\Support\Collection;
 
@@ -42,7 +44,36 @@ final class FulfillmentPresenter
             'status' => $shipment?->status->value ?? 'new',
             'partial' => $order->fulfillment_status === 'partly_shipped',
             'picker' => $shipment?->picker?->name,
+            'awaiting_check' => match ($shipment?->check_stage) {
+                'picked' => 'Picked',
+                'loaded' => 'Loaded',
+                default => null,
+            },
+            'sent_back' => $shipment !== null && ! $shipment->awaitingCheck() && ! $shipment->isReleased()
+                && $shipment->checks->first()?->outcome === ShipmentCheck::REJECTED,
         ];
+    }
+
+    /**
+     * Who signed off each stage, for the pick ticket and the order.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function signOffs(Shipment $shipment): array
+    {
+        return array_values($shipment->checks
+            ->sortBy('id')
+            ->map(fn (ShipmentCheck $c) => [
+                'id' => $c->id,
+                'stage' => $c->stageLabel(),
+                'outcome' => $c->outcome,
+                'by' => $c->user?->name,
+                'at' => $c->created_at->toIso8601String(),
+                'notes' => $c->notes,
+                'reason' => $c->reason,
+                'photo_url' => Files::url($c->photo_path),
+            ])
+            ->all());
     }
 
     /**

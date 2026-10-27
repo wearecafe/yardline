@@ -4,9 +4,11 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Chip } from '@/components/yard/chip';
-import { Field, NativeSelect } from '@/components/yard/field';
+import { Checkbox, Field, NativeSelect } from '@/components/yard/field';
 
-type Role = 'owner' | 'admin' | 'staff';
+type Role = 'owner' | 'admin' | 'staff' | 'picker';
+
+type Yard = { id: number; name: string };
 
 type UserAccount = {
     id: number;
@@ -16,21 +18,93 @@ type UserAccount = {
     joined: boolean;
     is_you: boolean;
     manageable: boolean;
+    yards: number[];
 };
 
 type Props = {
     users: UserAccount[];
     roles: { value: Role; label: string }[];
+    locations: Yard[];
 };
 
 const roleLabels: Record<Role, string> = {
     owner: 'Owner',
     admin: 'Admin',
     staff: 'Staff',
+    picker: 'Order picker',
 };
 
-function AddUser({ roles }: Pick<Props, 'roles'>) {
-    const form = useForm({ name: '', email: '', role: 'staff' as Role });
+/** Ticks the yards an order picker works. */
+function YardPicker({
+    id,
+    locations,
+    value,
+    onChange,
+}: {
+    id: string;
+    locations: Yard[];
+    value: number[];
+    onChange: (ids: number[]) => void;
+}) {
+    return (
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+            {locations.map((yard) => (
+                <Checkbox
+                    key={yard.id}
+                    id={`${id}-${yard.id}`}
+                    label={yard.name}
+                    checked={value.includes(yard.id)}
+                    onChange={(on) =>
+                        onChange(
+                            on
+                                ? [...value, yard.id]
+                                : value.filter((v) => v !== yard.id),
+                        )
+                    }
+                />
+            ))}
+        </div>
+    );
+}
+
+/** The yards an order picker works. */
+function PickerYards({
+    user,
+    locations,
+}: {
+    user: UserAccount;
+    locations: Yard[];
+}) {
+    return (
+        <div className="grid w-full gap-1.5 rounded-md bg-secondary/50 p-3 text-sm">
+            <span className="font-medium">Yards they pick at</span>
+            <YardPicker
+                id={`yards-${user.id}`}
+                locations={locations}
+                value={user.yards}
+                onChange={(ids) => {
+                    // A picker always works at least one yard.
+                    if (ids.length > 0) {
+                        router.patch(
+                            UserAccountsController.update.url(user.id),
+                            { location_ids: ids },
+                            { preserveScroll: true },
+                        );
+                    }
+                }}
+            />
+        </div>
+    );
+}
+
+function AddUser({ roles, locations }: Pick<Props, 'roles' | 'locations'>) {
+    const form = useForm({
+        name: '',
+        email: '',
+        role: 'staff' as Role,
+        location_ids: locations.map((l) => l.id),
+    });
+    const errors = form.errors as Record<string, string | undefined>;
 
     return (
         <form
@@ -89,11 +163,30 @@ function AddUser({ roles }: Pick<Props, 'roles'>) {
             <Button type="submit" disabled={form.processing}>
                 Add user
             </Button>
+            {form.data.role === 'picker' && (
+                <div className="grid gap-3 sm:col-span-6 sm:grid-cols-6">
+                    <Field
+                        label="Yards they pick at"
+                        htmlFor="user-yards"
+                        error={errors.location_ids}
+                        className="sm:col-span-6"
+                    >
+                        <YardPicker
+                            id="user-yards"
+                            locations={locations}
+                            value={form.data.location_ids}
+                            onChange={(ids) =>
+                                form.setData('location_ids', ids)
+                            }
+                        />
+                    </Field>
+                </div>
+            )}
         </form>
     );
 }
 
-export default function UsersSettings({ users, roles }: Props) {
+export default function UsersSettings({ users, roles, locations }: Props) {
     return (
         <>
             <Head title="Users" />
@@ -104,7 +197,7 @@ export default function UsersSettings({ users, roles }: Props) {
                     <Heading
                         variant="small"
                         title="Users"
-                        description="People who sign in to the yard. Staff work orders, stock and rentals. Admins can also change business settings, credit terms and line prices, and override credit limits. Drivers are added under Drivers."
+                        description="People who sign in to the yard. Staff work orders, stock and rentals. Admins can also change business settings, credit terms and line prices, and override credit limits. Order pickers only see the order queue for their yards, with no prices or payments. They can switch in on a shared yard tablet with their time-clock PIN, set under Employees. Drivers are added under Drivers."
                     />
 
                     <ul className="divide-y divide-border rounded-lg border border-border">
@@ -202,11 +295,17 @@ export default function UsersSettings({ users, roles }: Props) {
                                         {roleLabels[u.role]}
                                     </Chip>
                                 )}
+                                {u.manageable && u.role === 'picker' && (
+                                    <PickerYards
+                                        user={u}
+                                        locations={locations}
+                                    />
+                                )}
                             </li>
                         ))}
                     </ul>
 
-                    <AddUser roles={roles} />
+                    <AddUser roles={roles} locations={locations} />
                 </section>
             </div>
         </>

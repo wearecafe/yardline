@@ -35,6 +35,8 @@ type Props = {
         pod_signature_url: string | null;
         pod_photo_url: string | null;
         pod_notes: string | null;
+        released: boolean;
+        checked: string[];
         stop_id: number | null;
     };
     items: {
@@ -163,6 +165,11 @@ export default function Deliver({ shipment, items, weight_kg }: Props) {
                                     : ''}
                             </p>
                         )}
+                        {shipment.checked.length > 0 && (
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                {shipment.checked.join(' · ')}
+                            </p>
+                        )}
                     </section>
 
                     {done ? (
@@ -192,9 +199,10 @@ export default function Deliver({ shipment, items, weight_kg }: Props) {
                                 </p>
                             )}
                         </section>
-                    ) : shipment.status === 'picking' ? (
+                    ) : !shipment.released ? (
                         <p className="rounded-lg bg-secondary px-3 py-2 text-sm">
-                            This load is still being picked.
+                            This load is still at the yard being picked or
+                            checked.
                         </p>
                     ) : (
                         <form

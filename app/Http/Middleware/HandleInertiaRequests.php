@@ -49,6 +49,8 @@ class HandleInertiaRequests extends Middleware
                     'manageBusiness' => (bool) $request->user()?->canManageBusiness(),
                     'manageUsers' => (bool) $request->user()?->canManageUsers(),
                     'drive' => (bool) $request->user()?->isDriver(),
+                    // Order pickers only work the order queue.
+                    'pick' => (bool) $request->user()?->isPicker(),
                     // Set a price by hand on a product exempt from price lists.
                     'priceExempt' => (bool) $request->user()?->canManageBusiness()
                         && PricingSettings::current()->canPriceExempt($request->user()),

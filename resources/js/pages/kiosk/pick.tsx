@@ -30,20 +30,53 @@ type Props = {
         order_number: string;
         customer: string;
         mode: string;
+        awaiting_check: string | null;
+        released: boolean;
     };
     items: Item[];
     weight_kg: number;
+    next_step: { action: 'picked' | 'load' | 'check'; label: string } | null;
+    sent_back: {
+        stage: string;
+        reason: string | null;
+        by: string | null;
+    } | null;
+    check: { can_check: boolean } | null;
     tolerance: number;
 };
 
 /**
  * The yard picker (yard mockup 4): dark, big targets, one line at a time
- * for a phone in the yard. Weighed material takes a scale reading.
+ * for a phone in the yard. Weighed material takes a scale reading. The
+ * button at the bottom moves the load to the yard's next stage.
  */
-export default function Pick({ shipment, items, tolerance }: Props) {
+export default function Pick({
+    shipment,
+    items,
+    next_step,
+    sent_back,
+    check,
+    tolerance,
+}: Props) {
     const picked = items.filter((i) => i.picked).length;
     const left = items.length - picked;
+    // Lines can only be changed while the load is being picked.
     const loading = shipment.status !== 'picking';
+    const blocked = shipment.status === 'picking' && left > 0;
+
+    function advance() {
+        if (next_step?.action === 'picked') {
+            router.post(
+                FulfillmentController.picked.url(shipment.id),
+                {},
+                { preserveScroll: true },
+            );
+        } else if (next_step?.action === 'load') {
+            router.post(FulfillmentController.load.url(shipment.id), {
+                from_picker: true,
+            });
+        }
+    }
 
     return (
         <>
@@ -70,11 +103,46 @@ export default function Pick({ shipment, items, tolerance }: Props) {
                         </p>
                     </header>
 
-                    {loading && (
+                    {sent_back && (
+                        <div className="rounded-xl bg-[#7f1d1d] p-4 text-sm">
+                            <div className="font-semibold">
+                                Sent back at {sent_back.stage}
+                                {sent_back.by && ` by ${sent_back.by}`}
+                            </div>
+                            {sent_back.reason}
+                        </div>
+                    )}
+
+                    {shipment.awaiting_check && (
+                        <div className="rounded-xl bg-[#292524] p-4 text-sm">
+                            Marked {shipment.awaiting_check.toLowerCase()}.
+                            Waiting for someone to check it before it moves on.
+                            {check?.can_check && (
+                                <Link
+                                    href={FulfillmentController.queue.url({
+                                        query: { card: `s${shipment.id}` },
+                                    })}
+                                    className="mt-2 block font-semibold text-[#fdba74] underline underline-offset-4"
+                                >
+                                    Check it now
+                                </Link>
+                            )}
+                        </div>
+                    )}
+
+                    {shipment.released && (
                         <p className="rounded-xl bg-[#292524] p-4 text-sm">
                             This load has gone. Nothing left to pick.
                         </p>
                     )}
+
+                    {shipment.status === 'picked' &&
+                        !shipment.awaiting_check && (
+                            <p className="rounded-xl bg-[#292524] p-4 text-sm">
+                                Picked and staged. Load it when the truck is
+                                ready.
+                            </p>
+                        )}
 
                     <ol className="flex flex-col gap-3">
                         {items.map((item) => (
@@ -89,24 +157,17 @@ export default function Pick({ shipment, items, tolerance }: Props) {
                     </ol>
                 </div>
 
-                {!loading && (
+                {next_step && next_step.action !== 'check' && (
                     <div className="fixed inset-x-0 bottom-0 bg-[#1c1917]/95 p-4">
                         <button
                             type="button"
-                            disabled={left > 0}
-                            onClick={() =>
-                                router.post(
-                                    FulfillmentController.load.url(shipment.id),
-                                    { from_picker: true },
-                                )
-                            }
+                            disabled={blocked}
+                            onClick={advance}
                             className="mx-auto block h-14 w-full max-w-md rounded-xl bg-[#c2410c] text-lg font-bold text-white disabled:bg-[#44403c] disabled:text-[#a8a29e]"
                         >
-                            {left > 0
-                                ? `${shipment.delivery ? 'Mark loaded' : 'Ready for pickup'} (${left} left)`
-                                : shipment.delivery
-                                  ? 'Mark loaded'
-                                  : 'Ready for pickup'}
+                            {blocked
+                                ? `${next_step.label} (${left} left)`
+                                : next_step.label}
                         </button>
                     </div>
                 )}

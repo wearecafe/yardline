@@ -74,17 +74,35 @@ layer (9 sq ft) or the pallet (90 sq ft) and round up.
 
 ## Yard and delivery
 
-| Feature                                                             | Screens                       | Code                                               |
-| ------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------- |
-| Pick queue, picking with 5% tolerance, bins                         | Orders → Queue, yard kiosk    | `StartPicking`, `RecordPick`                       |
-| Loading shipments onto trucks, partial shipments                    | Kiosk                         | `LoadShipment`                                     |
-| Dispatch board: trucks × hours, rental drops and pallet pickups too | Dispatch                      | `Dispatch`, `DispatchController`                   |
-| Delivery pricing by zone, distance or truckload                     | Settings → Delivery           | `DeliveryPricer`, `DeliverySettings`               |
-| ETA texts                                                           | Dispatch                      | `Dispatch::sendEtas`, `EtaMessage`                 |
-| Proof of delivery (signature, photo)                                | Driver app, deliver screen    | `CompleteShipment`                                 |
-| Driver role: the day's truck run on their phone, nothing else       | `/driver`, Settings → Drivers | `DriverRun`, `DriverController`, `RestrictDrivers` |
-| Truck locations from drivers' phones (kept 30 days)                 | Driver app, Dispatch          | `DriverRun::locate`, `DriverPing`                  |
-| Contractor tracking: stops before yours, truck map when next        | Portal order page             | `DeliveryTracking`                                 |
+| Feature                                                                  | Screens                         | Code                                               |
+| ------------------------------------------------------------------------ | ------------------------------- | -------------------------------------------------- |
+| Pick queue, picking with 5% tolerance, bins                              | Orders → Queue, yard kiosk      | `StartPicking`, `RecordPick`                       |
+| Loading shipments onto trucks, partial shipments                         | Kiosk                           | `LoadShipment`                                     |
+| Stages on/off (Picking, Picked, Loaded, Out), sign-offs at Picked/Loaded | Settings → Order picking, Queue | `PickingSettings`, `PickingFlow`                   |
+| Order picker role: their yards' queue only, no money, PIN switching      | Queue, Settings → Users         | `RestrictPickers`, `PickerSwitchController`        |
+| Dispatch board: trucks × hours, rental drops and pallet pickups too      | Dispatch                        | `Dispatch`, `DispatchController`                   |
+| Delivery pricing by zone, distance or truckload                          | Settings → Delivery             | `DeliveryPricer`, `DeliverySettings`               |
+| ETA texts                                                                | Dispatch                        | `Dispatch::sendEtas`, `EtaMessage`                 |
+| Proof of delivery (signature, photo)                                     | Driver app, deliver screen      | `CompleteShipment`                                 |
+| Driver role: the day's truck run on their phone, nothing else            | `/driver`, Settings → Drivers   | `DriverRun`, `DriverController`, `RestrictDrivers` |
+| Truck locations from drivers' phones (kept 30 days)                      | Driver app, Dispatch            | `DriverRun::locate`, `DriverPing`                  |
+| Contractor tracking: stops before yours, truck map when next             | Portal order page               | `DeliveryTracking`                                 |
+
+### Order picking stages and checks
+
+`tenants.settings['picking']` (`PickingSettings`) says which of Picking,
+Picked, Loaded and Out for delivery a yard uses (New and Delivered /
+Picked up are always on) and whether a sign-off is required at Picked,
+Loaded or both, by which roles, and whether it must be someone other
+than whoever completed the stage. `PickingFlow` moves a shipment through
+the stages that are on and records each check in `shipment_checks`; a
+shipment waiting for one has `check_stage` set. `LoadShipment::release`
+is where stock leaves and a delivery reaches the dispatch board
+(`shipments.released_at`), so it only runs once every required check is
+signed off. A rejection sends the shipment back a stage with the reason.
+With Loaded off, a released delivery waits as `ready` ("Ready for
+dispatch"); with Out off, `Dispatch::enRoute` leaves the shipment as it
+is.
 
 ### Drivers
 
@@ -205,7 +223,8 @@ order and organization pages show their own history.
 ## Users and roles
 
 Every user belongs to one tenant with one role (`UserRole`): `owner`
-(one per business, created at sign-up), `admin`, `staff` or `driver`.
+(one per business, created at sign-up), `admin`, `staff`, `picker`
+(order picker) or `driver`.
 Owners and admins pass `manage-business` (business settings, credit
 terms and overrides, line prices); only the owner passes `manage-users`.
 The owner adds admins and staff under Settings → Users
@@ -213,6 +232,14 @@ The owner adds admins and staff under Settings → Users
 changes and removal, each written to the audit log. The owner, the
 signed-in user and drivers can't be changed there; drivers stay under
 Settings → Drivers.
+
+Order pickers work only the yards ticked for them (`location_user`).
+`RestrictPickers` keeps them to the queue, the picker kiosk, sign-offs
+and their own account; the queue scopes to their yards and leaves out
+prices, payments and balances. On a shared tablet a picker switches in
+with their time-clock PIN (`Employee::checkPin`, via `picker.switch`,
+throttled); only picker accounts can be switched to that way. They keep
+their own time clock (`time.self.*`) and the counter time clock.
 
 ## Integrations
 

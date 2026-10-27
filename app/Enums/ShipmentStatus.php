@@ -5,6 +5,7 @@ namespace App\Enums;
 enum ShipmentStatus: string
 {
     case Picking = 'picking';
+    case Picked = 'picked';       // every line pulled and staged
     case Loaded = 'loaded';       // delivery: on the truck
     case Ready = 'ready';         // pickup: waiting at the yard
     case Out = 'out';             // delivery: truck on its way
@@ -16,6 +17,7 @@ enum ShipmentStatus: string
     {
         return match ($this) {
             self::Picking => 'Picking',
+            self::Picked => 'Picked',
             self::Loaded => 'Loaded',
             self::Ready => 'Ready for pickup',
             self::Out => 'Out for delivery',

@@ -49,7 +49,7 @@ export function StopActions({
         stop.kind === 'delivery' &&
         stop.shipment_id !== null &&
         stop.status !== 'done' &&
-        ['loaded', 'out'].includes(stop.shipment_status ?? '');
+        ['loaded', 'out', 'ready'].includes(stop.shipment_status ?? '');
 
     return (
         <div className={cn('flex flex-wrap gap-2', className)}>

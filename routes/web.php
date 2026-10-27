@@ -21,6 +21,7 @@ use App\Http\Controllers\OrderLineController;
 use App\Http\Controllers\OrganizationContactController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationLocationController;
+use App\Http\Controllers\PickerSwitchController;
 use App\Http\Controllers\Portal\PortalAuthController;
 use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\PriceListCategoryRuleController;
@@ -137,7 +138,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('shipments/{shipment}', [FulfillmentController::class, 'assign'])->name('shipments.assign');
     Route::get('pick/{shipment}', [FulfillmentController::class, 'pick'])->name('shipments.pick');
     Route::post('shipments/{shipment}/lines/{line}', [FulfillmentController::class, 'record'])->scopeBindings()->name('shipments.lines.record');
+    Route::post('shipments/{shipment}/picked', [FulfillmentController::class, 'picked'])->name('shipments.picked');
     Route::post('shipments/{shipment}/load', [FulfillmentController::class, 'load'])->name('shipments.load');
+    Route::post('shipments/{shipment}/sign-off', [FulfillmentController::class, 'signOff'])->name('shipments.sign-off');
+    Route::post('shipments/{shipment}/reject', [FulfillmentController::class, 'reject'])->name('shipments.reject');
+    // A shared yard tablet: an order picker switches in with their PIN.
+    Route::post('picker/switch', PickerSwitchController::class)->middleware('throttle:10,1')->name('picker.switch');
     Route::post('shipments/{shipment}/cancel', [FulfillmentController::class, 'cancel'])->name('shipments.cancel');
     Route::get('shipments/{shipment}/ticket', [FulfillmentController::class, 'ticket'])->name('shipments.ticket');
     Route::get('deliver/{shipment}', [DeliveryController::class, 'show'])->name('shipments.deliver');
