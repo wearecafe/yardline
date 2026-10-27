@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Audit\Audit;
+use App\BackOffice\TenantHealth;
+use App\BackOffice\TenantMetrics;
 use App\Billing\Billing;
 use App\Billing\BillingGateway;
 use App\Billing\BillingState;
 use App\Billing\Plan;
 use App\Billing\Trial;
-use App\BackOffice\TenantHealth;
-use App\BackOffice\TenantMetrics;
 use App\Enums\IntegrationProvider;
 use App\Enums\IntegrationStatus;
 use App\Enums\TenantStatus;

@@ -108,6 +108,7 @@ What yards pay YardRunner runs on the same Stripe account
     secret. (In the dashboard instead: events
     `customer.subscription.created`, `.updated`, `.deleted`, `.paused`
     and `.resumed`.)
+
 3. Set up the customer portal (Settings → Billing → Customer portal):
    allow updating payment methods, billing address and tax IDs, invoice
    history, and cancelling at the end of the period. Turn **off**

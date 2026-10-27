@@ -2,10 +2,10 @@
 
 namespace App\Actions\Fortify;
 
-use App\Concerns\PasswordValidationRules;
-use App\Concerns\ProfileValidationRules;
 use App\Billing\Billing;
 use App\Billing\Trial;
+use App\Concerns\PasswordValidationRules;
+use App\Concerns\ProfileValidationRules;
 use App\Enums\TenantStatus;
 use App\Enums\UserRole;
 use App\Models\Location;

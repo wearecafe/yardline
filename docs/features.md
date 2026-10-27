@@ -317,13 +317,13 @@ Staff must turn on two-factor authentication before `/admin` opens
 users get a 404 there, and staff are sent back to `/admin` from the yard
 screens (`KeepStaffInBackOffice`).
 
-| Screen             | What's on it                                                                                                                | Code                                               |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Overview           | Tenants, trials, MRR, sales and orders across tenants, busiest tenants, what needs attention, growth, module adoption       | `Admin\OverviewController`, `BackOffice\Attention` |
-| Tenants            | Every tenant with status, plan, connections, activity and health; set up a new tenant (emails the owner)                    | `Admin\TenantController`                           |
+| Screen             | What's on it                                                                                                                 | Code                                               |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Overview           | Tenants, trials, MRR, sales and orders across tenants, busiest tenants, what needs attention, growth, module adoption        | `Admin\OverviewController`, `BackOffice\Attention` |
+| Tenants            | Every tenant with status, plan, connections, activity and health; set up a new tenant (emails the owner)                     | `Admin\TenantController`                           |
 | Tenant page        | 30-day activity, integrations, yards, users (send a password link), audit log; subscription, trial end, suspend, staff notes | `Admin\TenantController`                           |
-| Activity reports   | Volume per week, module usage by tenant, engagement and churn risk, retention by signup month                               | `Admin\ReportController`                           |
-| Integration health | Webhooks, QuickBooks connections, open issues, failed jobs (retry or clear)                                                 | `Admin\IntegrationHealthController`                |
+| Activity reports   | Volume per week, module usage by tenant, engagement and churn risk, retention by signup month                                | `Admin\ReportController`                           |
+| Integration health | Webhooks, QuickBooks connections, open issues, failed jobs (retry or clear)                                                  | `Admin\IntegrationHealthController`                |
 
 Figures come from `App\BackOffice\TenantMetrics`, which reads tables
 directly and groups by `tenant_id` (staff have no tenant, so scoped models
@@ -355,15 +355,15 @@ month), plus tax. Amounts and Stripe lookup keys are in
 reads them too. Billed through Stripe Billing on YardRunner's own Stripe
 account, never on a yard's connected account. Code is in `app/Billing`.
 
-| What                                                                            | Where                     | Code                                      |
-| ------------------------------------------------------------------------------- | ------------------------- | ----------------------------------------- |
-| 14-day trial on sign-up (today is day 1); every add-on can be switched on free  | Settings → Billing        | `Trial`, `AddOns`, `BillingController`    |
-| Add payment details in Stripe Checkout; the trial carries over                  | Settings → Billing        | `StripeBillingGateway::checkoutUrl`       |
-| Card, address, invoices and cancelling in Stripe's customer portal              | Settings → Billing        | `StripeBillingGateway::portalUrl`         |
-| Add-on or tracked-people changes update the subscription, prorated              | Billing, Time, Employees  | `Billing::changed`, `SyncSubscription`    |
-| Subscription state copied from Stripe's webhooks                                | `/webhooks/stripe/billing` | `StripeBillingWebhookController`          |
-| Locked when the trial ends unpaid, unpaid after retries, cancelled or suspended | Everywhere                | `BillingState`, `EnsureBilling`           |
-| Rentals screens and the booking page only with the add-on on                    | Rentals                   | `EnsureRentals`                           |
+| What                                                                            | Where                      | Code                                   |
+| ------------------------------------------------------------------------------- | -------------------------- | -------------------------------------- |
+| 14-day trial on sign-up (today is day 1); every add-on can be switched on free  | Settings → Billing         | `Trial`, `AddOns`, `BillingController` |
+| Add payment details in Stripe Checkout; the trial carries over                  | Settings → Billing         | `StripeBillingGateway::checkoutUrl`    |
+| Card, address, invoices and cancelling in Stripe's customer portal              | Settings → Billing         | `StripeBillingGateway::portalUrl`      |
+| Add-on or tracked-people changes update the subscription, prorated              | Billing, Time, Employees   | `Billing::changed`, `SyncSubscription` |
+| Subscription state copied from Stripe's webhooks                                | `/webhooks/stripe/billing` | `StripeBillingWebhookController`       |
+| Locked when the trial ends unpaid, unpaid after retries, cancelled or suspended | Everywhere                 | `BillingState`, `EnsureBilling`        |
+| Rentals screens and the booking page only with the add-on on                    | Rentals                    | `EnsureRentals`                        |
 
 - **Access** is worked out on every request from the trial date and the
   last subscription status Stripe sent (`BillingState`), so a trial ends

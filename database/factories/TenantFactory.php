@@ -20,10 +20,19 @@ class TenantFactory extends Factory
             'slug' => Str::slug($name).'-'.Str::lower(Str::random(4)),
             'currency' => 'CAD',
             'timezone' => 'America/Toronto',
-            'trial_ends_at' => now('America/Toronto')->addDays(13)->toDateString(), // a fresh 14-day trial
+            // In good standing for tests that travel weeks ahead; see freshTrial().
+            'trial_ends_at' => now('America/Toronto')->addYear()->toDateString(),
             // Most tests exercise rentals; new sign-ups start with it off.
             'rentals_enabled' => true,
         ];
+    }
+
+    /**
+     * A tenant on day 1 of the 14-day trial a sign-up gets.
+     */
+    public function freshTrial(): static
+    {
+        return $this->state(fn () => ['trial_ends_at' => now('America/Toronto')->addDays(13)->toDateString()]);
     }
 
     /**

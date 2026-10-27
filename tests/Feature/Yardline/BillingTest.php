@@ -5,6 +5,7 @@ namespace Tests\Feature\Yardline;
 use App\Billing\BillingState;
 use App\Billing\ItemChanges;
 use App\Billing\Plan;
+use App\Billing\Trial;
 use App\Enums\TenantStatus;
 use App\Enums\UserRole;
 use App\Jobs\SyncSubscription;
@@ -50,14 +51,14 @@ class BillingTest extends TestCase
     public function test_signing_up_starts_a_14_day_trial_with_add_ons_off(): void
     {
         $this->post(route('register.store'), [
-            'business_name' => 'Escarpment Stone',
+            'business_name' => 'Niagara Hardscape Depot',
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
         ])->assertRedirect(route('dashboard', absolute: false));
 
-        $tenant = Tenant::query()->where('name', 'Escarpment Stone')->firstOrFail();
+        $tenant = Tenant::query()->where('name', 'Niagara Hardscape Depot')->firstOrFail();
         $state = $tenant->billing();
 
         $this->assertSame(TenantStatus::Trial, $tenant->status);
@@ -89,7 +90,7 @@ class BillingTest extends TestCase
     {
         $this->signInToNewTenant();
         $tenant = $this->tenant();
-        $tenant->forceFill(['rentals_enabled' => false])->save();
+        $tenant->forceFill(['rentals_enabled' => false, 'trial_ends_at' => Trial::endsOn()])->save();
 
         // Off: managers are sent to Billing, the public booking page is gone.
         $this->get(route('fleet.index'))->assertRedirect(route('billing.edit'));
