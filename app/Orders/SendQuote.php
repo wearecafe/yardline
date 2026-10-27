@@ -86,6 +86,7 @@ class SendQuote
                 'line_total_cents' => $line->line_total_cents,
             ])->values()->all(),
             'subtotal_cents' => $order->subtotal_cents,
+            'pallet_fee_cents' => $order->pallet_fee_cents,
             'tax_cents' => $order->tax_cents,
             'deposit_cents' => $order->deposit_cents,
             'total_cents' => $order->total_cents,

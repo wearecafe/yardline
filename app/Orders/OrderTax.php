@@ -32,6 +32,11 @@ final class OrderTax
         foreach ($order->lines as $line) {
             $code = $line->product !== null && ! $line->product->taxable ? TaxLine::NONTAXABLE : $line->product?->tax_code;
             $lines[] = new TaxLine('line_'.$line->id, $line->line_total_cents, $code);
+
+            // The pallet usage fee is taxed the same way as the product it ships with.
+            if ($line->pallet_fee_cents > 0) {
+                $lines[] = new TaxLine('pallet_fee_'.$line->id, $line->pallet_fee_cents, $code);
+            }
         }
 
         if ($order->delivery_fee_cents > 0) {

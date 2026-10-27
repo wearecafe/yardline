@@ -58,6 +58,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property int $tax_cents
  * @property int $total_cents
  * @property int $deposit_cents
+ * @property int $pallet_fee_cents non-refundable pallet usage fees, before tax (in subtotal_cents)
  * @property int $amount_paid_cents
  * @property string|null $tax_calculation_ref
  * @property string|null $tax_transaction_ref
@@ -106,6 +107,7 @@ class Order extends Model
         'tax_cents' => 0,
         'total_cents' => 0,
         'deposit_cents' => 0,
+        'pallet_fee_cents' => 0,
         'amount_paid_cents' => 0,
         'revision' => 0,
         'delivery_fee_cents' => 0,
@@ -127,6 +129,7 @@ class Order extends Model
             'tax_cents' => 'integer',
             'total_cents' => 'integer',
             'deposit_cents' => 'integer',
+            'pallet_fee_cents' => 'integer',
             'amount_paid_cents' => 'integer',
             'rental_starts_at' => 'datetime',
             'rental_ends_at' => 'datetime',

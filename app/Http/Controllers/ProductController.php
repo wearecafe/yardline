@@ -106,6 +106,7 @@ class ProductController extends Controller
             'weight_kg' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             'supplier_name' => ['nullable', 'string', 'max:255'],
             'pallet_deposit' => ['boolean'],
+            'pallet_usage_fee' => ['boolean'],
             'supplier_id' => ['nullable', TenantRule::exists('suppliers')],
             'track_lots' => ['boolean'],
             'per_pallet' => ['nullable', 'numeric', 'gt:0', 'max:1000000'],

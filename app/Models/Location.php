@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * A yard or stocking point.
  *
  * @property bool $pallet_deposits whether this yard charges pallet deposits
+ * @property bool $pallet_usage_fees whether this yard charges pallet usage fees
  * @property int $id
  * @property int $tenant_id
  * @property string $name
@@ -28,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $longitude
  * @property int|null $geofence_m radius for checking phone punches
  */
-#[Fillable(['name', 'code', 'address_line1', 'address_line2', 'city', 'region', 'postal_code', 'country', 'is_default', 'pallet_deposits', 'latitude', 'longitude', 'geofence_m'])]
+#[Fillable(['name', 'code', 'address_line1', 'address_line2', 'city', 'region', 'postal_code', 'country', 'is_default', 'pallet_deposits', 'pallet_usage_fees', 'latitude', 'longitude', 'geofence_m'])]
 class Location extends Model
 {
     /** @use HasFactory<LocationFactory> */
@@ -39,6 +40,7 @@ class Location extends Model
         return [
             'is_default' => 'boolean',
             'pallet_deposits' => 'boolean',
+            'pallet_usage_fees' => 'boolean',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
             'geofence_m' => 'integer',

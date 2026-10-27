@@ -37,6 +37,9 @@ class RecalculateOrder
         $reprice = $order->isDraft() && ! $order->pricesLocked();
         $returns = ReturnsSettings::for($order->tenant);
         $palletFee = $returns->palletDeposits && $order->location->pallet_deposits ? $returns->palletDepositCents : 0;
+        // The non-refundable usage fee. Once prices are fixed, a line keeps
+        // the rate it was charged even if the setting changes later.
+        $usageFee = $returns->palletUsageFees && $order->location->pallet_usage_fees ? $returns->palletUsageFeeCents : 0;
 
         foreach ($order->lines as $line) {
             $line->unit_factor = $line->productUnit !== null ? $line->productUnit->factor : ($line->unit_factor ?: '1');
@@ -59,14 +62,18 @@ class RecalculateOrder
             $line->line_total_cents = Money::extend($line->quantity, $line->unit_price_cents) * $line->periods;
             // Rental deposits per unit; for sales, a container deposit (bulk
             // bags) per unit sold plus a deposit on each pallet it ships on.
-            $line->pallets = $order->isRental() || ! $palletFee ? 0 : $this->pallets($line);
+            $line->pallets = $order->isRental() || ! $palletFee || ! $line->product?->pallet_deposit ? 0 : $this->pallets($line);
             $line->deposit_cents = match (true) {
                 $line->product === null => 0,
                 $order->isRental() => Money::extend($line->quantity, $line->product->deposit_cents),
                 default => Money::extend($line->quantity, $line->productUnit !== null ? $line->productUnit->deposit_cents : 0)
                     + $line->pallets * $palletFee,
             };
+            $feeEach = $reprice || $line->fee_pallets <= 0 ? $usageFee : intdiv($line->pallet_fee_cents, $line->fee_pallets);
+            $line->fee_pallets = $order->isRental() || ! $feeEach || ! $line->product?->pallet_usage_fee ? 0 : $this->pallets($line);
+            $line->pallet_fee_cents = $line->fee_pallets * $feeEach;
             $line->tax_cents = 0;
+            $line->pallet_fee_tax_cents = 0;
         }
 
         // Delivery: priced by zone, distance or truckload unless set by hand.
@@ -90,6 +97,7 @@ class RecalculateOrder
 
             foreach ($order->lines as $line) {
                 $line->tax_cents = $result->forLine('line_'.$line->id);
+                $line->pallet_fee_tax_cents = $result->forLine('pallet_fee_'.$line->id);
             }
 
             $order->tax_cents = $result->totalCents;
@@ -98,7 +106,8 @@ class RecalculateOrder
 
         $order->lines->each->save();
 
-        $order->subtotal_cents = (int) $order->lines->sum('line_total_cents') + $order->delivery_fee_cents;
+        $order->pallet_fee_cents = (int) $order->lines->sum('pallet_fee_cents');
+        $order->subtotal_cents = (int) $order->lines->sum('line_total_cents') + $order->delivery_fee_cents + $order->pallet_fee_cents;
         $order->deposit_cents = (int) $order->lines->sum('deposit_cents');
         $order->total_cents = $order->subtotal_cents + $order->tax_cents;
         $order->save();
@@ -107,13 +116,14 @@ class RecalculateOrder
     }
 
     /**
-     * Pallets a line ships on, for the deposit.
+     * Pallets a line ships on, for the deposit and the usage fee. Each line
+     * counts on its own, so loose layers ship on (and pay for) one more.
      */
     private function pallets(OrderLine $line): int
     {
         $product = $line->product;
 
-        if ($product === null || ! $product->pallet_deposit) {
+        if ($product === null) {
             return 0;
         }
 

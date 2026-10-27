@@ -43,6 +43,8 @@ class QuickBooksPusher
     public const SERVICE_ITEMS = [
         'delivery' => ['Delivery', 'delivery'],
         'deposits' => ['Deposits (pallets and containers)', 'pallet_deposits'],
+        // Non-refundable, so it's sales income, not a liability.
+        'pallet_fee' => ['Pallet usage fee', 'sales'],
         'restocking' => ['Restocking fee', 'restocking'],
         'adjustment' => ['Adjustment', 'adjustments'],
         'waiver' => ['Damage waiver', 'damage_waiver'],
@@ -123,6 +125,14 @@ class QuickBooksPusher
             $lines[] = $this->line($this->productItem($line->product, $line->description), $this->describe($line), $line->line_total_cents, (float) $line->quantity, $code);
             $this->addTax($groups, $code, $line->line_total_cents, $line->tax_cents);
             $lineTax += $line->tax_cents;
+
+            if ($line->pallet_fee_cents > 0) {
+                $feeCode = $line->pallet_fee_tax_cents > 0 || ($taxable && ! $exempt) ? $taxCode : $exemptCode;
+                $feePallets = $line->fee_pallets === 1 ? '1 pallet' : "{$line->fee_pallets} pallets";
+                $lines[] = $this->line($this->serviceItem('pallet_fee'), "Pallet usage fee, {$feePallets} of {$line->description}", $line->pallet_fee_cents, (float) max(1, $line->fee_pallets), $feeCode);
+                $this->addTax($groups, $feeCode, $line->pallet_fee_cents, $line->pallet_fee_tax_cents);
+                $lineTax += $line->pallet_fee_tax_cents;
+            }
         }
 
         if ($order->delivery_fee_cents > 0) {
@@ -302,6 +312,13 @@ class QuickBooksPusher
         if ($credit->kind === 'adjustment' && $credit->lines->isEmpty()) {
             $lines[] = $this->line($this->serviceItem('adjustment'), $credit->reason ?: 'Adjustment', $credit->subtotal_cents, 1, $code);
             $net += $credit->tax_cents > 0 ? $credit->subtotal_cents : 0;
+        }
+
+        if ($credit->pallet_fee_cents > 0) {
+            // The fee was taxed like the goods it came with, so it's credited the same way.
+            $feeTaxed = $credit->tax_cents > 0;
+            $lines[] = $this->line($this->serviceItem('pallet_fee'), 'Pallet usage fee, full pallets returned', $credit->pallet_fee_cents, 1, $feeTaxed ? $code : $exemptCode);
+            $net += $feeTaxed ? $credit->pallet_fee_cents : 0;
         }
 
         if ($credit->deposit_cents > 0) {

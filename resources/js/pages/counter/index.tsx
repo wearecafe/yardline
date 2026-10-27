@@ -613,7 +613,8 @@ export default function Counter({
                             </dd>
                         </dl>
                         <p className="-mt-2 text-xs text-muted-foreground">
-                            Container and pallet deposits are added at checkout.
+                            Container and pallet deposits, and pallet usage
+                            fees, are added at checkout.
                         </p>
 
                         {org && (

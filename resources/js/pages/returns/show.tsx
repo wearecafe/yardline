@@ -26,6 +26,7 @@ type Props = {
         restocking_fee_cents: number;
         tax_cents: number;
         deposit_cents: number;
+        pallet_fee_cents: number;
         total_cents: number;
         applied_cents: number;
         refunded_cents: number;
@@ -184,6 +185,19 @@ export default function CreditNotePage({ credit, openOrders, tenders }: Props) {
                                             −
                                             {formatMoney(
                                                 credit.restocking_fee_cents,
+                                            )}
+                                        </dd>
+                                    </>
+                                )}
+                                {credit.pallet_fee_cents > 0 && (
+                                    <>
+                                        <dt className="text-muted-foreground">
+                                            Pallet usage fees (full pallets
+                                            back)
+                                        </dt>
+                                        <dd className="figure text-right">
+                                            {formatMoney(
+                                                credit.pallet_fee_cents,
                                             )}
                                         </dd>
                                     </>

@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $shipped_quantity in the line's unit
  * @property string $returned_quantity in the line's unit
  * @property int $pallets pallets charged a deposit
+ * @property int $fee_pallets pallets charged a usage fee
  * @property string|null $price_source
  * @property int|null $category_rule_id the price list category rule that priced the line
  * @property int $unit_price_cents
@@ -38,6 +39,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $line_total_cents
  * @property int $tax_cents
  * @property int $deposit_cents
+ * @property int $pallet_fee_cents non-refundable pallet usage fees on the line, before tax
+ * @property int $pallet_fee_tax_cents tax on the pallet usage fees
  * @property int $position
  * @property-read Product|null $product
  * @property-read ProductUnit|null $productUnit
@@ -45,8 +48,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'order_id', 'product_id', 'product_unit_id', 'sku', 'description', 'quantity', 'unit',
-    'unit_factor', 'base_quantity', 'shipped_quantity', 'returned_quantity', 'pallets', 'unit_price_cents', 'unit_cost_cents', 'cost_source', 'list_price_cents', 'periods', 'period_unit', 'price_overridden',
-    'price_source', 'category_rule_id', 'line_total_cents', 'tax_cents', 'deposit_cents', 'position',
+    'unit_factor', 'base_quantity', 'shipped_quantity', 'returned_quantity', 'pallets', 'fee_pallets', 'unit_price_cents', 'unit_cost_cents', 'cost_source', 'list_price_cents', 'periods', 'period_unit', 'price_overridden',
+    'price_source', 'category_rule_id', 'line_total_cents', 'tax_cents', 'deposit_cents', 'pallet_fee_cents', 'pallet_fee_tax_cents', 'position',
 ])]
 class OrderLine extends Model
 {
@@ -64,6 +67,7 @@ class OrderLine extends Model
             'shipped_quantity' => 'decimal:3',
             'returned_quantity' => 'decimal:3',
             'pallets' => 'integer',
+            'fee_pallets' => 'integer',
             'unit_price_cents' => 'integer',
             'unit_cost_cents' => 'decimal:4',
             'list_price_cents' => 'integer',
@@ -72,6 +76,8 @@ class OrderLine extends Model
             'line_total_cents' => 'integer',
             'tax_cents' => 'integer',
             'deposit_cents' => 'integer',
+            'pallet_fee_cents' => 'integer',
+            'pallet_fee_tax_cents' => 'integer',
             'position' => 'integer',
         ];
     }

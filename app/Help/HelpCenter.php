@@ -60,7 +60,7 @@ class HelpCenter
         ],
         'money' => [
             'title' => 'Invoices, payments and returns',
-            'summary' => 'Tax, payments, invoices, statements, returns, credit notes and pallet deposits.',
+            'summary' => 'Tax, payments, invoices, statements, returns, credit notes, pallet deposits and pallet usage fees.',
             'icon' => 'receipt',
         ],
         'rentals' => [

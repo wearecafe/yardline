@@ -28,6 +28,7 @@ type Props = {
             line_total_cents: number;
             deposit_cents: number;
         }[];
+        pallet_fee_cents: number;
         subtotal_cents: number;
         tax_cents: number;
         deposit_cents: number;
@@ -91,6 +92,12 @@ export default function Receipt({ order, change_cents, business }: Props) {
                         </div>
                     </div>
                 ))}
+                {order.pallet_fee_cents > 0 && (
+                    <div className="mb-1 flex justify-between">
+                        <span>Pallet usage fees</span>
+                        <span>{formatMoney(order.pallet_fee_cents)}</span>
+                    </div>
+                )}
                 <div className="my-2 border-t border-dashed border-black" />
                 <div className="flex justify-between">
                     <span>Subtotal</span>

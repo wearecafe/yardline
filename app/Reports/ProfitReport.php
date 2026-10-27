@@ -40,6 +40,7 @@ class ProfitReport
     public const LINES = [
         'goods_sales' => ['Goods sales', 'goods_revenue'],
         'delivery_fees' => ['Delivery fees', 'goods_revenue'],
+        'pallet_fees' => ['Pallet usage fees', 'goods_revenue'],
         'restocking_fees' => ['Restocking fees', 'goods_revenue'],
         'returns' => ['Returns and credits', 'goods_revenue'],
         'rental_charges' => ['Rental charges', 'rental_revenue'],
@@ -84,11 +85,14 @@ class ProfitReport
             $credits = $this->sums($this->credits($f), [
                 'returned' => 'SUM(credit_notes.subtotal_cents)',
                 'fees' => 'SUM(credit_notes.restocking_fee_cents)',
+                'pallet_fees' => 'SUM(credit_notes.pallet_fee_cents)',
             ]);
 
             $lines['goods_sales'] = $sales['sales'];
             $lines['cogs'] = $sales['cost'];
             $lines['delivery_fees'] = $this->sums($this->invoicedOrders($f), ['fees' => 'SUM(orders.delivery_fee_cents)'])['fees'];
+            // Usage fees charged, less those credited when full pallets of product came back.
+            $lines['pallet_fees'] = $this->sums($this->invoicedOrders($f), ['fees' => 'SUM(orders.pallet_fee_cents)'])['fees'] - $credits['pallet_fees'];
             $lines['returns'] = -$credits['returned'];
             $lines['restocking_fees'] = $credits['fees'];
             $lines['returned_to_stock'] = -$this->sums($this->restocked($f), ['cost' => 'SUM(ROUND(credit_note_lines.base_quantity * credit_note_lines.unit_cost_cents))'])['cost'];
@@ -118,7 +122,7 @@ class ProfitReport
 
         $lines['card_fees'] = $goodsFees + $rentalFees;
 
-        $goodsRevenue = $lines['goods_sales'] + $lines['delivery_fees'] + $lines['restocking_fees'] + $lines['returns'];
+        $goodsRevenue = $lines['goods_sales'] + $lines['delivery_fees'] + $lines['pallet_fees'] + $lines['restocking_fees'] + $lines['returns'];
         $goodsCosts = $lines['cogs'] + $lines['returned_to_stock'] + $lines['adjustments'] + $goodsFees;
         $rentalRevenue = $lines['rental_charges'] + $lines['damage_waiver'] + $lines['rental_delivery'] + $lines['rental_extras'];
         $rentalCosts = $lines['maintenance'] + $rentalFees;
@@ -371,6 +375,7 @@ class ProfitReport
         $rows = match ($key) {
             'goods_sales', 'cogs', 'missing' => $goods ? $this->goodsDetail($key, $f, $limit) : [],
             'delivery_fees' => $goods ? $this->deliveryDetail($f, $limit) : [],
+            'pallet_fees' => $goods ? $this->palletFeeDetail($f, $limit) : [],
             'returns', 'restocking_fees' => $goods ? $this->creditDetail($key, $f, $limit) : [],
             'returned_to_stock' => $goods ? $this->restockDetail($f, $limit) : [],
             'adjustments' => $goods && $f->channel === null ? $this->adjustmentDetail($f, $limit) : [],
@@ -578,6 +583,47 @@ class ProfitReport
                 'amount' => (int) $order->delivery_fee_cents,
                 'href' => route('orders.show', $order),
             ])->all());
+    }
+
+    /**
+     * Usage fees on invoices, and those credited back on returns.
+     *
+     * @return list<array{date: string, reference: string, who: string|null, description: string, amount: int, href: string|null}>
+     */
+    private function palletFeeDetail(ProfitFilters $f, int $limit): array
+    {
+        $charged = $this->invoicedOrders($f)
+            ->where('orders.pallet_fee_cents', '>', 0)
+            ->select('orders.*', 'invoices.issued_on as invoice_date', 'invoices.number as invoice_number')
+            ->with(['organization:id,name', 'customer:id,first_name,last_name'])
+            ->orderByDesc('invoices.issued_on')
+            ->limit($limit)
+            ->get()
+            ->map(fn (Order $order) => [
+                'date' => (string) $order->getAttribute('invoice_date'),
+                'reference' => (string) $order->getAttribute('invoice_number'),
+                'who' => $this->who($order),
+                'description' => "Pallet usage fees on {$order->number}",
+                'amount' => (int) $order->pallet_fee_cents,
+                'href' => route('orders.show', $order),
+            ]);
+
+        $credited = $this->credits($f)
+            ->where('pallet_fee_cents', '>', 0)
+            ->with(['organization:id,name', 'customer:id,first_name,last_name'])
+            ->orderByDesc('issued_on')
+            ->limit($limit)
+            ->get()
+            ->map(fn (CreditNote $credit) => [
+                'date' => $credit->issued_on->toDateString(),
+                'reference' => $credit->number,
+                'who' => $credit->organization->name ?? $credit->customer->full_name ?? null,
+                'description' => 'Usage fees credited on full pallets returned',
+                'amount' => -$credit->pallet_fee_cents,
+                'href' => route('credit-notes.show', $credit),
+            ]);
+
+        return array_values([...$charged->all(), ...$credited->all()]);
     }
 
     /**
