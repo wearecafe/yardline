@@ -102,6 +102,18 @@ fields in their `AUDITED` constant, with the staff user (or portal
 customer) and before/after values. Settings → Audit log lists everything;
 order and organization pages show their own history.
 
+## Users and roles
+
+Every user belongs to one tenant with one role (`UserRole`): `owner`
+(one per business, created at sign-up), `admin`, `staff` or `driver`.
+Owners and admins pass `manage-business` (business settings, credit
+terms and overrides, line prices); only the owner passes `manage-users`.
+The owner adds admins and staff under Settings → Users
+(`UserAccountsController`): an emailed link to choose a password, role
+changes and removal, each written to the audit log. The owner, the
+signed-in user and drivers can't be changed there; drivers stay under
+Settings → Drivers.
+
 ## Integrations
 
 - **Shopify** pushes products (one variant per selling unit) and stock.

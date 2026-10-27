@@ -6,6 +6,7 @@ import DriverAccountsController from '@/actions/App/Http/Controllers/Settings/Dr
 import QuickBooksController from '@/actions/App/Http/Controllers/Settings/QuickBooksController';
 import RentalSettingsController from '@/actions/App/Http/Controllers/Settings/RentalSettingsController';
 import ShopifyController from '@/actions/App/Http/Controllers/Settings/ShopifyController';
+import UserAccountsController from '@/actions/App/Http/Controllers/Settings/UserAccountsController';
 import type { PropsWithChildren } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,12 @@ const sidebarNavItems: NavItem[] = [
         icon: null,
     },
 ];
+
+const usersNavItem: NavItem = {
+    title: 'Users',
+    href: UserAccountsController.index(),
+    icon: null,
+};
 
 const businessNavItems: NavItem[] = [
     {
@@ -76,9 +83,12 @@ const businessNavItems: NavItem[] = [
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
     const { auth } = usePage().props;
-    const navItems = auth.can.manageBusiness
-        ? [...sidebarNavItems, ...businessNavItems]
-        : sidebarNavItems;
+    const navItems = [
+        ...sidebarNavItems,
+        ...(auth.can.manageBusiness ? businessNavItems.slice(0, 1) : []),
+        ...(auth.can.manageUsers ? [usersNavItem] : []),
+        ...(auth.can.manageBusiness ? businessNavItems.slice(1) : []),
+    ];
 
     return (
         <div className="px-4 py-6">

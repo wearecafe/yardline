@@ -44,6 +44,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'can' => [
                     'manageBusiness' => (bool) $request->user()?->canManageBusiness(),
+                    'manageUsers' => (bool) $request->user()?->canManageUsers(),
                     'drive' => (bool) $request->user()?->isDriver(),
                 ],
             ],
