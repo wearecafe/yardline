@@ -32,6 +32,7 @@ export function ProductForm({
         deposit: centsToInput(product?.deposit_cents),
         tax_code: product?.tax_code ?? '',
         taxable: product?.taxable ?? true,
+        price_list_exempt: product?.price_list_exempt ?? false,
         weight_kg: product?.weight_kg ? String(Number(product.weight_kg)) : '',
         supplier_name: product?.supplier_name ?? '',
         pallet_deposit: product?.pallet_deposit ?? false,
@@ -260,6 +261,19 @@ export function ProductForm({
                         </Field>
                     )}
                 </div>
+                {!isRental && (
+                    <div className="mt-4">
+                        <Checkbox
+                            id="price_list_exempt"
+                            label="Exempt from price lists"
+                            hint="Always sells at this price. Price lists, contract prices and category discounts don't apply."
+                            checked={form.data.price_list_exempt}
+                            onChange={(checked) =>
+                                form.setData('price_list_exempt', checked)
+                            }
+                        />
+                    </div>
+                )}
                 <Field
                     label="Stripe tax code"
                     htmlFor="tax_code"

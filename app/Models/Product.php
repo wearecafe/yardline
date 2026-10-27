@@ -54,6 +54,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $previous_cost_cents
  * @property CarbonImmutable|null $cost_changed_at
  * @property bool $taxable
+ * @property bool $price_list_exempt always sells at its own price: no price list, contract or category discount
  * @property bool $pallet_deposit
  * @property int|null $supplier_id
  * @property bool $track_lots
@@ -70,7 +71,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'rate_hour_cents', 'rate_half_day_cents', 'rate_week_cents', 'rate_month_cents',
     'rate_weekend_cents', 'minimum_charge_cents', 'fuel_charge_cents', 'cleaning_fee_cents',
     'service_interval_hours', 'service_interval_days', 'use_case', 'bookable_online',
-    'weight_kg', 'supplier_name', 'supplier_id', 'track_lots', 'taxable', 'pallet_deposit', 'per_pallet',
+    'weight_kg', 'supplier_name', 'supplier_id', 'track_lots', 'taxable', 'price_list_exempt', 'pallet_deposit', 'per_pallet',
     'quantity_rounding',
 ])]
 class Product extends Model
@@ -79,7 +80,7 @@ class Product extends Model
     use Audited, BelongsToTenant, HasFactory, SendsToQuickBooks, SyncsWithCommerce;
 
     /** Changes to these are written to the audit log. */
-    public const AUDITED = ['price_cents', 'cost_cents', 'is_active', 'taxable', 'quantity_rounding'];
+    public const AUDITED = ['price_cents', 'cost_cents', 'is_active', 'taxable', 'price_list_exempt', 'quantity_rounding'];
 
     /**
      * @var array<string, mixed>
@@ -95,6 +96,7 @@ class Product extends Model
         'cleaning_fee_cents' => 0,
         'bookable_online' => false,
         'taxable' => true,
+        'price_list_exempt' => false,
         'quantity_rounding' => 'off',
     ];
 
@@ -157,6 +159,7 @@ class Product extends Model
             'previous_cost_cents' => 'integer',
             'cost_changed_at' => 'immutable_datetime',
             'taxable' => 'boolean',
+            'price_list_exempt' => 'boolean',
             'pallet_deposit' => 'boolean',
             'track_lots' => 'boolean',
             'per_pallet' => 'decimal:3',

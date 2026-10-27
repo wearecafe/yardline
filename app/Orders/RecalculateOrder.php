@@ -46,6 +46,7 @@ class RecalculateOrder
                 $resolved = $this->prices->unitPrice($line->product, $order->organization, $line->quantity, $line->productUnit);
                 $line->unit_price_cents = $resolved->cents;
                 $line->price_source = $resolved->source;
+                $line->category_rule_id = $resolved->categoryRuleId;
             }
 
             $period = $order->isRental() ? $line->product?->rental_period : null;

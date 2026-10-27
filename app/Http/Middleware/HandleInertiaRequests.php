@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Pricing\PricingSettings;
 use App\Support\Demo;
 use App\Tenancy\CurrentTenant;
 use Illuminate\Http\Request;
@@ -46,6 +47,9 @@ class HandleInertiaRequests extends Middleware
                     'manageBusiness' => (bool) $request->user()?->canManageBusiness(),
                     'manageUsers' => (bool) $request->user()?->canManageUsers(),
                     'drive' => (bool) $request->user()?->isDriver(),
+                    // Set a price by hand on a product exempt from price lists.
+                    'priceExempt' => (bool) $request->user()?->canManageBusiness()
+                        && PricingSettings::current()->canPriceExempt($request->user()),
                 ],
             ],
             // Drivers' phones share their position while their run is open.

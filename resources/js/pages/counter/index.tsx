@@ -549,8 +549,12 @@ export default function Counter({
                                                     ),
                                                 )}
                                                 {prices[i] &&
-                                                    prices[i].source !==
-                                                        'list' && (
+                                                    ![
+                                                        'list',
+                                                        'exempt',
+                                                    ].includes(
+                                                        prices[i].source,
+                                                    ) && (
                                                         <span className="block text-right text-[11px] text-success">
                                                             account price
                                                         </span>

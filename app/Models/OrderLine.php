@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $returned_quantity in the line's unit
  * @property int $pallets pallets charged a deposit
  * @property string|null $price_source
+ * @property int|null $category_rule_id the price list category rule that priced the line
  * @property int $unit_price_cents
  * @property int $periods
  * @property string|null $period_unit
@@ -42,7 +43,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'order_id', 'product_id', 'product_unit_id', 'sku', 'description', 'quantity', 'unit',
     'unit_factor', 'base_quantity', 'shipped_quantity', 'returned_quantity', 'pallets', 'unit_price_cents', 'periods', 'period_unit', 'price_overridden',
-    'price_source', 'line_total_cents', 'tax_cents', 'deposit_cents', 'position',
+    'price_source', 'category_rule_id', 'line_total_cents', 'tax_cents', 'deposit_cents', 'position',
 ])]
 class OrderLine extends Model
 {

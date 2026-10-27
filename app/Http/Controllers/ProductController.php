@@ -102,6 +102,7 @@ class ProductController extends Controller
             'deposit' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
             'tax_code' => ['nullable', 'string', 'max:50'],
             'taxable' => ['boolean'],
+            'price_list_exempt' => ['boolean'],
             'weight_kg' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             'supplier_name' => ['nullable', 'string', 'max:255'],
             'pallet_deposit' => ['boolean'],
@@ -138,6 +139,7 @@ class ProductController extends Controller
             'cost_cents' => Money::parse($data['cost'] ?? null),
             'deposit_cents' => $isRental ? (Money::parse($data['deposit'] ?? null) ?? 0) : 0,
             'rental_period' => $isRental ? ($data['rental_period'] ?? 'day') : null,
+            'price_list_exempt' => ! $isRental && ($data['price_list_exempt'] ?? false),
         ];
     }
 

@@ -20,6 +20,7 @@ class AuditController extends Controller
         'product' => 'Products',
         'product_unit' => 'Selling units',
         'price_list_item' => 'Price lists',
+        'price_list_category_rule' => 'Category discounts',
         'contract_price' => 'Contract prices',
         'organization' => 'Credit terms',
         'credit_note' => 'Credits',

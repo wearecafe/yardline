@@ -494,6 +494,7 @@ function AddLine({
         product_unit_id: '',
         quantity: '',
         unit_price: '',
+        price_reason: '',
     });
     const [search, setSearch] = useState('');
     const [fit, setFit] = useState<FitResult | null>(null);
@@ -508,7 +509,13 @@ function AddLine({
     const sourceLabel: Record<string, string> = {
         contract: ' (contract price)',
         price_list: ' (price list)',
+        category: ' (category discount)',
+        'volume+category': ' (volume price + category discount)',
+        exempt: ' (exempt from price lists)',
     };
+    const exempt = product?.price_list_exempt ?? false;
+    const canSetPrice =
+        auth.can.manageBusiness && (!exempt || auth.can.priceExempt);
 
     function post(round: boolean) {
         router.post(
@@ -516,7 +523,9 @@ function AddLine({
             {
                 ...form.data,
                 product_unit_id: unit ? String(unit.id) : '',
-                ...(round ? { round: true, unit_price: '' } : {}),
+                ...(round
+                    ? { round: true, unit_price: '', price_reason: '' }
+                    : {}),
             },
             {
                 preserveScroll: true,
@@ -670,14 +679,20 @@ function AddLine({
                 label="Price"
                 htmlFor="unit_price"
                 error={form.errors.unit_price}
-                hint={auth.can.manageBusiness ? 'Optional override' : undefined}
+                hint={
+                    exempt && !canSetPrice
+                        ? 'Exempt from discounts'
+                        : canSetPrice
+                          ? 'Optional override'
+                          : undefined
+                }
             >
                 <Input
                     id="unit_price"
                     inputMode="decimal"
                     placeholder={product ? (price / 100).toFixed(2) : ''}
                     value={form.data.unit_price}
-                    disabled={!auth.can.manageBusiness}
+                    disabled={!canSetPrice}
                     onChange={(e) => form.setData('unit_price', e.target.value)}
                 />
             </Field>
@@ -691,6 +706,25 @@ function AddLine({
                     Add
                 </Button>
             </div>
+            {exempt && canSetPrice && form.data.unit_price !== '' && (
+                <div className="sm:col-span-5">
+                    <Field
+                        label="Reason for changing an exempt product's price"
+                        htmlFor="price_reason"
+                        error={form.errors.price_reason}
+                        hint="Goes in the audit log."
+                    >
+                        <Input
+                            id="price_reason"
+                            value={form.data.price_reason}
+                            onChange={(e) =>
+                                form.setData('price_reason', e.target.value)
+                            }
+                            required
+                        />
+                    </Field>
+                </div>
+            )}
             {fit && (
                 <div className="sm:col-span-5">
                     <RoundingPrompt

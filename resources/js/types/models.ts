@@ -42,6 +42,7 @@ export type Product = {
     use_case?: string | null;
     bookable_online?: boolean;
     taxable?: boolean;
+    price_list_exempt?: boolean;
     weight_kg?: string | null;
     supplier_name?: string | null;
     pallet_deposit?: boolean;
@@ -57,7 +58,18 @@ export type PriceListSummary = {
     name: string;
     description: string | null;
     items_count: number;
+    category_rules_count: number;
     organizations_count: number;
+};
+
+export type CategoryRule = {
+    id: number;
+    category: string;
+    discount_type: 'percent' | 'amount';
+    discount_percent: string | null;
+    discount_cents: number | null;
+    starts_on: string | null;
+    ends_on: string | null;
 };
 
 export type PriceListItem = {
@@ -69,7 +81,10 @@ export type PriceListItem = {
     starts_on: string | null;
     ends_on: string | null;
     unit: { id: number; name: string; price_cents: number } | null;
-    product: Pick<Product, 'id' | 'sku' | 'name' | 'unit' | 'price_cents'>;
+    product: Pick<
+        Product,
+        'id' | 'sku' | 'name' | 'unit' | 'price_cents' | 'price_list_exempt'
+    >;
 };
 
 export type Organization = {
@@ -157,7 +172,15 @@ export type OrderLine = {
     periods: number;
     period_unit: 'day' | 'week' | null;
     price_overridden: boolean;
-    price_source?: 'list' | 'price_list' | 'contract' | 'manual' | null;
+    price_source?:
+        | 'list'
+        | 'exempt'
+        | 'price_list'
+        | 'category'
+        | 'volume+category'
+        | 'contract'
+        | 'manual'
+        | null;
     product_unit_id?: number | null;
     base_quantity?: string | null;
     shipped_quantity?: string;
@@ -311,6 +334,7 @@ export type OrderProduct = Pick<
     | 'track_inventory'
 > & {
     contract_price: boolean;
+    price_list_exempt: boolean;
     on_hand: string | null;
     units: {
         id: number;
