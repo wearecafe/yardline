@@ -63,7 +63,7 @@ class UserAccountsTest extends TestCase
             ->where('users.1.roles', ['admin'])
             ->where('users.1.joined', false)
             ->where('users.1.manageable', true)
-            ->has('roles', 9)
+            ->has('roles', 10)
             ->has('permissions', count(Permission::cases())));
 
         $this->assertTrue(AuditEvent::query()->where('subject_type', 'user')->where('subject_id', $jess->id)->where('event', 'created')->exists());
@@ -221,5 +221,29 @@ class UserAccountsTest extends TestCase
 
         $this->actingAs($sales->refresh());
         $this->get(route('users.index'))->assertOk();
+    }
+
+    public function test_time_and_attendance_only_people_need_no_email(): void
+    {
+        Notification::fake();
+
+        $this->post(route('users.store'), ['name' => 'Dave', 'roles' => ['sales']])->assertSessionHasErrors('email');
+        $this->post(route('users.store'), ['name' => 'Dave', 'roles' => ['time_only', 'yard_crew'], 'email' => 'dave@example.com'])->assertSessionHasErrors('roles');
+
+        $this->post(route('users.store'), ['name' => 'Dave', 'roles' => ['time_only']])->assertSessionHasNoErrors();
+        $dave = User::query()->where('name', 'Dave')->sole();
+        $this->assertNull($dave->email);
+        $this->assertFalse($dave->canSignIn());
+        Notification::assertNothingSent();
+
+        // Giving them more than the time clock takes an email, which invites them.
+        $this->patch(route('users.update', $dave), ['roles' => ['yard_crew']])->assertSessionHasErrors('email');
+        $this->patch(route('users.update', $dave), ['roles' => ['yard_crew'], 'email' => 'dave@example.com'])->assertSessionHasNoErrors();
+        $this->assertSame('dave@example.com', $dave->refresh()->email);
+        $this->assertTrue($dave->hasRole(UserRole::YardCrew));
+        Notification::assertSentTo($dave, UserInviteMessage::class);
+
+        // Once they have one, it's theirs to change.
+        $this->patch(route('users.update', $dave), ['email' => 'other@example.com'])->assertSessionHasErrors('email');
     }
 }

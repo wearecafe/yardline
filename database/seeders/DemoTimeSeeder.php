@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Enums\AdjustmentAction;
 use App\Enums\PunchSource;
 use App\Enums\PunchType;
+use App\Enums\UserRole;
 use App\Http\Controllers\Time\EmployeeController;
 use App\Models\Employee;
 use App\Models\Location;
@@ -19,6 +20,7 @@ use App\Time\PayrollExporter;
 use App\Time\TimeSettings;
 use App\Time\Timesheets;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Str;
 
 /**
  * Time and attendance for the demo yard: who clocks in (sign-ins and
@@ -76,10 +78,10 @@ final class DemoTimeSeeder
         $byUser = fn (string $email) => Employee::query()->where('user_id', $this->users[$email]->id)->firstOrFail();
 
         $setup = [
-            'lisa' => [$byUser('lisa.marchetti@example.com'), ['job_title' => 'Office manager', 'pay_type' => 'salaried', 'overtime_exempt' => true, 'location_id' => $this->waterdown->id, 'payroll_id' => '1002'], null],
-            'ryan' => [$byUser('ryan.tran@example.com'), ['job_title' => 'Counter sales', 'location_id' => $this->waterdown->id, 'payroll_id' => '1003'], '1111'],
-            'owen' => [$byUser('owen.bakker@example.com'), ['job_title' => 'Yard lead', 'location_id' => $this->waterdown->id, 'payroll_id' => '1004'], '2222'],
-            'sam' => [$byUser('sam.rinaldi@example.com'), ['job_title' => 'Driver', 'location_id' => $this->waterdown->id, 'payroll_id' => '1005'], null],
+            'lisa' => [$byUser('lisa.marchetti@example.com'), ['pay_type' => 'salaried', 'overtime_exempt' => true, 'location_id' => $this->waterdown->id, 'payroll_id' => '1002'], null],
+            'ryan' => [$byUser('ryan.tran@example.com'), ['location_id' => $this->waterdown->id, 'payroll_id' => '1003'], '1111'],
+            'owen' => [$byUser('owen.bakker@example.com'), ['location_id' => $this->waterdown->id, 'payroll_id' => '1004'], '2222'],
+            'sam' => [$byUser('sam.rinaldi@example.com'), ['location_id' => $this->waterdown->id, 'payroll_id' => '1005'], null],
         ];
 
         foreach ($setup as $key => [$employee, $attributes, $pin]) {
@@ -89,17 +91,26 @@ final class DemoTimeSeeder
             $this->people[$key] = $employee;
         }
 
-        // Yard hands who only punch at the counter tablet.
+        // Yard hands who only punch at the counter tablet: users with the
+        // Time & attendance only role and no email.
         $hands = [
-            'dave' => ['Dave Kowalski', 'Yard hand', $this->waterdown, '1006', '3333', false],
-            'marco' => ['Marco Silva', 'Yard hand', $this->stoneyCreek, '1007', '4444', false],
-            'priya' => ['Priya Nair', 'Loader operator', $this->stoneyCreek, '1008', '5555', true],
+            'dave' => ['Dave Kowalski', $this->waterdown, '1006', '3333', false],
+            'marco' => ['Marco Silva', $this->stoneyCreek, '1007', '4444', false],
+            'priya' => ['Priya Nair', $this->stoneyCreek, '1008', '5555', true],
         ];
 
-        foreach ($hands as $key => [$name, $job, $yard, $payroll, $pin, $photo]) {
-            $employee = new Employee([
+        foreach ($hands as $key => [$name, $yard, $payroll, $pin, $photo]) {
+            $user = new User([
+                'tenant_id' => $this->tenant->id,
                 'name' => $name,
-                'job_title' => $job,
+                'email' => null,
+                'password' => Str::random(40),
+            ]);
+            $user->setRoles([UserRole::TimeOnly])->save();
+            $user->setYards([$yard->id]);
+
+            $employee = new Employee([
+                'user_id' => $user->id,
                 'location_id' => $yard->id,
                 'payroll_id' => $payroll,
                 'photo_on_punch' => $photo,

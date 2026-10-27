@@ -134,9 +134,10 @@ class BillingTest extends TestCase
         $tenant = $this->tenant();
         $this->put(route('billing.add-ons'), ['time' => true]);
 
-        Employee::query()->create(['name' => 'Owen', 'tracks_time' => true]);
-        Employee::query()->create(['name' => 'Priya', 'tracks_time' => true]);
-        Employee::query()->create(['name' => 'Office cat', 'tracks_time' => false]);
+        foreach (['Owen' => true, 'Priya' => true, 'Office cat' => false] as $name => $tracked) {
+            $user = User::factory()->create(['tenant_id' => $tenant->id, 'name' => $name]);
+            Employee::query()->create(['user_id' => $user->id, 'tracks_time' => $tracked]);
+        }
 
         $tenant->refresh();
         $this->assertSame(2, Plan::for($tenant)->seats);

@@ -213,7 +213,8 @@ class PunchCorrections
     {
         $user = $employee->user;
 
-        if ($user === null || $user->id === $adjustment->user_id) {
+        // Nobody to email for time-clock-only people who never sign in.
+        if ($user->email === null || $user->id === $adjustment->user_id) {
             return;
         }
 

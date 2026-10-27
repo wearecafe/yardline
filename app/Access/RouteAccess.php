@@ -188,6 +188,8 @@ final class RouteAccess
                 'rentals.inspect',
             ],
         ],
+        // Their own time (time.self.*, for everyone) and nothing else.
+        'time_only' => [],
     ];
 
     /**
@@ -203,6 +205,7 @@ final class RouteAccess
         'yard_crew' => 'orders.queue',
         'service_tech' => 'maintenance.index',
         'driver' => 'driver.today',
+        'time_only' => 'time.self.show',
     ];
 
     /** Whether the user may use this request's route. */

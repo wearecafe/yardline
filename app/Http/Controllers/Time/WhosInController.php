@@ -44,8 +44,8 @@ class WhosInController extends Controller
 
         $rows = Employee::query()
             ->tracked()
-            ->with('location:id,name', 'user:id,role')
-            ->orderBy('name')
+            ->with('location:id,name')
+            ->orderByName()
             ->get()
             ->map(function (Employee $e) use ($clock, $calculator, $settings, $today, $now, $tz, $threshold, $trucks) {
                 $status = $clock->status($e, $now);
@@ -58,7 +58,7 @@ class WhosInController extends Controller
                 return [
                     'id' => $e->id,
                     'name' => $e->name,
-                    'job_title' => $e->job_title ?? ($e->user?->isDriver() ? 'Driver' : null),
+                    'role' => $e->roleLabel(),
                     'yard_id' => $e->location_id,
                     'state' => $status['state']->value,
                     'state_label' => $status['state']->label(),
@@ -72,7 +72,7 @@ class WhosInController extends Controller
                         default => $last->source->label(),
                     },
                     'away' => $last?->geofence === Geofence::OUTSIDE && $status['state'] !== ClockState::Out,
-                    'truck' => $e->user_id !== null ? $trucks->get($e->user_id) : null,
+                    'truck' => $trucks->get($e->user_id),
                     'today_minutes' => $day !== null ? $day->regularMinutes + $day->overtimeMinutes : 0,
                     'today_label' => TimesheetCalculator::hours($day !== null ? $day->regularMinutes + $day->overtimeMinutes : 0),
                     'week_minutes' => $weekMinutes,
@@ -95,7 +95,8 @@ class WhosInController extends Controller
                 'out' => $rows->where('state', ClockState::Out->value)->count(),
                 'near_overtime' => $rows->where('near_overtime', true)->count() + $rows->where('overtime', true)->count(),
             ],
-            'unset' => Employee::query()->tracked()->whereNull('pin_hash')->whereNull('user_id')->count(),
+            // Clocking in but no way to: no PIN and no email to sign in with.
+            'unset' => Employee::query()->tracked()->whereNull('pin_hash')->whereHas('user', fn ($q) => $q->whereNull('email'))->count(),
         ]);
     }
 }

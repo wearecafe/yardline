@@ -11,6 +11,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -28,7 +29,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property list<string>|null $roles every role they hold (null: just $role)
  * @property array<string, bool>|null $permissions permissions granted (true) or removed (false) on top of their roles
  * @property string $name
- * @property string $email
+ * @property string|null $email null for Time & attendance only users who never sign in
  * @property string|null $phone
  * @property CarbonImmutable|null $email_verified_at
  * @property string $password
@@ -37,6 +38,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property CarbonImmutable|null $two_factor_confirmed_at
  * @property bool $is_platform_staff
  * @property CarbonImmutable|null $last_seen_at
+ * @property CarbonImmutable|null $deactivated_at no longer works here: can't sign in, hidden everywhere
  * @property string|null $remember_token
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -55,8 +57,16 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         'role' => 'sales',
     ];
 
+    /** The global scope that hides deactivated users. */
+    public const ACTIVE = 'active';
+
     protected static function booted(): void
     {
+        // People who have left can't sign in (their session ends on their
+        // next request) and drop out of every list. Their employee record
+        // keeps their name; see Employee::user().
+        static::addGlobalScope(self::ACTIVE, fn (Builder $query) => $query->whereNull($query->qualifyColumn('deactivated_at')));
+
         // Setting only the main role (a factory, an older call site) means
         // that's the one role they hold.
         static::saving(function (User $user) {
@@ -82,6 +92,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'two_factor_confirmed_at' => 'datetime',
             'is_platform_staff' => 'boolean',
             'last_seen_at' => 'datetime',
+            'deactivated_at' => 'immutable_datetime',
         ];
     }
 
@@ -224,6 +235,11 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             return true;
         }
 
+        // Clocking in is all they do, whatever's been granted on them.
+        if ($this->isTimeOnly()) {
+            return false;
+        }
+
         if ($permission->requires() !== null && ! $this->hasPermission($permission->requires())) {
             return false;
         }
@@ -330,6 +346,18 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function isDriver(): bool
     {
         return $this->hasRole(UserRole::Driver);
+    }
+
+    /** Clocks in and out and nothing else. */
+    public function isTimeOnly(): bool
+    {
+        return $this->hasRole(UserRole::TimeOnly);
+    }
+
+    /** Has an email, so can be invited and sign in. */
+    public function canSignIn(): bool
+    {
+        return $this->email !== null && $this->deactivated_at === null;
     }
 
     /** Holds only the Driver role: their run is all they see. */

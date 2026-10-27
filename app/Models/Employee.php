@@ -10,21 +10,22 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Someone whose hours YardRunner keeps. Linked to a user when they sign
- * in; yard hands who only punch at the counter tablet don't need one.
+ * Someone whose hours YardRunner keeps: the time and payroll side of a
+ * user. Every employee is a user (yard hands who only punch at the counter
+ * tablet hold the Time & attendance only role); not every user is an
+ * employee. Their name is their user's.
  *
  * @property int $id
  * @property int $tenant_id
- * @property int|null $user_id
- * @property int|null $location_id home yard
- * @property string $name
- * @property string|null $job_title
+ * @property int $user_id
+ * @property int|null $location_id home yard, one of the yards their user works
  * @property string $pay_type hourly | salaried
  * @property bool $tracks_time
  * @property bool $overtime_exempt
@@ -35,18 +36,26 @@ use Illuminate\Support\Facades\Hash;
  * @property CarbonImmutable|null $archived_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
- * @property-read User|null $user
+ * @property-read string $name their user's name
+ * @property-read User $user
  * @property-read Location|null $location
  */
-#[Fillable(['user_id', 'location_id', 'name', 'job_title', 'pay_type', 'tracks_time', 'overtime_exempt', 'take_home_truck', 'photo_on_punch', 'payroll_id'])]
+#[Fillable(['user_id', 'location_id', 'pay_type', 'tracks_time', 'overtime_exempt', 'take_home_truck', 'photo_on_punch', 'payroll_id'])]
 #[Hidden(['pin_hash'])]
 class Employee extends Model
 {
     use Audited, BelongsToTenant;
 
-    public const AUDITED = ['name', 'pay_type', 'tracks_time', 'overtime_exempt', 'take_home_truck', 'photo_on_punch', 'payroll_id', 'location_id', 'archived_at'];
+    public const AUDITED = ['pay_type', 'tracks_time', 'overtime_exempt', 'take_home_truck', 'photo_on_punch', 'payroll_id', 'location_id', 'archived_at'];
 
     public const PAY_TYPES = ['hourly' => 'Hourly', 'salaried' => 'Salaried'];
+
+    /**
+     * Their name comes from their user, so the user comes along.
+     *
+     * @var list<string>
+     */
+    protected $with = ['user'];
 
     /**
      * @var array<string, mixed>
@@ -88,6 +97,32 @@ class Employee extends Model
     public function scopeActive(Builder $query): void
     {
         $query->whereNull('archived_at');
+    }
+
+    /**
+     * By their user's name.
+     *
+     * @param  Builder<Employee>  $query
+     */
+    public function scopeOrderByName(Builder $query): void
+    {
+        $query->orderBy(
+            User::query()->withoutGlobalScope(User::ACTIVE)->select('name')->whereColumn('users.id', 'employees.user_id')->limit(1),
+        );
+    }
+
+    /**
+     * @return Attribute<string, never>
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::get(fn () => $this->user->name);
+    }
+
+    /** Their main role, to show beside their name (none for time-only people). */
+    public function roleLabel(): ?string
+    {
+        return $this->user->isTimeOnly() ? null : $this->user->role->label();
     }
 
     /**
@@ -146,7 +181,8 @@ class Employee extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        // Past employees keep their name after their user is deactivated.
+        return $this->belongsTo(User::class)->withoutGlobalScope(User::ACTIVE);
     }
 
     /**

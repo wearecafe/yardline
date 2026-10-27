@@ -238,8 +238,18 @@ confirms them.
 
 An add-on, turned on under Settings → Time (`TimeSettings`, kept in
 `tenants.settings['time']`). Turning it on sets up an `Employee` for
-everyone who signs in; yard hands who only use the counter tablet are
-employees with no user. Rules live in `app/Time`.
+everyone who signs in. Rules live in `app/Time`.
+
+Every employee is a user (`employees.user_id` is required, one per
+user); not every user is an employee. An employee's name is their
+user's (`Employee::name`), and YardRunner keeps no job titles: roles say
+what someone does. Team → Employees picks a user who isn't set up yet or
+adds a new one (name, email, roles, yards) in the same form; people
+without Manage users and roles can only add Time & attendance only
+users there. The home yard has to be one of the user's yards. Yard hands
+who only punch at the counter tablet hold the `time_only` role with no
+email. "End employment" archives the employee and leaves the user;
+deactivating the user archives the employee too.
 
 | Feature                                                                   | Screens                    | Code                                 |
 | ------------------------------------------------------------------------- | -------------------------- | ------------------------------------ |
@@ -282,7 +292,7 @@ order and organization pages show their own history.
 Every user belongs to one tenant and holds one or more job-based roles
 (`UserRole`): `owner` (one per business, created at sign-up), `admin`,
 `sales`, `rental_desk`, `yard_crew`, `dispatcher`, `driver`,
-`purchasing`, `accounts` and `service_tech`. `users.roles` lists them
+`purchasing`, `accounts`, `service_tech` and `time_only`. `users.roles` lists them
 (null means just `users.role`); `users.role` is the highest, kept for
 sorting and owner lookups. Older values read through
 `UserRole::fromValue`: `staff` is Sales and `picker` is Yard crew (the
@@ -333,10 +343,25 @@ cancellation that refunds; above the limit someone with Refund above
 limit approves with their password or time-clock PIN, and
 `RefundApproval::record` logs both names.
 
-**Managing people.** Settings → Users (`UserAccountsController`) adds
-people with roles, yards and permissions, changes them and removes them,
-each in the audit log. Nobody manages the owner, themselves, or people
-who only drive (Settings → Drivers lists everyone holding Driver).
+**Time & attendance only.** `time_only` clocks in and out and nothing
+else: it can't be held with another role, gives no permissions (even
+ones granted on the person) and no refunds, isn't on Settings → Roles,
+and reaches only the person's own time (`time.self.*`). It's the one role
+that can go without an email (`users.email` is nullable); without one,
+the person never signs in and punches at the counter tablet with their
+PIN. Giving them another role needs an email, which sends the invite.
+
+**Managing people.** Settings → Users (`UserAccountsController`, with
+`UserAccounts` shared with Team → Employees) adds people with roles,
+yards and permissions, changes them and removes them, each in the audit
+log. Removing someone with an employee record deactivates them instead
+(`users.deactivated_at`, `UserAccounts::deactivate`): they can't sign in,
+a global scope (`User::ACTIVE`) drops them from every list and ends
+their session, their employee record is archived, and their hours keep
+their name. Bringing the employee back reactivates the user (anyone who
+signs in needs Manage users and roles for that). Nobody manages the
+owner, themselves, or people who only drive (Settings → Drivers lists
+everyone holding Driver).
 
 **Shared devices.** Yard crew, Drivers and Service techs switch in on a
 shared tablet with their time-clock PIN (`picker.switch`,
@@ -513,6 +538,7 @@ remove an item when it ships.
 | Rental rates hidden from Service techs       | Users and roles | The fleet screens show rental rates, which Service techs shouldn't see                                                                                   |
 | QuickBooks page for Accounts                 | Users and roles | Accounts sees the connect and mapping controls. The server refuses them; the page should hide them                                                       |
 | Selling prices locked for Purchasing         | Users and roles | The product editor leaves price fields editable for Purchasing. The server ignores the changes; the fields should be disabled                            |
+| Deactivated users list                       | Users and roles | Deactivated users drop out of Settings → Users. They come back only by bringing back their employee record; there's no list of them to reactivate from   |
 | Offline work in the yard and on the truck    | Installable app | Offline is a friendly page only. Queuing picks, scale weights, photos and proof of delivery while offline, then syncing, isn't built                     |
 | Alert preferences                            | Installable app | Alerts are on or off per device. Choosing which kinds of alert to get, and quiet hours, isn't built                                                      |
 | Installable contractor portal                | Installable app | The portal has no manifest of its own, and contractors get no push alerts (delivery on the way, order ready)                                             |

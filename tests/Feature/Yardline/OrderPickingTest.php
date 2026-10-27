@@ -402,7 +402,7 @@ class OrderPickingTest extends TestCase
         $picker->forceFill(['email_verified_at' => now()])->save();
 
         // Their PIN is the one they clock in with.
-        $employee = Employee::query()->create(['user_id' => $picker->id, 'name' => 'Pat Picker']);
+        $employee = Employee::query()->create(['user_id' => $picker->id]);
         $employee->setPin('4821');
         $employee->save();
 
@@ -418,14 +418,14 @@ class OrderPickingTest extends TestCase
         $this->assertAuthenticatedAs($picker);
 
         // Owners and admins can't be switched to by PIN.
-        $owners = Employee::query()->create(['user_id' => $this->owner->id, 'name' => 'Owner']);
+        $owners = Employee::query()->create(['user_id' => $this->owner->id]);
         $owners->setPin('1111');
         $owners->save();
         $this->post(route('picker.switch'), ['user_id' => $this->owner->id, 'pin' => '1111'])->assertSessionHasErrors('pin');
         $this->assertAuthenticatedAs($picker);
 
         // Nor can Sales, who sign in with a password.
-        $salesPin = Employee::query()->create(['user_id' => $sales->id, 'name' => 'Jess']);
+        $salesPin = Employee::query()->create(['user_id' => $sales->id]);
         $salesPin->setPin('2222');
         $salesPin->save();
         $this->post(route('picker.switch'), ['user_id' => $sales->id, 'pin' => '2222'])->assertSessionHasErrors('pin');

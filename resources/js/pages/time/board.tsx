@@ -21,7 +21,7 @@ import type { ClockStateValue } from '@/types/time';
 type Row = {
     id: number;
     name: string;
-    job_title: string | null;
+    role: string | null;
     yard_id: number | null;
     state: ClockStateValue;
     state_label: string;
@@ -193,7 +193,7 @@ export default function WhosIn({
                                             {r.name}
                                         </Link>
                                         <div className="text-xs text-muted-foreground">
-                                            {[r.job_title, r.truck]
+                                            {[r.role, r.truck]
                                                 .filter(Boolean)
                                                 .join(' · ')}
                                         </div>

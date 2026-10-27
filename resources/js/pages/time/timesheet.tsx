@@ -30,7 +30,7 @@ type Props = {
     employee: {
         id: number;
         name: string;
-        job_title: string | null;
+        role: string | null;
         yard: string | null;
         pay_type: string;
         earns_overtime: boolean;
@@ -423,7 +423,7 @@ export default function EmployeeTimesheet({
                         <span className="text-muted-foreground">
                             ·{' '}
                             {[
-                                employee.job_title,
+                                employee.role,
                                 employee.yard,
                                 employee.pay_type,
                                 employee.payroll_id
