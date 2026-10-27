@@ -14,6 +14,9 @@ Each line shows the product, the bin to pull from, the colour run to ship from, 
 - **Counted items** (pallets, bags, each): enter the **Quantity loaded**.
 - **Weighed material** (anything sold by the tonne or set to truck scale weight): load it with the loader, weigh it, and enter the **Scale reading (net)**.
 - **Loader buckets**: the line shows how many buckets to load.
+- **Measured length or area** (sod, edging, cut stone): measure it and enter the **Quantity loaded**.
+
+How each product is measured is set on its selling units. See [Selling units and conversions](/help/products-pricing/selling-units).
 
 Select **Picked** to confirm the line. A quantity within 5% of what was ordered counts as complete, so a scale reading of 9.7 tonnes on a 10-tonne order is fine.
 
