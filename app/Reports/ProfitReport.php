@@ -623,7 +623,7 @@ class ProfitReport
                 'href' => route('credit-notes.show', $credit),
             ]);
 
-        return array_values([...$charged->all(), ...$credited->all()]);
+        return [...$charged->all(), ...$credited->all()];
     }
 
     /**

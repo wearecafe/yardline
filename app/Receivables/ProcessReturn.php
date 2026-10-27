@@ -166,7 +166,7 @@ class ProcessReturn
      */
     private function fullPallets(OrderLine $line, float $quantity): int
     {
-        $perPallet = (float) ($line->product?->per_pallet ?? 0);
+        $perPallet = (float) ($line->product->per_pallet ?? 0);
 
         return $perPallet > 0
             ? (int) floor($quantity * (float) ($line->unit_factor ?: 1) / $perPallet + 1e-9)
