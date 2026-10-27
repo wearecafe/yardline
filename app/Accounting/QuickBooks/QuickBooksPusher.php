@@ -103,7 +103,7 @@ class QuickBooksPusher
             return null;
         }
 
-        if ($this->beforeStart($invoice->issued_on)) {
+        if ($this->beforeStart($invoice->issued_on->toDateString())) {
             $this->mark($invoice, 'skipped', 'Dated before the QuickBooks start date.');
 
             return null;
@@ -273,7 +273,7 @@ class QuickBooksPusher
             return null;
         }
 
-        if ($this->beforeStart($credit->issued_on)) {
+        if ($this->beforeStart($credit->issued_on->toDateString())) {
             $this->mark($credit, 'skipped', 'Dated before the QuickBooks start date.');
 
             return null;
@@ -945,11 +945,21 @@ class QuickBooksPusher
         };
     }
 
-    private function beforeStart(?CarbonInterface $date): bool
+    /**
+     * A moment is compared on the yard's calendar; a date-only value (an
+     * invoice's issue date) is already a yard day and is compared as is,
+     * since shifting its midnight into the yard's time zone would move it
+     * to the day before.
+     */
+    private function beforeStart(CarbonInterface|string|null $date): bool
     {
         $start = $this->integration->settings['start_date'] ?? null;
 
-        return is_string($start) && $date !== null && $this->localDate($date) < $start;
+        if (! is_string($start) || $date === null) {
+            return false;
+        }
+
+        return (is_string($date) ? $date : $this->localDate($date)) < $start;
     }
 
     private function localDate(?CarbonInterface $at): string
