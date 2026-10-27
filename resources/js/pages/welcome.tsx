@@ -22,12 +22,12 @@ type Props = {
 };
 
 const nav = [
-    { href: '#day', label: 'A day in the yard' },
     { href: '#features', label: 'Features' },
-    { href: '#drivers', label: 'Driver app' },
     { href: '#rentals', label: 'Rentals' },
     { href: '#portal', label: 'Contractor portal' },
+    { href: '#drivers', label: 'Driver app' },
     { href: '#time', label: 'Time clock' },
+    { href: '#day', label: 'A day in the yard' },
     { href: '#faq', label: 'FAQ' },
     { href: '/help', label: 'Help' },
 ];
@@ -421,8 +421,8 @@ export default function Welcome({ demo, canRegister }: Props) {
                             </p>
                             <div className="mt-8 flex flex-wrap gap-3">
                                 {primary}
-                                <a href="#day" className={ctaSecondary}>
-                                    See a day in the yard
+                                <a href="#features" className={ctaSecondary}>
+                                    See what it does
                                 </a>
                             </div>
                             {demo && (
@@ -498,43 +498,6 @@ export default function Welcome({ demo, canRegister }: Props) {
                         </div>
                     </section>
 
-                    {/* Day in the yard */}
-                    <section
-                        id="day"
-                        className="scroll-mt-20 bg-foreground text-background"
-                    >
-                        <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
-                            <Eyebrow>A day in the yard</Eyebrow>
-                            <h2 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
-                                One order, from a phone on a job site to a
-                                statement in the mail.
-                            </h2>
-                            <ol className="mt-12 grid gap-0 md:grid-cols-2 lg:grid-cols-1">
-                                {day.map((step) => (
-                                    <li
-                                        key={step.time}
-                                        className="grid grid-cols-[4.5rem_1fr] gap-4 border-t border-background/15 py-5 lg:grid-cols-[6rem_9rem_1fr_2fr] lg:items-baseline"
-                                    >
-                                        <span className="font-mono text-lg font-semibold text-primary">
-                                            {step.time}
-                                        </span>
-                                        <div className="lg:contents">
-                                            <span className="text-xs font-semibold tracking-widest uppercase opacity-60">
-                                                {step.who}
-                                            </span>
-                                            <h3 className="mt-1 font-semibold lg:mt-0">
-                                                {step.title}
-                                            </h3>
-                                            <p className="mt-1 text-sm opacity-75 lg:mt-0">
-                                                {step.body}
-                                            </p>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ol>
-                        </div>
-                    </section>
-
                     {/* Deep dives */}
                     <div id="features" className="scroll-mt-20">
                         <Feature
@@ -553,6 +516,32 @@ export default function Welcome({ demo, canRegister }: Props) {
                             visual={<PricingMock />}
                         />
                         <Feature
+                            eyebrow="Receivables"
+                            title="Get paid for everything that went out the gate"
+                            body="Account orders are invoiced the moment they’re confirmed and come due by the account’s terms. Returns, credits and pallet deposits all land on the same statement."
+                            points={[
+                                'Credit limits checked at the counter; holds need an owner to override',
+                                'Aging by account; statements to print, download or email',
+                                'Returns restocked less a fee and credited to the account',
+                                'Pallet deposits charged going out and credited coming back',
+                                'Card payments and payment links by text or email through Stripe',
+                            ]}
+                            visual={<AgingMock />}
+                            flip
+                        />
+                        <Feature
+                            eyebrow="Inventory and purchasing"
+                            title="Stock you can trust, at every yard"
+                            body="Every receipt, sale, transfer, return and count is a line in the ledger, so on-hand numbers always add up. Pavers are kept by colour run, so a patio ships from one run and matches."
+                            points={[
+                                'Purchase orders to suppliers, received into runs, average cost updated',
+                                'Transfers between yards',
+                                'Cycle counts that post only the difference',
+                                'Bins on pick tickets so the yard finds it first time',
+                            ]}
+                            visual={<StockMock />}
+                        />
+                        <Feature
                             eyebrow="Dispatch and delivery"
                             title="A dispatch board instead of a whiteboard"
                             body="Every delivery, rental drop and pallet pickup on one board, trucks down the side and hours across. Drag a stop onto a truck and the customer gets a text with their window."
@@ -565,34 +554,6 @@ export default function Welcome({ demo, canRegister }: Props) {
                             ]}
                             visual={<DispatchMock />}
                             flip
-                        />
-                        <section id="drivers" className="scroll-mt-20">
-                            <Feature
-                                eyebrow="Driver app"
-                                title="Every driver’s run on their phone, every truck on the map"
-                                body="Drivers sign in on their own phone and see their truck’s stops in order: address, site notes, PO, what’s on the truck. One tap for directions, one to call the site, and the signature at the curb. While their run is open, the phone shares where the truck is."
-                                points={[
-                                    'Each driver sees only their own truck. No prices, no accounts, nothing to break',
-                                    '“On my way” with an ETA; rental drops and pallet pickups finished in a tap',
-                                    'Dispatch sees where every truck was last seen, right on the board',
-                                    'Optional for contractors: “2 stops before yours” in the portal, and the truck on a map once theirs is next',
-                                    'Clock in and out from the same app, if you use the time clock',
-                                    'Nothing to install. It runs in the phone’s browser and adds to the home screen',
-                                ]}
-                                visual={<DriverMock />}
-                            />
-                        </section>
-                        <Feature
-                            eyebrow="Inventory and purchasing"
-                            title="Stock you can trust, at every yard"
-                            body="Every receipt, sale, transfer, return and count is a line in the ledger, so on-hand numbers always add up. Pavers are kept by colour run, so a patio ships from one run and matches."
-                            points={[
-                                'Purchase orders to suppliers, received into runs, average cost updated',
-                                'Transfers between yards',
-                                'Cycle counts that post only the difference',
-                                'Bins on pick tickets so the yard finds it first time',
-                            ]}
-                            visual={<StockMock />}
                         />
                         <section id="rentals" className="scroll-mt-20">
                             <Feature
@@ -608,7 +569,6 @@ export default function Welcome({ demo, canRegister }: Props) {
                                     'Contractors signed in to the portal book on their own account, licence and insurance already on file',
                                 ]}
                                 visual={<RentalMock />}
-                                flip
                             />
                         </section>
                         <section id="portal" className="scroll-mt-20">
@@ -627,22 +587,25 @@ export default function Welcome({ demo, canRegister }: Props) {
                                     'Made for phones: tabs along the bottom and orders as cards',
                                 ]}
                                 visual={<PortalMock />}
+                                flip
                             />
                         </section>
-                        <Feature
-                            eyebrow="Receivables"
-                            title="Get paid for everything that went out the gate"
-                            body="Account orders are invoiced the moment they’re confirmed and come due by the account’s terms. Returns, credits and pallet deposits all land on the same statement."
-                            points={[
-                                'Credit limits checked at the counter; holds need an owner to override',
-                                'Aging by account; statements to print, download or email',
-                                'Returns restocked less a fee and credited to the account',
-                                'Pallet deposits charged going out and credited coming back',
-                                'Card payments and payment links by text or email through Stripe',
-                            ]}
-                            visual={<AgingMock />}
-                            flip
-                        />
+                        <section id="drivers" className="scroll-mt-20">
+                            <Feature
+                                eyebrow="Driver app"
+                                title="Every driver’s run on their phone, every truck on the map"
+                                body="Drivers sign in on their own phone and see their truck’s stops in order: address, site notes, PO, what’s on the truck. One tap for directions, one to call the site, and the signature at the curb. While their run is open, the phone shares where the truck is."
+                                points={[
+                                    'Each driver sees only their own truck. No prices, no accounts, nothing to break',
+                                    '“On my way” with an ETA; rental drops and pallet pickups finished in a tap',
+                                    'Dispatch sees where every truck was last seen, right on the board',
+                                    'Optional for contractors: “2 stops before yours” in the portal, and the truck on a map once theirs is next',
+                                    'Clock in and out from the same app, if you use the time clock',
+                                    'Nothing to install. It runs in the phone’s browser and adds to the home screen',
+                                ]}
+                                visual={<DriverMock />}
+                            />
+                        </section>
                         <section id="time" className="scroll-mt-20">
                             <Feature
                                 eyebrow="Time and attendance · add-on"
@@ -657,78 +620,13 @@ export default function Welcome({ demo, canRegister }: Props) {
                                     'Approve and lock each pay period, then export to QuickBooks Online, ADP or a spreadsheet',
                                 ]}
                                 visual={<TimeMock />}
+                                flip
                             />
                         </section>
                     </div>
 
-                    {/* Devices */}
-                    <section className="border-y border-border bg-card">
-                        <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
-                            <Eyebrow>
-                                Everyone gets the screen they need
-                            </Eyebrow>
-                            <h2 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
-                                Built for the counter, the yard and the cab.
-                            </h2>
-                            <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                <Role
-                                    title="Counter"
-                                    device="Desktop or tablet"
-                                >
-                                    Ring up walk-ins, take orders on account,
-                                    quote jobs and take payments. The same
-                                    tablet is the crew’s time clock.
-                                </Role>
-                                <Role title="Yard" device="Kiosk tablet">
-                                    Big buttons for gloves: the pick queue,
-                                    bins, colour runs, loading and rental
-                                    check-in.
-                                </Role>
-                                <Role title="Drivers" device="Their phone">
-                                    Their own run in order, directions and site
-                                    notes, a signature at the curb, the truck’s
-                                    location shared with dispatch, and their
-                                    clock-in.
-                                </Role>
-                                <Role title="Office" device="Desktop">
-                                    Prices, credit, receivables, purchasing,
-                                    timesheets and reports, with every change
-                                    logged.
-                                </Role>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Everything */}
-                    <section className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
-                        <Eyebrow>Everything in it</Eyebrow>
-                        <h2 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
-                            One system, not six.
-                        </h2>
-                        <div className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-                            {everything.map((group) => (
-                                <div key={group.group}>
-                                    <h3 className="border-b border-border pb-2 font-semibold">
-                                        {group.group}
-                                    </h3>
-                                    <ul className="mt-3 grid gap-2 text-sm">
-                                        {group.items.map((item) => (
-                                            <li
-                                                key={item}
-                                                className="flex gap-2"
-                                            >
-                                                <Check />
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-
                     {/* Compare */}
-                    <section className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-6">
+                    <section className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
                         <div className="rounded-lg border border-border bg-card">
                             <div className="p-6 sm:p-8">
                                 <h2 className="text-2xl font-bold tracking-tight">
@@ -783,42 +681,6 @@ export default function Welcome({ demo, canRegister }: Props) {
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
-                    </section>
-
-                    {/* Trust */}
-                    <section className="bg-foreground text-background">
-                        <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-20 sm:px-6 md:grid-cols-3">
-                            <Point title="Every yard, one book">
-                                Each yard keeps its own stock, bins and trucks.
-                                Accounts, prices and credit are shared across
-                                them.
-                            </Point>
-                            <Point title="A record of who changed what">
-                                Price changes, credit limits and order
-                                confirmations are logged with the person and the
-                                before and after.
-                            </Point>
-                            <Point title="Roles that match the yard">
-                                The owner invites admins and staff and sets who
-                                can do what. The office runs accounts. The
-                                counter sells. The yard picks and loads. Drivers
-                                see their own run and nothing else.
-                            </Point>
-                            <Point title="In the cloud, nothing to install">
-                                Runs in the browser on any desktop, tablet or
-                                phone. No server in the back office, no updates
-                                to run.
-                            </Point>
-                            <Point title="Your data stays yours">
-                                Each business is kept separate, and the yard
-                                owner decides who on the team sees what.
-                            </Point>
-                            <Point title="Canadian from day one">
-                                Prices in dollars, HST and GST/QST worked out by
-                                Stripe Tax, metric and imperial units side by
-                                side.
-                            </Point>
                         </div>
                     </section>
 
@@ -889,6 +751,145 @@ export default function Welcome({ demo, canRegister }: Props) {
                                     take your first order.
                                 </StepCard>
                             </ol>
+                        </div>
+                    </section>
+
+                    {/* Trust */}
+                    <section className="bg-foreground text-background">
+                        <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-20 sm:px-6 md:grid-cols-3">
+                            <Point title="Every yard, one book">
+                                Each yard keeps its own stock, bins and trucks.
+                                Accounts, prices and credit are shared across
+                                them.
+                            </Point>
+                            <Point title="A record of who changed what">
+                                Price changes, credit limits and order
+                                confirmations are logged with the person and the
+                                before and after.
+                            </Point>
+                            <Point title="Roles that match the yard">
+                                The owner invites admins and staff and sets who
+                                can do what. The office runs accounts. The
+                                counter sells. The yard picks and loads. Drivers
+                                see their own run and nothing else.
+                            </Point>
+                            <Point title="In the cloud, nothing to install">
+                                Runs in the browser on any desktop, tablet or
+                                phone. No server in the back office, no updates
+                                to run.
+                            </Point>
+                            <Point title="Your data stays yours">
+                                Each business is kept separate, and the yard
+                                owner decides who on the team sees what.
+                            </Point>
+                            <Point title="Canadian from day one">
+                                Prices in dollars, HST and GST/QST worked out by
+                                Stripe Tax, metric and imperial units side by
+                                side.
+                            </Point>
+                        </div>
+                    </section>
+
+                    {/* Devices */}
+                    <section className="border-y border-border bg-card">
+                        <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
+                            <Eyebrow>
+                                Everyone gets the screen they need
+                            </Eyebrow>
+                            <h2 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
+                                Built for the counter, the yard and the cab.
+                            </h2>
+                            <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                                <Role
+                                    title="Counter"
+                                    device="Desktop or tablet"
+                                >
+                                    Ring up walk-ins, take orders on account,
+                                    quote jobs and take payments. The same
+                                    tablet is the crew’s time clock.
+                                </Role>
+                                <Role title="Yard" device="Kiosk tablet">
+                                    Big buttons for gloves: the pick queue,
+                                    bins, colour runs, loading and rental
+                                    check-in.
+                                </Role>
+                                <Role title="Drivers" device="Their phone">
+                                    Their own run in order, directions and site
+                                    notes, a signature at the curb, the truck’s
+                                    location shared with dispatch, and their
+                                    clock-in.
+                                </Role>
+                                <Role title="Office" device="Desktop">
+                                    Prices, credit, receivables, purchasing,
+                                    timesheets and reports, with every change
+                                    logged.
+                                </Role>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Day in the yard */}
+                    <section
+                        id="day"
+                        className="scroll-mt-20 bg-foreground text-background"
+                    >
+                        <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
+                            <Eyebrow>A day in the yard</Eyebrow>
+                            <h2 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
+                                One order, from a phone on a job site to a
+                                statement in the mail.
+                            </h2>
+                            <ol className="mt-12 grid gap-0 md:grid-cols-2 lg:grid-cols-1">
+                                {day.map((step) => (
+                                    <li
+                                        key={step.time}
+                                        className="grid grid-cols-[4.5rem_1fr] gap-4 border-t border-background/15 py-5 lg:grid-cols-[6rem_9rem_1fr_2fr] lg:items-baseline"
+                                    >
+                                        <span className="font-mono text-lg font-semibold text-primary">
+                                            {step.time}
+                                        </span>
+                                        <div className="lg:contents">
+                                            <span className="text-xs font-semibold tracking-widest uppercase opacity-60">
+                                                {step.who}
+                                            </span>
+                                            <h3 className="mt-1 font-semibold lg:mt-0">
+                                                {step.title}
+                                            </h3>
+                                            <p className="mt-1 text-sm opacity-75 lg:mt-0">
+                                                {step.body}
+                                            </p>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ol>
+                        </div>
+                    </section>
+
+                    {/* Everything */}
+                    <section className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6">
+                        <Eyebrow>Everything in it</Eyebrow>
+                        <h2 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
+                            One system, not six.
+                        </h2>
+                        <div className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+                            {everything.map((group) => (
+                                <div key={group.group}>
+                                    <h3 className="border-b border-border pb-2 font-semibold">
+                                        {group.group}
+                                    </h3>
+                                    <ul className="mt-3 grid gap-2 text-sm">
+                                        {group.items.map((item) => (
+                                            <li
+                                                key={item}
+                                                className="flex gap-2"
+                                            >
+                                                <Check />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
                         </div>
                     </section>
 
