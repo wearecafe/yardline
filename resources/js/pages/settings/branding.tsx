@@ -267,7 +267,7 @@ export default function Branding({
                     description="How your business looks on the emails your customers and suppliers get: quotes, invoices, statements, delivery updates and rentals."
                 />
 
-                <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_400px]">
+                <div className="grid gap-10 xl:grid-cols-[minmax(0,36rem)_minmax(22rem,30rem)] xl:items-start">
                     <div className="grid content-start gap-8">
                         <LogoSection brand={brand} />
 
@@ -590,7 +590,7 @@ export default function Branding({
                         </form>
                     </div>
 
-                    <aside className="grid content-start gap-2">
+                    <aside className="grid max-w-xl content-start gap-2 xl:sticky xl:top-6">
                         <span className="text-sm font-medium">
                             Preview · Order confirmation
                         </span>
@@ -609,4 +609,5 @@ export default function Branding({
 
 Branding.layout = {
     breadcrumbs: [{ title: 'Branding', href: BrandingController.edit() }],
+    wide: true,
 };
