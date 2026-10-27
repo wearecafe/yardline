@@ -18,8 +18,12 @@ class CompleteShipment
 {
     public function handle(Shipment $shipment, string $name, ?string $signatureDataUrl = null, ?UploadedFile $photo = null, ?string $notes = null): Shipment
     {
-        if (! in_array($shipment->status, [ShipmentStatus::Loaded, ShipmentStatus::Out, ShipmentStatus::Ready], true)) {
-            OrderRules::fail($shipment->status === ShipmentStatus::Picking ? 'Load it before it can be delivered.' : 'This load is already complete.');
+        if ($shipment->status->isDone()) {
+            OrderRules::fail('This load is already complete.');
+        }
+
+        if (! $shipment->isReleased()) {
+            OrderRules::fail($shipment->awaitingCheck() ? 'This load is waiting for a quality check.' : 'Load it before it can be delivered.');
         }
 
         $signature = null;

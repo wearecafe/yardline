@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\BusinessController;
 use App\Http\Controllers\Settings\DriverAccountsController;
+use App\Http\Controllers\Settings\OrderPickingController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\QuickBooksController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -39,6 +40,9 @@ Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function (
     Route::put('settings/drivers/{driver}', [DriverAccountsController::class, 'update'])->name('drivers.update');
     Route::post('settings/drivers/{driver}/resend', [DriverAccountsController::class, 'resend'])->name('drivers.resend');
     Route::delete('settings/drivers/{driver}', [DriverAccountsController::class, 'destroy'])->name('drivers.destroy');
+
+    Route::get('settings/picking', [OrderPickingController::class, 'edit'])->name('picking-settings.edit');
+    Route::put('settings/picking', [OrderPickingController::class, 'update'])->name('picking-settings.update');
 
     Route::get('settings/quickbooks', [QuickBooksController::class, 'edit'])->name('quickbooks.edit');
     Route::post('settings/quickbooks/connect', [QuickBooksController::class, 'connect'])->name('quickbooks.connect');

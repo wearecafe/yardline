@@ -1421,6 +1421,7 @@ const shipmentStatus: Record<
     [string, 'success' | 'info' | 'warning' | 'neutral']
 > = {
     picking: ['Picking', 'warning'],
+    picked: ['Picked', 'warning'],
     loaded: ['Loaded', 'info'],
     ready: ['Ready for pickup', 'info'],
     out: ['Out for delivery', 'info'],
@@ -1466,6 +1467,14 @@ function Shipments({ order }: { order: Order }) {
                                             {shorts} short
                                         </Chip>
                                     )}
+                                    {s.check_stage && (
+                                        <Chip tone="warning">
+                                            Awaiting check at{' '}
+                                            {s.check_stage === 'loaded'
+                                                ? 'Loaded'
+                                                : 'Picked'}
+                                        </Chip>
+                                    )}
                                 </div>
                                 <div className="mt-0.5 text-muted-foreground">
                                     {[
@@ -1486,9 +1495,29 @@ function Shipments({ order }: { order: Order }) {
                                         .filter(Boolean)
                                         .join(' · ')}
                                 </div>
+                                {s.checks && s.checks.length > 0 && (
+                                    <ul className="mt-1 grid gap-0.5 text-muted-foreground">
+                                        {[...s.checks].reverse().map((c) => (
+                                            <li key={c.id}>
+                                                {c.stage === 'loaded'
+                                                    ? 'Loaded'
+                                                    : 'Picked'}{' '}
+                                                {c.outcome === 'signed_off'
+                                                    ? 'checked'
+                                                    : 'sent back'}{' '}
+                                                by {c.user?.name ?? 'someone'}{' '}
+                                                {formatDate(c.created_at)}
+                                                {c.reason
+                                                    ? `: ${c.reason}`
+                                                    : ''}
+                                                {c.notes ? ` · ${c.notes}` : ''}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             </div>
                             <div className="flex gap-2">
-                                {s.status === 'picking' && (
+                                {['picking', 'picked'].includes(s.status) && (
                                     <Button variant="outline" size="sm" asChild>
                                         <Link
                                             href={FulfillmentController.pick.url(
@@ -1505,22 +1534,27 @@ function Shipments({ order }: { order: Order }) {
                                     'ready',
                                     'delivered',
                                     'picked_up',
-                                ].includes(s.status) && (
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link
-                                            href={DeliveryController.show.url(
-                                                s.id,
-                                            )}
+                                ].includes(s.status) &&
+                                    !s.check_stage && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            asChild
                                         >
-                                            {s.status === 'delivered' ||
-                                            s.status === 'picked_up'
-                                                ? 'Proof'
-                                                : s.status === 'ready'
-                                                  ? 'Hand over'
-                                                  : 'Deliver'}
-                                        </Link>
-                                    </Button>
-                                )}
+                                            <Link
+                                                href={DeliveryController.show.url(
+                                                    s.id,
+                                                )}
+                                            >
+                                                {s.status === 'delivered' ||
+                                                s.status === 'picked_up'
+                                                    ? 'Proof'
+                                                    : s.status === 'ready'
+                                                      ? 'Hand over'
+                                                      : 'Deliver'}
+                                            </Link>
+                                        </Button>
+                                    )}
                                 <Button variant="ghost" size="sm" asChild>
                                     <a
                                         href={FulfillmentController.ticket.url(

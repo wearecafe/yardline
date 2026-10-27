@@ -27,6 +27,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $phone
  * @property CarbonImmutable|null $email_verified_at
  * @property string $password
+ * @property string|null $pin hashed; lets an order picker switch in on a shared yard tablet
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property CarbonImmutable|null $two_factor_confirmed_at
@@ -35,7 +36,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['tenant_id', 'name', 'email', 'phone', 'role', 'password'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Hidden(['password', 'pin', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
@@ -58,6 +59,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'pin' => 'hashed',
             'role' => UserRole::class,
             'two_factor_confirmed_at' => 'datetime',
         ];
@@ -136,5 +138,53 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function isDriver(): bool
     {
         return $this->role->isDriver();
+    }
+
+    public function isPicker(): bool
+    {
+        return $this->role->isPicker();
+    }
+
+    /**
+     * The yards an order picker works. Everyone else works every yard.
+     *
+     * @return BelongsToMany<Location, $this>
+     */
+    public function yards(): BelongsToMany
+    {
+        return $this->belongsToMany(Location::class, 'location_user')
+            ->withPivot('tenant_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * @param  array<int, int>  $locationIds
+     */
+    public function setYards(array $locationIds): void
+    {
+        $this->yards()->sync(
+            collect($locationIds)->mapWithKeys(fn (int $id) => [$id => ['tenant_id' => $this->tenant_id]])->all(),
+        );
+    }
+
+    /**
+     * Yards this user may pick at, or null for every yard.
+     *
+     * @return list<int>|null
+     */
+    public function pickingYardIds(): ?array
+    {
+        if (! $this->isPicker()) {
+            return null;
+        }
+
+        return array_values($this->yards()->pluck('locations.id')->map(fn ($id) => (int) $id)->all());
+    }
+
+    public function canPickAt(?int $locationId): bool
+    {
+        $yards = $this->pickingYardIds();
+
+        return $yards === null || ($locationId !== null && in_array($locationId, $yards, true));
     }
 }

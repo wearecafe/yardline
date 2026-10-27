@@ -4,7 +4,6 @@ namespace App\Orders;
 
 use App\Enums\OrderStatus;
 use App\Enums\Settlement;
-use App\Enums\ShipmentStatus;
 use App\Fulfillment\CompleteShipment;
 use App\Fulfillment\LoadShipment;
 use App\Fulfillment\StartPicking;
@@ -36,12 +35,13 @@ class FulfillOrder
         }
 
         return DB::transaction(function () use ($order, $user) {
-            $shipment = $order->shipments()->where('status', ShipmentStatus::Picking->value)->first()
+            $shipment = $order->shipments()->inYard()->first()
                 ?? $this->startPicking->handle($order, $user, $user);
 
             $this->load->handle($shipment, $user);
 
-            if (! $shipment->isDelivery()) {
+            // A business that checks loads holds it at Loaded for a sign-off.
+            if (! $shipment->isDelivery() && $shipment->refresh()->isReleased()) {
                 $this->complete->handle($shipment->refresh(), $order->customer->full_name ?? 'Counter');
             }
 

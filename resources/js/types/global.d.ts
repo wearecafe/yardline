@@ -16,6 +16,7 @@ declare module '@inertiajs/core' {
                     manageBusiness: boolean;
                     manageUsers: boolean;
                     drive: boolean;
+                    pick: boolean;
                     priceExempt: boolean;
                     manageTime: boolean;
                 };

@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LifeBuoy, Route } from 'lucide-react';
+import { ClipboardList, LifeBuoy, Route } from 'lucide-react';
 import DriverController from '@/actions/App/Http/Controllers/DriverController';
+import FulfillmentController from '@/actions/App/Http/Controllers/FulfillmentController';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -21,22 +22,38 @@ export function AppSidebar() {
     const { auth, time } = usePage().props;
     const team = teamSection(time, auth.can.manageTime);
     // Drivers only reach settings pages here; their run is the way back.
-    const sections = auth.can.drive
+    // Order pickers only work the order queue.
+    const sections = auth.can.pick
         ? [
               {
-                  label: 'Driving',
+                  label: 'Yard',
                   items: [
                       {
-                          title: 'My run',
-                          href: DriverController.today(),
-                          icon: Route,
+                          title: 'Orders and picking',
+                          href: FulfillmentController.queue(),
+                          icon: ClipboardList,
                       },
                   ],
               },
+              // Their own time clock, when the business tracks time.
+              ...(team ? [team] : []),
           ]
-        : team
-          ? [...navSections, team]
-          : navSections;
+        : auth.can.drive
+          ? [
+                {
+                    label: 'Driving',
+                    items: [
+                        {
+                            title: 'My run',
+                            href: DriverController.today(),
+                            icon: Route,
+                        },
+                    ],
+                },
+            ]
+          : team
+            ? [...navSections, team]
+            : navSections;
 
     return (
         <Sidebar collapsible="icon" variant="sidebar">
@@ -50,9 +67,11 @@ export function AppSidebar() {
                         >
                             <Link
                                 href={
-                                    auth.can.drive
-                                        ? DriverController.today()
-                                        : dashboard()
+                                    auth.can.pick
+                                        ? FulfillmentController.queue()
+                                        : auth.can.drive
+                                          ? DriverController.today()
+                                          : dashboard()
                                 }
                                 prefetch
                             >

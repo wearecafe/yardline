@@ -7,6 +7,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\ProtectDemoAccounts;
 use App\Http\Middleware\RestrictDrivers;
+use App\Http\Middleware\RestrictPickers;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             IdentifyTenant::class,
             ProtectDemoAccounts::class,
             RestrictDrivers::class,
+            RestrictPickers::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,

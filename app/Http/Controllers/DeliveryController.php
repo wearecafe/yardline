@@ -25,7 +25,7 @@ class DeliveryController extends Controller
     {
         abort_unless($run->canDeliver($request->user(), $shipment), 404);
 
-        $shipment->load(['order.organization:id,name', 'order.customer', 'order.organizationLocation', 'order.location', 'lines.orderLine.productUnit', 'lines.orderLine.product:id,weight_kg,track_lots', 'lines.lot', 'stop.truck']);
+        $shipment->load(['order.organization:id,name', 'order.customer', 'order.organizationLocation', 'order.location', 'lines.orderLine.productUnit', 'lines.orderLine.product:id,weight_kg,track_lots', 'lines.lot', 'stop.truck', 'checks.user:id,name']);
         $order = $shipment->order;
         $levels = StockLevel::query()->where('location_id', $order->location_id)->get()->keyBy('product_id');
 
@@ -49,6 +49,11 @@ class DeliveryController extends Controller
                 'pod_signature_url' => Files::url($shipment->pod_signature_path),
                 'pod_photo_url' => Files::url($shipment->pod_photo_path),
                 'pod_notes' => $shipment->pod_notes,
+                'released' => $shipment->isReleased(),
+                'checked' => collect(FulfillmentPresenter::signOffs($shipment))
+                    ->where('outcome', 'signed_off')
+                    ->map(fn (array $c) => "{$c['stage']} checked by ".($c['by'] ?? 'someone'))
+                    ->values(),
                 // Drivers go back to the stop on their run.
                 'stop_id' => $request->user()?->isDriver() ? $shipment->stop?->id : null,
             ],

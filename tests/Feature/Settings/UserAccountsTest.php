@@ -58,7 +58,7 @@ class UserAccountsTest extends TestCase
             ->where('users.1.role', 'admin')
             ->where('users.1.joined', false)
             ->where('users.1.manageable', true)
-            ->has('roles', 2));
+            ->has('roles', 3));
 
         $this->assertTrue(AuditEvent::query()->where('subject_type', 'user')->where('subject_id', $jess->id)->where('event', 'created')->exists());
 
