@@ -13,6 +13,6 @@ The portal doesn't use passwords. You sign in with a link sent to your email.
 
 ## Didn't get the email?
 
-- Check your junk or spam folder.
+- Check your junk or spam folder. The email comes from the yard, under the yard's name.
 - Make sure you used the email address the yard has on file for you. For your safety, the page looks the same whether or not the address is known.
 - Ask the yard to add you as a contact on your company's account, or to correct your email.
