@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Email\BrandedMail;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -23,8 +24,9 @@ class DriverInviteMessage extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return BrandedMail::user($this->business, "You're getting this because {$this->business} added you as a driver.")
             ->subject("Your driver sign-in for {$this->business}")
+            ->title('Your driver sign-in is ready')
             ->greeting('Hello')
             ->line("{$this->business} has set you up to see your delivery run on your phone.")
             ->line('Choose a password to get started. The link works for 60 minutes; ask the yard for a new one if it runs out.')

@@ -3,7 +3,7 @@ title: Setting up your yard
 summary: A checklist for getting from a new account to your first sale.
 order: 2
 popular: true
-related: getting-started/yards, products-pricing/add-a-product, accounts/organizations
+related: getting-started/yards, products-pricing/add-a-product, accounts/organizations, integrations/email-branding
 ---
 
 Work through these in order. Each step builds on the one before, so your first sale goes through with the right units, prices and tax.
@@ -15,6 +15,8 @@ Go to **Set up your yard** on the YardRunner home page and enter your business n
 ## 2. Fill in your business settings
 
 Under **Settings → Business**, check your business name and time zone, and add a reply-to email. Quote and rental emails go out under your business name, and customer replies go to that address.
+
+Then add your logo and colour under **Settings → Branding**, so customer emails look like they come from your yard. To send them from your own addresses, connect your domain under **Settings → Sending domain**. See [Your logo and colours on emails](/help/integrations/email-branding) and [Sending from your own domain](/help/integrations/sending-domain).
 
 ## 3. Add your yards
 

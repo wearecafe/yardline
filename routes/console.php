@@ -26,6 +26,9 @@ Schedule::command('yardline:rentals:remind')->everyFifteenMinutes()->withoutOver
 Schedule::command('yardline:quickbooks:pull')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('yardline:quickbooks:check')->dailyAt('02:30')->timezone('America/Toronto')->withoutOverlapping();
 
+// Yards' own sending domains: look for their DNS records.
+Schedule::command('yardline:email:domains')->everyTenMinutes()->withoutOverlapping();
+
 // Card fees on payments, for the profit report.
 Schedule::command('yardline:payments:fees')->hourly()->withoutOverlapping();
 

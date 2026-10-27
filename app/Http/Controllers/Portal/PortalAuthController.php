@@ -41,7 +41,7 @@ class PortalAuthController extends Controller
 
             if ($customer !== null && ! Demo::isCurrentTenant()) {
                 $url = URL::temporarySignedRoute('portal.enter', now()->addMinutes(30), ['tenant' => $tenant->slug, 'customer' => $customer->id]);
-                $customer->notify(new PortalLinkMessage($url, $tenant->name));
+                $customer->notify(new PortalLinkMessage($url, $tenant));
             }
         });
 

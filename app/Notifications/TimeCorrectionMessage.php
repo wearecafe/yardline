@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Email\BrandedMail;
 use App\Enums\AdjustmentAction;
 use App\Models\TimeAdjustment;
 use App\Time\TimesheetCalculator;
@@ -27,8 +28,9 @@ class TimeCorrectionMessage extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return BrandedMail::user($this->business, "You're getting this because your time is kept in YardRunner at {$this->business}.")
             ->subject("Your hours were changed at {$this->business}")
+            ->title('Your hours were changed')
             ->greeting('Hello')
             ->line($this->describe())
             ->line('Reason: '.$this->adjustment->reason)

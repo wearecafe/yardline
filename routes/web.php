@@ -1,6 +1,7 @@
 <?php
 
 use App\Billing\Plan;
+use App\Http\Controllers\BrandLogoController;
 use App\Http\Controllers\ContractPriceController;
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\CustomerController;
@@ -221,6 +222,9 @@ Route::middleware('portal')->prefix('portal/account')->name('portal.')->group(fu
     Route::post('pallet-pickup', [PortalController::class, 'palletPickup'])->name('pallet-pickup');
     Route::post('logout', [PortalAuthController::class, 'logout'])->name('logout');
 });
+
+// A yard's logo for its emails: public, since email apps don't sign in.
+Route::get('brand/{tenant:slug}/logo', BrandLogoController::class)->name('brand.logo');
 
 Route::get('portal/{tenant:slug}', [PortalAuthController::class, 'show'])->name('portal.login');
 Route::post('portal/{tenant:slug}', [PortalAuthController::class, 'send'])->middleware('throttle:6,1')->name('portal.send');

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\AlertsController;
 use App\Http\Controllers\Settings\BillingController;
+use App\Http\Controllers\Settings\BrandingController;
 use App\Http\Controllers\Settings\BusinessController;
 use App\Http\Controllers\Settings\DriverAccountsController;
 use App\Http\Controllers\Settings\OrderPickingController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\QuickBooksController;
 use App\Http\Controllers\Settings\RoleSettingsController;
 use App\Http\Controllers\Settings\SecurityController;
+use App\Http\Controllers\Settings\SendingDomainController;
 use App\Http\Controllers\Settings\UserAccountsController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
@@ -44,6 +46,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function () {
     Route::get('settings/business', [BusinessController::class, 'edit'])->name('business.edit');
     Route::patch('settings/business', [BusinessController::class, 'update'])->name('business.update');
+
+    // How the yard looks on customer emails.
+    Route::get('settings/branding', [BrandingController::class, 'edit'])->name('branding.edit');
+    Route::put('settings/branding', [BrandingController::class, 'update'])->name('branding.update');
+    Route::post('settings/branding/logo', [BrandingController::class, 'storeLogo'])->name('branding.logo.store');
+    Route::delete('settings/branding/logo', [BrandingController::class, 'destroyLogo'])->name('branding.logo.destroy');
+    Route::get('settings/branding/preview', [BrandingController::class, 'preview'])->middleware('throttle:120,1')->name('branding.preview');
+    Route::post('settings/branding/test', [BrandingController::class, 'test'])->middleware('throttle:6,1')->name('branding.test');
+
+    // Sending customer emails from the yard's own domain.
+    Route::get('settings/sending-domain', [SendingDomainController::class, 'edit'])->name('sending-domain.edit');
+    Route::post('settings/sending-domain', [SendingDomainController::class, 'store'])->middleware('throttle:10,1')->name('sending-domain.store');
+    Route::patch('settings/sending-domain', [SendingDomainController::class, 'update'])->name('sending-domain.update');
+    Route::post('settings/sending-domain/check', [SendingDomainController::class, 'check'])->middleware('throttle:12,1')->name('sending-domain.check');
+    Route::post('settings/sending-domain/records', [SendingDomainController::class, 'sendRecords'])->middleware('throttle:6,1')->name('sending-domain.records');
+    Route::delete('settings/sending-domain', [SendingDomainController::class, 'destroy'])->name('sending-domain.destroy');
 
     Route::get('settings/drivers', [DriverAccountsController::class, 'index'])->name('drivers.index');
     Route::post('settings/drivers', [DriverAccountsController::class, 'store'])->name('drivers.store');

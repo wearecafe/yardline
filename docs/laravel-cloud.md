@@ -54,6 +54,12 @@ MAIL_MAILER=resend
 RESEND_API_KEY=re_...
 MAIL_FROM_ADDRESS=...        # on a domain verified in Resend
 MAIL_FROM_NAME=YardRunner
+YARDLINE_EMAIL_TENANT_FROM_DOMAIN=mail.yardrunner.ca  # customer emails: <slug>@this
+YARDLINE_EMAIL_DOMAINS_DRIVER=resend
+YARDLINE_EMAIL_DNS_DRIVER=cloudflare
+YARDLINE_EMAIL_DNS_ZONE=dns.yardrunner.ca
+YARDLINE_DNS_CLOUDFLARE_TOKEN=...   # DNS edit on the zone below
+YARDLINE_DNS_CLOUDFLARE_ZONE=...    # zone ID for yardrunner.ca
 
 YARDLINE_SMS_DRIVER=twilio  # or log
 TWILIO_SID=...
@@ -80,10 +86,24 @@ instead. Signed rental agreements and proof-of-delivery photos are stored on
 `YARDLINE_FILES_DISK`; attach a bucket in Cloud so they survive deploys.
 
 Email goes through Resend: password resets, email verification, quotes,
-and rental confirmations, signing links, reminders and receipts. Customer
-emails are sent from `MAIL_FROM_ADDRESS` under the yard's name, and replies
-go to the reply-to address set in Settings, Business. The demo yard never
-emails its customers.
+and rental confirmations, signing links, reminders and receipts. Emails to
+a yard's own users come from `MAIL_FROM_ADDRESS` in YardRunner's brand.
+Emails to its customers carry the yard's brand (Settings, Branding) and
+come from `<slug>@YARDLINE_EMAIL_TENANT_FROM_DOMAIN` under the yard's name
+(verify that domain in Resend too; blank sends from `MAIL_FROM_ADDRESS`),
+or from the yard's own domain once it's connected. Replies go to the
+reply-to address set in Settings, Business. The demo yard never emails its
+customers.
+
+Yards' own sending domains are registered with Resend through its domains
+API (same `RESEND_API_KEY`). Its DKIM and bounce records are published on
+`YARDLINE_EMAIL_DNS_ZONE` through Cloudflare's API, under names like
+`dkim-42.dns.yardrunner.ca`, and yards add CNAMEs pointing there, so
+yards never see Resend in their DNS. The token needs DNS edit permission
+on the yardrunner.ca zone. The scheduler runs `yardline:email:domains`
+every 10 minutes to check them. Before relying on it, confirm with a test
+domain that Resend verifies DKIM and the bounce MX/SPF records when
+they're reached through these CNAMEs.
 
 The fake payments driver refuses to run in production. A staging
 environment can use Stripe test keys with the same drivers.

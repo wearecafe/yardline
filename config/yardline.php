@@ -99,6 +99,38 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Email
+    |--------------------------------------------------------------------------
+    |
+    | Customer emails carry the yard's brand; emails to a yard's own users
+    | carry YardRunner's. Until a yard connects its own domain, customer
+    | emails go from `<slug>@tenant_from_domain` under the yard's name (or
+    | MAIL_FROM_ADDRESS when that's blank).
+    |
+    | Domains: "fake" for local development and tests; "resend" registers
+    | yards' domains with the email service. Its real DNS records are
+    | published on `dns_zone` (YardRunner's own, via Cloudflare) and yards
+    | add CNAMEs pointing there, so yards never see the service's name in
+    | their values. "local" keeps those records in memory.
+    |
+    */
+
+    'email' => [
+        'tenant_from_domain' => env('YARDLINE_EMAIL_TENANT_FROM_DOMAIN', ''),
+        'postal_address' => env('YARDLINE_EMAIL_POSTAL_ADDRESS', 'Burlington, Ontario'),
+        'domains_driver' => env('YARDLINE_EMAIL_DOMAINS_DRIVER', 'fake'),
+        'dns_driver' => env('YARDLINE_EMAIL_DNS_DRIVER', 'local'),
+        'dns_zone' => env('YARDLINE_EMAIL_DNS_ZONE', 'dns.yardrunner.ca'),
+        'cloudflare' => [
+            'token' => env('YARDLINE_DNS_CLOUDFLARE_TOKEN'),
+            'zone_id' => env('YARDLINE_DNS_CLOUDFLARE_ZONE'),
+        ],
+        // Largest logo upload, in kilobytes.
+        'logo_max_kb' => 2048,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Back office (/admin)
     |--------------------------------------------------------------------------
     |

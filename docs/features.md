@@ -415,6 +415,62 @@ last signed in on it, so a shared yard tablet follows the PIN switch. On
 iPhone and iPad, web push only works from the installed app, so they're
 shown how to add it first. Alerts are off in the demo yard.
 
+## Emails and branding
+
+Every email goes through one layout, `resources/views/mail/branded.blade.php`
+(and `branded-text`), drawn in one of two brands. The recipient decides
+which:
+
+| Brand      | Who gets it                                                                                                                 | Start from                                                                    | From                                                                                           |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| YardRunner | The yard's own users: invites, password resets, verification, time corrections, QuickBooks failures, sending-domain notices | `BrandedMail::user($business, $why)`                                          | `MAIL_FROM_ADDRESS`, as YardRunner                                                             |
+| The yard   | Its customers and suppliers: quotes, statements, rentals, purchase orders, portal sign-in links                             | `BrandedMail::customer($tenant, $group, $yard)` (`YardMail::for` is the same) | The yard's mailbox for that group, or `<slug>@tenant_from_domain` until its domain is verified |
+
+`BrandedMessage` is Laravel's `MailMessage` plus `title()`, `facts()` (a key
+facts box; empty values are left out) and `notice()` (a banner). Customer
+emails show the yard's address and tax numbers and a reply line; the
+"Sent with YardRunner" line goes under them unless staff turn it off.
+
+**Branding** (Settings → Branding, `Settings\BrandingController`, owners
+and admins). Logo (PNG or JPG, served publicly at `/brand/{slug}/logo`
+because email apps don't sign in), primary colour, header style (light or
+brand), tax numbers and footer note, with a live preview and a test send.
+Stored in `tenants.settings['branding']` (`App\Email\BrandSettings`).
+
+**Colour system** (`App\Email\ColourSystem`, mirrored in
+`resources/js/lib/colour-system.ts`; change both together). One primary
+colour makes an 11-step OKLCH ramp; roles are picked by contrast, so body
+text, button text, links and the key facts box always reach 4.5:1 whatever
+the primary. Editing single colours is off by default: staff switch it on
+per tenant in the back office. With it off, earlier changes are kept but
+ignored. With it on, a change that fails a required check can't be saved.
+
+**Sending domain** (Settings → Sending domain,
+`Settings\SendingDomainController`, `App\Email\Domains`). A white-label
+flow: nothing a yard sees names the email service.
+
+1. The yard enters its domain and main mailbox. Free mail domains and
+   yardrunner.ca are refused.
+2. `SendingDomains::connect` registers it with the service (return path
+   `yr`), publishes the service's real records on YardRunner's zone
+   (`dkim-{tenant}.dns.yardrunner.ca`, `bounce-{tenant}…`) and gives the
+   yard CNAMEs pointing there, plus an optional DMARC record.
+3. `yardline:email:domains` runs every 10 minutes: domains still waiting
+   are checked for 72 hours (then "expired" until **Check now**), verified
+   ones hourly. Verified means every required CNAME resolves and the
+   service passes the domain.
+4. Owners and admins turn on sending and name mailboxes per `MailGroup`
+   (main, accounts, orders, delivery, rentals; blank uses main).
+5. A verified domain that stops passing is marked "needs attention",
+   customer emails fall back to YardRunner's address on their own, and
+   owners and admins are emailed (`SendingDomainMessage`). Sending resumes
+   when the records are back.
+
+Drivers: `yardline.email.domains_driver` (`resend` or `fake`) and
+`yardline.email.dns_driver` (`cloudflare` or `local`). The demo yard and
+local development use the fakes. Tests answer DNS with
+`DnsLookup::fake()`.
+
 ## Integrations
 
 - **Stripe** for payments and **Stripe Tax** for tax, on a connected
@@ -471,6 +527,10 @@ would return nothing). Health and churn risk are in `TenantHealth`.
 - Staff changes to a tenant are written to that tenant's audit log, but
   the tenant's own audit page leaves them out.
 - New sign-ups and tenants staff set up start a 14-day trial.
+- **Email branding**: staff switch on the full colour system for a
+  tenant that asks for it (off by default), and can turn off the "Sent
+  with YardRunner" line on its customer emails (on by default). Both live
+  in `tenants.settings['branding']` and each change is audited.
 
 ## Billing
 
@@ -541,16 +601,24 @@ Features the scope (`docs/scope`) calls for that aren't built, or are
 only partly built. Add to this list when something is left out, and
 remove an item when it ships.
 
-| Feature                                      | Area            | What's missing                                                                                                                                           |
-| -------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Payment on delivery (COD)                    | Users and roles | The Collect payment on delivery permission exists, but not the flow: COD stops, the truck's Stripe reader (S710), external terminal, cash, driver report |
-| Yard scope on every screen                   | Users and roles | Only the pick queue, pick lists and quality checks follow a person's yards. The dispatch board, stock, orders, counter and rentals still show every yard |
-| Count-only receiving for Yard crew           | Users and roles | Yard crew should confirm received quantities and pallet returns without costs. The purchasing screens show costs, so Yard crew don't reach them yet      |
-| PIN switching on drivers' and techs' devices | Users and roles | Yard crew, Drivers and Service techs can be switched to by PIN, but the switch is only on the pick queue, not the driver app or fleet screens            |
-| Rental rates hidden from Service techs       | Users and roles | The fleet screens show rental rates, which Service techs shouldn't see                                                                                   |
-| QuickBooks page for Accounts                 | Users and roles | Accounts sees the connect and mapping controls. The server refuses them; the page should hide them                                                       |
-| Selling prices locked for Purchasing         | Users and roles | The product editor leaves price fields editable for Purchasing. The server ignores the changes; the fields should be disabled                            |
-| Deactivated users list                       | Users and roles | Deactivated users drop out of Settings → Users. They come back only by bringing back their employee record; there's no list of them to reactivate from   |
-| Offline work in the yard and on the truck    | Installable app | Offline is a friendly page only. Queuing picks, scale weights, photos and proof of delivery while offline, then syncing, isn't built                     |
-| Alert preferences                            | Installable app | Alerts are on or off per device. Choosing which kinds of alert to get, and quiet hours, isn't built                                                      |
-| Installable contractor portal                | Installable app | The portal has no manifest of its own, and contractors get no push alerts (delivery on the way, order ready)                                             |
+| Feature                                      | Area            | What's missing                                                                                                                                                                                                                                 |
+| -------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Payment on delivery (COD)                    | Users and roles | The Collect payment on delivery permission exists, but not the flow: COD stops, the truck's Stripe reader (S710), external terminal, cash, driver report                                                                                       |
+| Yard scope on every screen                   | Users and roles | Only the pick queue, pick lists and quality checks follow a person's yards. The dispatch board, stock, orders, counter and rentals still show every yard                                                                                       |
+| Count-only receiving for Yard crew           | Users and roles | Yard crew should confirm received quantities and pallet returns without costs. The purchasing screens show costs, so Yard crew don't reach them yet                                                                                            |
+| PIN switching on drivers' and techs' devices | Users and roles | Yard crew, Drivers and Service techs can be switched to by PIN, but the switch is only on the pick queue, not the driver app or fleet screens                                                                                                  |
+| Rental rates hidden from Service techs       | Users and roles | The fleet screens show rental rates, which Service techs shouldn't see                                                                                                                                                                         |
+| QuickBooks page for Accounts                 | Users and roles | Accounts sees the connect and mapping controls. The server refuses them; the page should hide them                                                                                                                                             |
+| Selling prices locked for Purchasing         | Users and roles | The product editor leaves price fields editable for Purchasing. The server ignores the changes; the fields should be disabled                                                                                                                  |
+| Deactivated users list                       | Users and roles | Deactivated users drop out of Settings → Users. They come back only by bringing back their employee record; there's no list of them to reactivate from                                                                                         |
+| Offline work in the yard and on the truck    | Installable app | Offline is a friendly page only. Queuing picks, scale weights, photos and proof of delivery while offline, then syncing, isn't built                                                                                                           |
+| Alert preferences                            | Installable app | Alerts are on or off per device. Choosing which kinds of alert to get, and quiet hours, isn't built                                                                                                                                            |
+| Installable contractor portal                | Installable app | The portal has no manifest of its own, and contractors get no push alerts (delivery on the way, order ready)                                                                                                                                   |
+| One-click DNS setup                          | Emails          | Domain Connect, so yards on GoDaddy, Cloudflare and other supporting hosts add the records by signing in. Needs YardRunner registered as a service provider with each host; until then, yards copy the records or send them to their IT person |
+| DNS host detection                           | Emails          | Spotting where a yard's DNS is hosted and showing steps for that host                                                                                                                                                                          |
+| Logo processing                              | Emails          | Trimming empty margins, resizing and flattening transparent logos. Logos are shown as uploaded, at 40 px tall                                                                                                                                  |
+| Per-yard branding                            | Emails          | A different name, logo or reply-to for each yard. The contact block already uses the yard an email is about                                                                                                                                    |
+| Email log and bounces                        | Emails          | Which emails went to whom, delivered or bounced, on each order and rental; flagging a customer's address when it bounces                                                                                                                       |
+| Line items in emails                         | Emails          | Order and invoice emails show key facts and a link, not the full line items, pallet charges and totals                                                                                                                                         |
+| Branding changes in the yard's audit log     | Emails          | Branding and sending-domain changes are recorded against the tenant, which the yard's own audit page leaves out; staff see them in the back office                                                                                             |
+| French emails                                | Emails          | Every email is in English                                                                                                                                                                                                                      |
