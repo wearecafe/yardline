@@ -59,8 +59,9 @@ class TransferStock
                     : null;
 
                 $transfer->lines()->create(['product_id' => $product->id, 'stock_lot_id' => $fromLot?->id, 'quantity' => $quantity]);
-                $this->ledger->record($product, $from, -$quantity, StockMovementType::TransferOut, $transfer, $user, "{$transfer->number} to {$to->name}", $fromLot);
-                $this->ledger->record($product, $to, $quantity, StockMovementType::TransferIn, $transfer, $user, "{$transfer->number} from {$from->name}", $toLot);
+                // Stock arrives at the cost it left the other yard at.
+                $out = $this->ledger->record($product, $from, -$quantity, StockMovementType::TransferOut, $transfer, $user, "{$transfer->number} to {$to->name}", $fromLot);
+                $this->ledger->record($product, $to, $quantity, StockMovementType::TransferIn, $transfer, $user, "{$transfer->number} from {$from->name}", $toLot, $out->unit_cost_cents);
             }
 
             if ($transfer->lines()->doesntExist()) {

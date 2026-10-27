@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property RentalTender $tender
  * @property PaymentState $status
  * @property int $amount_cents
+ * @property int|null $fee_cents the card processor's fee, once known
+ * @property CarbonImmutable|null $fee_checked_at when the fee was last looked up
  * @property string|null $reference
  * @property string|null $stripe_payment_intent_id
  * @property string|null $stripe_checkout_session_id
@@ -35,7 +37,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'rental_id', 'kind', 'tender', 'status', 'amount_cents', 'reference',
     'stripe_payment_intent_id', 'stripe_checkout_session_id', 'checkout_url',
-    'recorded_by', 'succeeded_at',
+    'recorded_by', 'succeeded_at', 'fee_cents', 'fee_checked_at',
 ])]
 class RentalPayment extends Model
 {
@@ -48,7 +50,9 @@ class RentalPayment extends Model
             'tender' => RentalTender::class,
             'status' => PaymentState::class,
             'amount_cents' => 'integer',
+            'fee_cents' => 'integer',
             'succeeded_at' => 'datetime',
+            'fee_checked_at' => 'datetime',
         ];
     }
 

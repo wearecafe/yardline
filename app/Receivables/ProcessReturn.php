@@ -84,13 +84,15 @@ class ProcessReturn
                     'unit' => $line->unit,
                     'base_quantity' => $base,
                     'unit_price_cents' => $line->unit_price_cents,
+                    // Goods back on the shelf reverse the cost they were sold at.
+                    'unit_cost_cents' => $restock ? $line->unit_cost_cents : null,
                     'line_total_cents' => $amount,
                     'tax_cents' => $lineTax,
                     'restock' => $restock,
                 ]);
 
                 if ($restock && $line->product?->track_inventory) {
-                    $this->ledger->record($line->product, $location, $base, StockMovementType::CustomerReturn, $credit, $user, "Return {$credit->number}");
+                    $this->ledger->record($line->product, $location, $base, StockMovementType::CustomerReturn, $credit, $user, "Return {$credit->number}", unitCostCents: $line->unit_cost_cents);
                 }
 
                 $line->returned_quantity = (string) ((float) $line->returned_quantity + $quantity);

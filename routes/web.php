@@ -29,6 +29,7 @@ use App\Http\Controllers\PriceListController;
 use App\Http\Controllers\PriceListItemController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductUnitController;
+use App\Http\Controllers\ProfitReportController;
 use App\Http\Controllers\PurchasingController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\ReceivablesController;
@@ -159,6 +160,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('organizations/{organization}/statement.pdf', [ReceivablesController::class, 'pdf'])->name('organizations.statement.pdf');
     Route::post('organizations/{organization}/statement/email', [ReceivablesController::class, 'email'])->name('organizations.statement.email');
     Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+
+    // Profit and loss, down to gross profit: the owner, and admins if allowed.
+    Route::controller(ProfitReportController::class)->middleware('can:view-profit')->prefix('reports/profit')->group(function () {
+        Route::get('/', 'index')->name('reports.profit');
+        Route::get('lines', 'detail')->name('reports.profit.lines');
+        Route::get('export.csv', 'csv')->name('reports.profit.csv');
+        Route::get('export.pdf', 'pdf')->name('reports.profit.pdf');
+    });
 
     Route::get('returns', [ReturnController::class, 'index'])->name('returns.index');
     Route::get('orders/{order}/returns/create', [ReturnController::class, 'create'])->name('orders.returns.create');

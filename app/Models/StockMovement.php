@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property int $product_id
  * @property int $location_id
  * @property string $quantity
+ * @property string|null $unit_cost_cents cost per base unit of what moved
  * @property StockMovementType $type
  * @property string|null $reference_type
  * @property int|null $reference_id
@@ -25,7 +26,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string|null $note
  * @property CarbonImmutable $created_at
  */
-#[Fillable(['product_id', 'location_id', 'stock_lot_id', 'quantity', 'type', 'reference_type', 'reference_id', 'user_id', 'note'])]
+#[Fillable(['product_id', 'location_id', 'stock_lot_id', 'quantity', 'unit_cost_cents', 'type', 'reference_type', 'reference_id', 'user_id', 'note'])]
 class StockMovement extends Model
 {
     use BelongsToTenant;
@@ -36,6 +37,7 @@ class StockMovement extends Model
     {
         return [
             'quantity' => 'decimal:3',
+            'unit_cost_cents' => 'decimal:4',
             'type' => StockMovementType::class,
         ];
     }

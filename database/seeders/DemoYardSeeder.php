@@ -51,6 +51,7 @@ use App\Orders\ConfirmOrder;
 use App\Orders\CreateOrder;
 use App\Orders\FulfillOrder;
 use App\Orders\SendQuote;
+use App\Payments\Fees\RecordCardFees;
 use App\Payments\RecordPayment;
 use App\Purchasing\CycleCounting;
 use App\Purchasing\ReceivePurchaseOrder;
@@ -216,6 +217,8 @@ class DemoYardSeeder extends Seeder
                 $this->auditHistory();
                 $this->pavers80ByLayer();
                 (new DemoTimeSeeder($tenant, $this->users, $this->waterdown, $this->stoneyCreek, self::TZ))->run();
+                // Card fees on the card payments, for the profit report.
+                app(RecordCardFees::class)->handle();
             });
         });
 
