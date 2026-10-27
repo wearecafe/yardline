@@ -61,7 +61,7 @@ final class FulfillmentPresenter
      */
     public static function signOffs(Shipment $shipment): array
     {
-        return $shipment->checks
+        return array_values($shipment->checks
             ->sortBy('id')
             ->map(fn (ShipmentCheck $c) => [
                 'id' => $c->id,
@@ -73,8 +73,7 @@ final class FulfillmentPresenter
                 'reason' => $c->reason,
                 'photo_url' => Files::url($c->photo_path),
             ])
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**

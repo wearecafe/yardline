@@ -31,6 +31,8 @@ class RestrictPickers
         'shipments.reject',
         'shipments.ticket',
         'picker.switch',
+        'time.self.*',
+        'time.kiosk*',
         'files.show',
         'profile.edit',
         'profile.update',

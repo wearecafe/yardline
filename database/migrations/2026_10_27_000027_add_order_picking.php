@@ -7,8 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Order picking: the Picked stage, quality-check sign-offs at Picked and
- * Loaded, the order picker role's yards, and a PIN for switching pickers
- * on a shared yard tablet.
+ * Loaded, and the yards each order picker works.
  */
 return new class extends Migration
 {
@@ -54,15 +53,10 @@ return new class extends Migration
             $table->timestamps();
             $table->unique(['location_id', 'user_id']);
         });
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('pin')->nullable()->after('password');
-        });
     }
 
     public function down(): void
     {
-        Schema::table('users', fn (Blueprint $table) => $table->dropColumn('pin'));
         Schema::dropIfExists('location_user');
         Schema::dropIfExists('shipment_checks');
         Schema::table('shipments', function (Blueprint $table) {

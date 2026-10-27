@@ -27,7 +27,6 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $phone
  * @property CarbonImmutable|null $email_verified_at
  * @property string $password
- * @property string|null $pin hashed; lets an order picker switch in on a shared yard tablet
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property CarbonImmutable|null $two_factor_confirmed_at
@@ -36,7 +35,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['tenant_id', 'name', 'email', 'phone', 'role', 'password'])]
-#[Hidden(['password', 'pin', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
@@ -59,7 +58,6 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'pin' => 'hashed',
             'role' => UserRole::class,
             'two_factor_confirmed_at' => 'datetime',
         ];

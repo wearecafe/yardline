@@ -11,6 +11,7 @@ use App\Fulfillment\PickingSettings;
 use App\Fulfillment\RecordPick;
 use App\Fulfillment\StartPicking;
 use App\Http\Presenters\FulfillmentPresenter;
+use App\Models\Employee;
 use App\Models\Order;
 use App\Models\Shipment;
 use App\Models\ShipmentCheck;
@@ -123,7 +124,7 @@ class FulfillmentController extends Controller
             'pickers' => $user->isPicker()
                 ? [['id' => $user->id, 'name' => $user->name]]
                 : User::query()->where('tenant_id', $user->tenant_id)->where('role', '!=', UserRole::Driver->value)->orderBy('name')->get(['id', 'name']),
-            // Order pickers on a shared tablet can switch with their PIN.
+            // Order pickers on a shared tablet switch with their time-clock PIN.
             'switchable' => $this->switchablePickers($user),
             'today' => now()->setTimezone($user->tenant->timezone ?? 'America/Toronto')->format('D M j'),
         ]);
@@ -431,19 +432,23 @@ class FulfillmentController extends Controller
     }
 
     /**
+     * Order pickers with a time-clock PIN, who can switch in here.
+     *
      * @return list<array{id: int, name: string}>
      */
     private function switchablePickers(User $user): array
     {
-        return User::query()
+        $withPin = Employee::query()->active()->whereNotNull('pin_hash')->whereNotNull('user_id')->pluck('user_id');
+
+        return array_values(User::query()
             ->where('tenant_id', $user->tenant_id)
             ->where('role', UserRole::Picker->value)
-            ->whereNotNull('pin')
+            ->whereIn('id', $withPin)
             ->whereKeyNot($user->id)
             ->orderBy('name')
             ->get(['id', 'name'])
             ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name])
-            ->all();
+            ->all());
     }
 
     private function toast(Shipment $shipment, bool $signedOff = false): void

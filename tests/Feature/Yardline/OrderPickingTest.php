@@ -8,6 +8,7 @@ use App\Enums\Unit;
 use App\Enums\UserRole;
 use App\Fulfillment\PickingSettings;
 use App\Inventory\InventoryLedger;
+use App\Models\Employee;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\Organization;
@@ -341,7 +342,7 @@ class OrderPickingTest extends TestCase
         $this->actingAs($this->user(UserRole::Staff, 'Jess'))->put(route('picking-settings.update'), $valid)->assertForbidden();
     }
 
-    public function test_owner_adds_an_order_picker_who_switches_in_with_a_pin(): void
+    public function test_owner_adds_an_order_picker_who_switches_in_with_their_time_clock_pin(): void
     {
         $other = Location::factory()->create(['name' => 'Stoney Creek yard']);
 
@@ -350,35 +351,42 @@ class OrderPickingTest extends TestCase
             'email' => 'pat@example.com',
             'role' => 'picker',
             'location_ids' => [$other->id],
-            'pin' => '4821',
         ])->assertSessionHasNoErrors();
 
         $picker = User::query()->where('email', 'pat@example.com')->firstOrFail();
         $this->assertSame(UserRole::Picker, $picker->role);
         $this->assertSame([$other->id], $picker->pickingYardIds());
-        $this->assertNotSame('4821', $picker->pin, 'PINs are hashed.');
 
-        // A short or non-numeric PIN is refused.
-        $this->patch(route('users.update', $picker), ['pin' => '12'])->assertSessionHasErrors('pin');
+        // A picker added without yards works every yard.
+        $this->post(route('users.store'), ['name' => 'Lee', 'email' => 'lee@example.com', 'role' => 'picker'])->assertSessionHasNoErrors();
+        $this->assertCount(2, User::query()->where('email', 'lee@example.com')->firstOrFail()->pickingYardIds());
+
+        // Their PIN is the one they clock in with.
+        $employee = Employee::query()->create(['user_id' => $picker->id, 'name' => 'Pat Picker']);
+        $employee->setPin('4821');
+        $employee->save();
+
+        $staff = $this->user(UserRole::Staff, 'Jess');
+        $this->actingAs($staff)->get(route('orders.queue'))
+            ->assertInertia(fn (Assert $page) => $page->where('switchable', [['id' => $picker->id, 'name' => 'Pat Picker']]));
 
         // On a shared tablet, someone signed in switches to the picker.
-        $staff = $this->user(UserRole::Staff, 'Jess');
-        $this->actingAs($staff);
         $this->post(route('picker.switch'), ['user_id' => $picker->id, 'pin' => '0000'])->assertSessionHasErrors('pin');
         $this->assertAuthenticatedAs($staff);
 
         $this->post(route('picker.switch'), ['user_id' => $picker->id, 'pin' => '4821'])->assertRedirect(route('orders.queue'));
-        $this->assertAuthenticatedAs($picker->refresh());
+        $this->assertAuthenticatedAs($picker);
 
         // Only order picker accounts can be switched to by PIN.
-        $this->owner->forceFill(['pin' => '1111'])->save();
+        $owners = Employee::query()->create(['user_id' => $this->owner->id, 'name' => 'Owner']);
+        $owners->setPin('1111');
+        $owners->save();
         $this->post(route('picker.switch'), ['user_id' => $this->owner->id, 'pin' => '1111'])->assertSessionHasErrors('pin');
         $this->assertAuthenticatedAs($picker);
 
-        // Changing them to staff clears their yards and PIN.
+        // Changing them to staff clears their yards.
         $this->actingAs($this->owner)->patch(route('users.update', $picker), ['role' => 'staff'])->assertSessionHasNoErrors();
-        $picker->refresh();
-        $this->assertNull($picker->pin);
-        $this->assertSame(0, $picker->yards()->count());
+        $this->assertSame(0, $picker->refresh()->yards()->count());
+        $this->assertNull($picker->pickingYardIds());
     }
 }

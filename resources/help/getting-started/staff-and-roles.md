@@ -27,4 +27,4 @@ Inviting other staff from inside Yardline is coming soon. Until then, contact us
 
 Yard kiosks and counter tablets are often shared. Sign out at the end of a shift (from your name at the bottom of the sidebar) so the next person's work is recorded under their own name.
 
-Order pickers can switch on a shared tablet without signing out: select **Switch picker** at the top of the pick queue, choose their name and enter their PIN. The owner sets each order picker's PIN (4 to 6 digits) under **Settings → Users**. Only order picker accounts can be switched to with a PIN; everyone else signs in with their password.
+Order pickers can switch on a shared tablet without signing out: select **Switch picker** at the top of the pick queue, choose their name and enter their time-clock PIN. PINs are set under **Team → Employees** (see [Setting up time and attendance](/help/time/setting-up-time-and-attendance)). Only order picker accounts can be switched to with a PIN; everyone else signs in with their password.

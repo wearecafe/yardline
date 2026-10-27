@@ -1,5 +1,4 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { useState } from 'react';
 import UserAccountsController from '@/actions/App/Http/Controllers/Settings/UserAccountsController';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,6 @@ type UserAccount = {
     is_you: boolean;
     manageable: boolean;
     yards: number[];
-    has_pin: boolean;
 };
 
 type Props = {
@@ -35,8 +33,6 @@ const roleLabels: Record<Role, string> = {
     staff: 'Staff',
     picker: 'Order picker',
 };
-
-const digits = (value: string) => value.replace(/\D/g, '');
 
 /** Ticks the yards an order picker works. */
 function YardPicker({
@@ -71,80 +67,32 @@ function YardPicker({
     );
 }
 
-/** An order picker's yards and the PIN they switch in with. */
-function PickerAccess({
+/** The yards an order picker works. */
+function PickerYards({
     user,
     locations,
 }: {
     user: UserAccount;
     locations: Yard[];
 }) {
-    const [pin, setPin] = useState('');
-    const update = (
-        data: { location_ids?: number[]; pin?: string; clear_pin?: boolean },
-        onSuccess?: () => void,
-    ) =>
-        router.patch(UserAccountsController.update.url(user.id), data, {
-            preserveScroll: true,
-            onSuccess,
-        });
-
     return (
-        <div className="grid w-full gap-3 rounded-md bg-secondary/50 p-3 text-sm">
-            <div className="grid gap-1.5">
-                <span className="font-medium">Yards they pick at</span>
-                <YardPicker
-                    id={`yards-${user.id}`}
-                    locations={locations}
-                    value={user.yards}
-                    onChange={(ids) => {
-                        // A picker always works at least one yard.
-                        if (ids.length > 0) {
-                            update({ location_ids: ids });
-                        }
-                    }}
-                />
-            </div>
-            <form
-                className="flex flex-wrap items-center gap-2"
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    update({ pin }, () => setPin(''));
+        <div className="grid w-full gap-1.5 rounded-md bg-secondary/50 p-3 text-sm">
+            <span className="font-medium">Yards they pick at</span>
+            <YardPicker
+                id={`yards-${user.id}`}
+                locations={locations}
+                value={user.yards}
+                onChange={(ids) => {
+                    // A picker always works at least one yard.
+                    if (ids.length > 0) {
+                        router.patch(
+                            UserAccountsController.update.url(user.id),
+                            { location_ids: ids },
+                            { preserveScroll: true },
+                        );
+                    }
                 }}
-            >
-                <span className="font-medium">PIN</span>
-                <span className="text-muted-foreground">
-                    {user.has_pin ? 'Set' : 'None'}
-                </span>
-                <Input
-                    aria-label={`New PIN for ${user.name}`}
-                    inputMode="numeric"
-                    autoComplete="off"
-                    maxLength={6}
-                    placeholder="4–6 digits"
-                    className="h-8 w-28"
-                    value={pin}
-                    onChange={(e) => setPin(digits(e.target.value))}
-                />
-                <Button
-                    type="submit"
-                    size="sm"
-                    variant="outline"
-                    disabled={pin.length < 4}
-                >
-                    {user.has_pin ? 'Change PIN' : 'Set PIN'}
-                </Button>
-                {user.has_pin && (
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => update({ clear_pin: true })}
-                    >
-                        Remove PIN
-                    </Button>
-                )}
-            </form>
+            />
         </div>
     );
 }
@@ -155,7 +103,6 @@ function AddUser({ roles, locations }: Pick<Props, 'roles' | 'locations'>) {
         email: '',
         role: 'staff' as Role,
         location_ids: locations.map((l) => l.id),
-        pin: '',
     });
     const errors = form.errors as Record<string, string | undefined>;
 
@@ -222,7 +169,7 @@ function AddUser({ roles, locations }: Pick<Props, 'roles' | 'locations'>) {
                         label="Yards they pick at"
                         htmlFor="user-yards"
                         error={errors.location_ids}
-                        className="sm:col-span-4"
+                        className="sm:col-span-6"
                     >
                         <YardPicker
                             id="user-yards"
@@ -230,24 +177,6 @@ function AddUser({ roles, locations }: Pick<Props, 'roles' | 'locations'>) {
                             value={form.data.location_ids}
                             onChange={(ids) =>
                                 form.setData('location_ids', ids)
-                            }
-                        />
-                    </Field>
-                    <Field
-                        label="PIN for a shared tablet (optional)"
-                        htmlFor="user-pin"
-                        error={form.errors.pin}
-                        className="sm:col-span-2"
-                    >
-                        <Input
-                            id="user-pin"
-                            inputMode="numeric"
-                            autoComplete="off"
-                            maxLength={6}
-                            placeholder="4–6 digits"
-                            value={form.data.pin}
-                            onChange={(e) =>
-                                form.setData('pin', digits(e.target.value))
                             }
                         />
                     </Field>
@@ -268,7 +197,7 @@ export default function UsersSettings({ users, roles, locations }: Props) {
                     <Heading
                         variant="small"
                         title="Users"
-                        description="People who sign in to the yard. Staff work orders, stock and rentals. Admins can also change business settings, credit terms and line prices, and override credit limits. Order pickers only see the order queue for their yards, with no prices or payments. Drivers are added under Drivers."
+                        description="People who sign in to the yard. Staff work orders, stock and rentals. Admins can also change business settings, credit terms and line prices, and override credit limits. Order pickers only see the order queue for their yards, with no prices or payments. They can switch in on a shared yard tablet with their time-clock PIN, set under Employees. Drivers are added under Drivers."
                     />
 
                     <ul className="divide-y divide-border rounded-lg border border-border">
@@ -367,7 +296,7 @@ export default function UsersSettings({ users, roles, locations }: Props) {
                                     </Chip>
                                 )}
                                 {u.manageable && u.role === 'picker' && (
-                                    <PickerAccess
+                                    <PickerYards
                                         user={u}
                                         locations={locations}
                                     />

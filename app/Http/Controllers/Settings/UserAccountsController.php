@@ -23,7 +23,7 @@ use Inertia\Response;
 /**
  * The people who sign in to the yard: the owner adds admins, staff and
  * order pickers, changes their role and removes them. Order pickers work
- * the yards they're given, and can have a PIN for a shared yard tablet. Drivers have their own page
+ * the yards they're given. Drivers have their own page
  * (Settings → Drivers) because they only ever see their own run.
  */
 class UserAccountsController extends Controller
@@ -47,7 +47,6 @@ class UserAccountsController extends Controller
                     'is_you' => $user->id === $request->user()?->id,
                     'manageable' => $this->manageable($user, $request->user()),
                     'yards' => $user->isPicker() ? $user->yards->pluck('id')->map(fn ($id) => (int) $id)->values() : [],
-                    'has_pin' => $user->isPicker() && $user->pin !== null,
                 ])
                 ->values(),
             'roles' => array_map(fn (UserRole $role) => [
@@ -174,7 +173,7 @@ class UserAccountsController extends Controller
     }
 
     /**
-     * An order picker works at least one yard. A PIN is optional.
+     * An order picker works at least one yard.
      *
      * @return array<string, mixed>
      */
@@ -187,13 +186,11 @@ class UserAccountsController extends Controller
         return [
             'location_ids' => ['sometimes', 'array', 'min:1'],
             'location_ids.*' => ['integer', TenantRule::exists('locations')],
-            'pin' => ['nullable', 'string', 'regex:/^\d{4,6}$/'],
-            'clear_pin' => ['boolean'],
         ];
     }
 
     /**
-     * Yards and PIN for an order picker; anyone else has neither.
+     * Yards for an order picker; anyone else works every yard.
      *
      * @param  array<string, mixed>  $data
      * @return bool whether anything changed
@@ -201,9 +198,8 @@ class UserAccountsController extends Controller
     private function savePicking(User $user, array $data): bool
     {
         if (! $user->isPicker()) {
-            $had = $user->yards()->exists() || $user->pin !== null;
+            $had = $user->yards()->exists();
             $user->setYards([]);
-            $user->forceFill(['pin' => null])->save();
 
             return $had;
         }
@@ -227,16 +223,6 @@ class UserAccountsController extends Controller
                 ]]);
                 $changed = true;
             }
-        }
-
-        if (filled($data['pin'] ?? null)) {
-            $user->forceFill(['pin' => $data['pin']])->save();
-            Audit::record($user, 'PIN set');
-            $changed = true;
-        } elseif (! empty($data['clear_pin']) && $user->pin !== null) {
-            $user->forceFill(['pin' => null])->save();
-            Audit::record($user, 'PIN removed');
-            $changed = true;
         }
 
         return $changed;

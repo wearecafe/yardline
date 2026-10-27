@@ -4,17 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Audit\Audit;
 use App\Enums\UserRole;
+use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Yard tablets are shared, so an order picker switches in with their PIN
- * instead of a full sign-in. Only order picker accounts can be switched
- * to this way; anyone else signs in with their password.
+ * Yard tablets are shared, so an order picker switches in with their
+ * time-clock PIN (Team → Employees) instead of a full sign-in. Only order
+ * picker accounts can be switched to this way; anyone else signs in with
+ * their password.
  */
 class PickerSwitchController extends Controller
 {
@@ -31,10 +32,9 @@ class PickerSwitchController extends Controller
         $picker = User::query()
             ->where('tenant_id', $current->tenant_id)
             ->where('role', UserRole::Picker->value)
-            ->whereNotNull('pin')
             ->find((int) $data['user_id']);
 
-        if ($picker === null || ! Hash::check($data['pin'], (string) $picker->pin)) {
+        if ($picker === null || ! (Employee::forUser($picker)?->checkPin($data['pin']) ?? false)) {
             throw ValidationException::withMessages(['pin' => 'That PIN didn’t match.']);
         }
 

@@ -236,10 +236,10 @@ Settings → Drivers.
 Order pickers work only the yards ticked for them (`location_user`).
 `RestrictPickers` keeps them to the queue, the picker kiosk, sign-offs
 and their own account; the queue scopes to their yards and leaves out
-prices, payments and balances. The owner can give a picker a PIN
-(`users.pin`, hashed) so they can switch in on a shared tablet
-(`picker.switch`, throttled); only picker accounts can be switched to
-that way.
+prices, payments and balances. On a shared tablet a picker switches in
+with their time-clock PIN (`Employee::checkPin`, via `picker.switch`,
+throttled); only picker accounts can be switched to that way. They keep
+their own time clock (`time.self.*`) and the counter time clock.
 
 ## Integrations
 
