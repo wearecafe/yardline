@@ -259,7 +259,9 @@ export default function HelpLayout({
                         <div>
                             <div className="flex items-center gap-2">
                                 <AppLogoIcon className="size-5 fill-current" />
-                                <span className="font-bold">YardRunner Help</span>
+                                <span className="font-bold">
+                                    YardRunner Help
+                                </span>
                             </div>
                             <p className="mt-2 text-muted-foreground">
                                 Guides for running your yard, counter,

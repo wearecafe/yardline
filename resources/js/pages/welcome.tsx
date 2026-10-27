@@ -417,10 +417,10 @@ export default function Welcome({ demo, canRegister }: Props) {
                                 aria-hidden="true"
                             />
                             <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-                                YardRunner runs the counter, the yard, the trucks,
-                                the rental fleet, the crew’s hours and the
-                                receivables in one system, built around how a
-                                supply yard actually sells: by the bag, the
+                                YardRunner runs the counter, the yard, the
+                                trucks, the rental fleet, the crew’s hours and
+                                the receivables in one system, built around how
+                                a supply yard actually sells: by the bag, the
                                 pallet, the tonne and the yard, on account, with
                                 a deposit on every pallet.
                             </p>

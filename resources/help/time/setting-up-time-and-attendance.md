@@ -14,15 +14,15 @@ The first time it's turned on, everyone who signs in to YardRunner is set up to 
 
 **Team → Employees** lists everyone whose hours YardRunner keeps.
 
-| Setting                     | What it does                                                                                                                                     |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Setting                       | What it does                                                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Signs in to YardRunner as** | Links them to a sign-in so they can clock in from their own phone. Leave as **Time clock only** for a yard hand who just uses the counter tablet |
-| **PIN for the time clock**  | 4 to 6 digits, entered at the counter tablet. Anyone without a PIN can't use the tablet                                                          |
-| **Pay**                     | Hourly or salaried. Salaried people don't earn overtime                                                                                          |
-| **Payroll ID**              | Their number in your payroll system (the ADP file number)                                                                                        |
-| **Clocks in**               | Turn off for staff who only take time off                                                                                                        |
-| **No overtime**             | For managers and other roles that don't earn overtime                                                                                            |
-| **Takes a truck home**      | Lets a driver start and end the day away from the yard without a flag                                                                            |
+| **PIN for the time clock**    | 4 to 6 digits, entered at the counter tablet. Anyone without a PIN can't use the tablet                                                          |
+| **Pay**                       | Hourly or salaried. Salaried people don't earn overtime                                                                                          |
+| **Payroll ID**                | Their number in your payroll system (the ADP file number)                                                                                        |
+| **Clocks in**                 | Turn off for staff who only take time off                                                                                                        |
+| **No overtime**               | For managers and other roles that don't earn overtime                                                                                            |
+| **Takes a truck home**        | Lets a driver start and end the day away from the yard without a flag                                                                            |
 
 Pay rates aren't kept in YardRunner; they stay in your payroll system.
 

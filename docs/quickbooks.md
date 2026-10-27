@@ -7,7 +7,7 @@ map" doc; this is the short version for developers.
 
 ## What goes across
 
-| YardRunner                                                                         | QuickBooks                                                                        | When                                                       |
+| YardRunner                                                                       | QuickBooks                                                                        | When                                                       |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | Organization                                                                     | Customer                                                                          | With its first document; updated when a sent field changes |
 | Customer with no organization                                                    | One shared "Cash sales" customer (name in the memo)                               | With its first document                                    |

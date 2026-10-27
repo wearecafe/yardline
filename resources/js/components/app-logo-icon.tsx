@@ -13,12 +13,13 @@ const LOGO_ACCENT = '#F26B1D';
  * chevron. The lead brick at the tip is safety orange; the rest take the
  * current fill colour.
  */
-export default function AppLogoIcon({
-    accent = LOGO_ACCENT,
-    ...props
-}: Props) {
+export default function AppLogoIcon({ accent = LOGO_ACCENT, ...props }: Props) {
     return (
-        <svg {...props} viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <svg
+            {...props}
+            viewBox="0 0 120 120"
+            xmlns="http://www.w3.org/2000/svg"
+        >
             <rect x="10" y="2" width="44" height="20" rx="3" />
             <rect x="58" y="2" width="28" height="20" rx="3" />
             <rect x="22" y="26" width="28" height="20" rx="3" />
