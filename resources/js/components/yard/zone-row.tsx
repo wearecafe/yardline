@@ -4,6 +4,7 @@ import RentalSettingsController from '@/actions/App/Http/Controllers/Settings/Re
 import { Field } from '@/components/yard/field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 export type Zone = {
     id: number;
@@ -14,9 +15,19 @@ export type Zone = {
 
 /**
  * One delivery zone: postal code prefixes and a fee each way. Used for
- * material deliveries and rental drops alike.
+ * material deliveries and rental drops alike. In a list of zones, only the
+ * first row shows its labels; the rest keep them for screen readers.
  */
-export function ZoneRow({ zone }: { zone: Zone | null }) {
+export function ZoneRow({
+    zone,
+    showLabels = true,
+}: {
+    zone: Zone | null;
+    showLabels?: boolean;
+}) {
+    const label = (text: string) =>
+        showLabels ? text : <span className="sr-only">{text}</span>;
+
     const form = useForm({
         name: zone?.name ?? '',
         postal_prefixes: zone?.postal_prefixes ?? '',
@@ -43,7 +54,7 @@ export function ZoneRow({ zone }: { zone: Zone | null }) {
             }}
         >
             <Field
-                label="Zone"
+                label={label('Zone')}
                 htmlFor={`zone-name-${zone?.id ?? 'new'}`}
                 error={form.errors.name}
             >
@@ -56,7 +67,7 @@ export function ZoneRow({ zone }: { zone: Zone | null }) {
                 />
             </Field>
             <Field
-                label="Postal code prefixes"
+                label={label('Postal code prefixes')}
                 htmlFor={`zone-prefixes-${zone?.id ?? 'new'}`}
                 error={form.errors.postal_prefixes}
             >
@@ -71,7 +82,7 @@ export function ZoneRow({ zone }: { zone: Zone | null }) {
                 />
             </Field>
             <Field
-                label="Fee each way"
+                label={label('Fee each way')}
                 htmlFor={`zone-fee-${zone?.id ?? 'new'}`}
                 error={form.errors.fee}
             >
@@ -83,7 +94,12 @@ export function ZoneRow({ zone }: { zone: Zone | null }) {
                     onChange={(e) => form.setData('fee', e.target.value)}
                 />
             </Field>
-            <div className="flex gap-2 sm:pt-6">
+            <div
+                className={cn(
+                    'flex gap-2',
+                    showLabels ? 'sm:pt-6' : 'sm:pt-1.5',
+                )}
+            >
                 <Button
                     type="submit"
                     variant={zone ? 'outline' : 'default'}
