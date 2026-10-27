@@ -1,4 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
+import BillingController from '@/actions/App/Http/Controllers/Settings/BillingController';
 import BusinessController from '@/actions/App/Http/Controllers/Settings/BusinessController';
 import AuditController from '@/actions/App/Http/Controllers/Settings/AuditController';
 import DeliverySettingsController from '@/actions/App/Http/Controllers/Settings/DeliverySettingsController';
@@ -75,6 +76,11 @@ const businessNavItems: NavItem[] = [
         icon: null,
     },
     {
+        title: 'Billing',
+        href: BillingController.edit(),
+        icon: null,
+    },
+    {
         title: 'Audit log',
         href: AuditController.index(),
         icon: null,
@@ -88,12 +94,16 @@ const businessNavItems: NavItem[] = [
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
-    const { auth } = usePage().props;
+    const { auth, modules } = usePage().props;
+    // Rental settings only once the Rentals add-on is on.
+    const business = businessNavItems.filter(
+        (item) => item.title !== 'Rentals' || modules.rentals,
+    );
     const navItems = [
         ...sidebarNavItems,
-        ...(auth.can.manageBusiness ? businessNavItems.slice(0, 1) : []),
+        ...(auth.can.manageBusiness ? business.slice(0, 1) : []),
         ...(auth.can.manageUsers ? [usersNavItem] : []),
-        ...(auth.can.manageBusiness ? businessNavItems.slice(1) : []),
+        ...(auth.can.manageBusiness ? business.slice(1) : []),
     ];
 
     return (

@@ -12,10 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Chip } from '@/components/yard/chip';
 import type { ChipTone } from '@/components/yard/chip';
 import { EmptyRow, Table, Td, Th } from '@/components/yard/data-table';
-import { Field, NativeSelect } from '@/components/yard/field';
+import { Field } from '@/components/yard/field';
 import { PageBody, PageHeader, Section } from '@/components/yard/page-header';
 import {
-    centsToInput,
     formatAgo,
     formatChange,
     formatDate,
@@ -34,13 +33,13 @@ type Props = {
         plan_label: string | null;
         monthly_price_cents: number | null;
         trial_ends_at: string | null;
+        billing: Billing;
         currency: string;
         timezone: string;
         created_at: string | null;
         last_active_at: string | null;
         status_changed_at: string | null;
         staff_notes: string | null;
-        modules: { key: string; label: string; on: boolean }[];
         owner: { id: number; name: string; email: string } | null;
         health: Health;
     };
@@ -86,159 +85,242 @@ type Props = {
         note: string | null;
         who: string;
     }[];
-    options: {
-        statuses: { value: TenantStatus; label: string }[];
-        plans: { value: string; label: string }[];
-    };
 };
 
-function AccountForm({ tenant, options }: Pick<Props, 'tenant' | 'options'>) {
-    const form = useForm({
-        status: tenant.status,
-        plan: tenant.plan ?? '',
-        monthly_price: centsToInput(tenant.monthly_price_cents),
-        trial_ends_at: tenant.trial_ends_at ?? '',
-    });
+type Billing = {
+    status_label: string;
+    has_access: boolean;
+    subscribed: boolean;
+    exempt: boolean;
+    suspended: boolean;
+    subscription_status: string | null;
+    trial_editable: boolean;
+    trial_days_left: number | null;
+    period_ends_at: string | null;
+    cancelling: boolean;
+    billed_seats: number | null;
+    lines: {
+        key: string;
+        name: string;
+        unit_cents: number;
+        quantity: number;
+        per_user: boolean;
+        total_cents: number;
+        on: boolean;
+    }[];
+    total_cents: number;
+    stripe_customer_url: string | null;
+    stripe_subscription_url: string | null;
+};
 
-    return (
-        <Section
-            title="Plan and status"
-            description="Recorded here for reporting and MRR. Nothing is charged, and the status doesn’t block sign-in yet."
-        >
-            <form
-                className="grid gap-4"
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    form.transform((data) => ({
-                        ...data,
-                        plan: data.plan || null,
-                        monthly_price: data.monthly_price || null,
-                        trial_ends_at: data.trial_ends_at || null,
-                    }));
-                    form.patch(TenantController.update.url(tenant.id), {
-                        preserveScroll: true,
-                        onSuccess: () => form.setDefaults(),
-                    });
-                }}
-            >
-                <Field
-                    label="Status"
-                    htmlFor="status"
-                    error={form.errors.status}
-                >
-                    <NativeSelect
-                        id="status"
-                        value={form.data.status}
-                        onChange={(e) =>
-                            form.setData(
-                                'status',
-                                e.target.value as TenantStatus,
-                            )
-                        }
-                    >
-                        {options.statuses.map((s) => (
-                            <option key={s.value} value={s.value}>
-                                {s.label}
-                            </option>
-                        ))}
-                    </NativeSelect>
-                </Field>
-                {form.data.status === 'trial' && (
-                    <Field
-                        label="Trial ends"
-                        htmlFor="trial_ends_at"
-                        error={form.errors.trial_ends_at}
-                    >
-                        <Input
-                            id="trial_ends_at"
-                            type="date"
-                            value={form.data.trial_ends_at}
-                            onChange={(e) =>
-                                form.setData('trial_ends_at', e.target.value)
-                            }
-                        />
-                    </Field>
-                )}
-                <Field label="Plan" htmlFor="plan" error={form.errors.plan}>
-                    <NativeSelect
-                        id="plan"
-                        value={form.data.plan}
-                        onChange={(e) => form.setData('plan', e.target.value)}
-                    >
-                        <option value="">Not set</option>
-                        {options.plans.map((p) => (
-                            <option key={p.value} value={p.value}>
-                                {p.label}
-                            </option>
-                        ))}
-                    </NativeSelect>
-                </Field>
-                <Field
-                    label={`Monthly price (${tenant.currency})`}
-                    htmlFor="monthly_price"
-                    error={form.errors.monthly_price}
-                >
-                    <Input
-                        id="monthly_price"
-                        inputMode="decimal"
-                        value={form.data.monthly_price}
-                        onChange={(e) =>
-                            form.setData('monthly_price', e.target.value)
-                        }
-                    />
-                </Field>
-                <div>
-                    <Button
-                        type="submit"
-                        variant="outline"
-                        disabled={form.processing || !form.isDirty}
-                    >
-                        Save plan and status
-                    </Button>
-                </div>
-            </form>
-        </Section>
-    );
+/** "2026-11-09" plus days, as "2026-11-xx". */
+function addDays(date: string, days: number): string {
+    const d = new Date(`${date}T12:00:00`);
+    d.setDate(d.getDate() + days);
+
+    return d.toISOString().slice(0, 10);
 }
 
-function Modules({ tenant }: Pick<Props, 'tenant'>) {
-    const toggle = (key: string, on: boolean) =>
+function Subscription({ tenant }: Pick<Props, 'tenant'>) {
+    const billing = tenant.billing;
+    const today = new Date().toISOString().slice(0, 10);
+    const form = useForm({ trial_ends_at: tenant.trial_ends_at ?? today });
+    const save = (trialEndsAt: string) =>
         router.patch(
             TenantController.update.url(tenant.id),
-            { modules: { [key]: on } },
+            { trial_ends_at: trialEndsAt },
+            { preserveScroll: true, onSuccess: () => form.setDefaults() },
+        );
+    const extend = () => {
+        const from =
+            tenant.trial_ends_at && tenant.trial_ends_at > today
+                ? tenant.trial_ends_at
+                : today;
+        save(addDays(from, 7));
+    };
+    const suspend = (on: boolean) => {
+        if (
+            on &&
+            !window.confirm(
+                `Suspend ${tenant.name}? Nobody there can use YardRunner until you restore them. Their Stripe subscription isn’t changed.`,
+            )
+        ) {
+            return;
+        }
+
+        router.patch(
+            TenantController.update.url(tenant.id),
+            { suspended: on },
             { preserveScroll: true },
         );
+    };
+
+    if (billing.exempt) {
+        return (
+            <Section title="Subscription">
+                <p className="text-sm text-muted-foreground">
+                    The demo yard isn’t billed.
+                </p>
+            </Section>
+        );
+    }
 
     return (
         <Section
-            title="Modules"
-            description="Recorded for now: switching one off doesn’t hide it from the tenant yet."
+            title="Subscription"
+            description="Follows their trial and Stripe. They switch add-ons on themselves under Settings → Billing."
         >
-            <ul className="-my-1 divide-y divide-secondary">
-                {tenant.modules.map((m) => (
-                    <li
-                        key={m.key}
-                        className="flex min-h-12 items-center justify-between gap-3"
-                    >
-                        <span className="text-sm">{m.label}</span>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={m.on}
-                            aria-label={m.label}
-                            onClick={() => toggle(m.key, !m.on)}
+            <div className="grid gap-4 text-sm">
+                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
+                    <dt className="text-muted-foreground">Status</dt>
+                    <dd>
+                        {billing.status_label}
+                        {billing.subscription_status &&
+                            ` · Stripe: ${billing.subscription_status}`}
+                        {!billing.has_access && ' · locked out'}
+                    </dd>
+                    {billing.trial_days_left !== null && (
+                        <>
+                            <dt className="text-muted-foreground">Trial</dt>
+                            <dd>
+                                {billing.trial_days_left === 1
+                                    ? 'Last day'
+                                    : `${billing.trial_days_left} days left`}
+                                {billing.subscribed
+                                    ? ', card on file'
+                                    : ', no card yet'}
+                            </dd>
+                        </>
+                    )}
+                    {billing.period_ends_at && billing.subscribed && (
+                        <>
+                            <dt className="text-muted-foreground">
+                                {billing.cancelling ? 'Ends' : 'Next bill'}
+                            </dt>
+                            <dd>{formatDate(billing.period_ends_at)}</dd>
+                        </>
+                    )}
+                </dl>
+
+                <ul className="-my-1 divide-y divide-secondary">
+                    {billing.lines.map((line) => (
+                        <li
+                            key={line.key}
                             className={cn(
-                                'flex h-7 w-12 shrink-0 rounded-full p-0.5 transition-colors',
-                                m.on
-                                    ? 'justify-end bg-primary'
-                                    : 'justify-start bg-[#a8a29e]',
+                                'flex min-h-10 items-center justify-between gap-3',
+                                !line.on && 'text-muted-foreground',
                             )}
                         >
-                            <span className="size-6 rounded-full bg-white shadow-sm" />
-                        </button>
+                            <span>
+                                {line.name}
+                                {line.per_user && line.on
+                                    ? ` × ${line.quantity}`
+                                    : ''}
+                                {!line.on && ' (off)'}
+                            </span>
+                            <span className="figure">
+                                {formatWholeMoney(
+                                    line.total_cents,
+                                    tenant.currency,
+                                )}
+                            </span>
+                        </li>
+                    ))}
+                    <li className="flex min-h-10 items-center justify-between gap-3 font-medium">
+                        <span>Monthly, before tax</span>
+                        <span className="figure">
+                            {formatWholeMoney(
+                                billing.total_cents,
+                                tenant.currency,
+                            )}
+                        </span>
                     </li>
-                ))}
-            </ul>
+                </ul>
+
+                {billing.trial_editable && (
+                    <form
+                        className="grid gap-2"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            save(form.data.trial_ends_at);
+                        }}
+                    >
+                        <Field
+                            label="Last day of trial"
+                            htmlFor="trial_ends_at"
+                            error={form.errors.trial_ends_at}
+                        >
+                            <Input
+                                id="trial_ends_at"
+                                type="date"
+                                value={form.data.trial_ends_at}
+                                onChange={(e) =>
+                                    form.setData(
+                                        'trial_ends_at',
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                        </Field>
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                type="submit"
+                                variant="outline"
+                                size="sm"
+                                disabled={!form.isDirty}
+                            >
+                                Save trial
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={extend}
+                            >
+                                Extend 7 days
+                            </Button>
+                        </div>
+                        {billing.subscribed && (
+                            <p className="text-xs text-muted-foreground">
+                                Moves the trial end on their Stripe subscription
+                                too.
+                            </p>
+                        )}
+                    </form>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                    {billing.stripe_customer_url && (
+                        <Button variant="outline" size="sm" asChild>
+                            <a
+                                href={billing.stripe_customer_url}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                Customer in Stripe
+                            </a>
+                        </Button>
+                    )}
+                    {billing.stripe_subscription_url && (
+                        <Button variant="outline" size="sm" asChild>
+                            <a
+                                href={billing.stripe_subscription_url}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                Subscription in Stripe
+                            </a>
+                        </Button>
+                    )}
+                    <Button
+                        variant={billing.suspended ? 'outline' : 'ghost'}
+                        size="sm"
+                        onClick={() => suspend(!billing.suspended)}
+                    >
+                        {billing.suspended ? 'Restore access' : 'Suspend'}
+                    </Button>
+                </div>
+            </div>
         </Section>
     );
 }
@@ -296,7 +378,6 @@ export default function ShowTenant({
     yards,
     users,
     audit,
-    options,
 }: Props) {
     const change =
         stats.prior_orders > 0
@@ -604,8 +685,7 @@ export default function ShowTenant({
                     </div>
 
                     <aside className="flex min-w-0 flex-[1_1_320px] flex-col gap-5">
-                        <AccountForm tenant={tenant} options={options} />
-                        <Modules tenant={tenant} />
+                        <Subscription tenant={tenant} />
                         <Notes tenant={tenant} />
                     </aside>
                 </div>

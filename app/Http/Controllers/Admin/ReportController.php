@@ -94,7 +94,7 @@ class ReportController extends Controller
 
     /**
      * Actions per week in each module over the last four weeks, busiest
-     * tenants first. Null when the module is switched off or not connected.
+     * tenants first. Null when the add-on is off or not connected.
      *
      * @param  array<int, Tenant>  $tenants
      * @return list<array{id: int, name: string, cells: list<int|null>}>
@@ -103,9 +103,8 @@ class ReportController extends Controller
     {
         $ids = array_map(fn (Tenant $t) => $t->id, $tenants);
         $usage = $ids === [] ? [] : $metrics->moduleUsage($now->subDays(28), $now, $ids);
-        /** @var array<string, string> $modules */
-        $modules = config('yardline.back_office.modules', []);
-        $switchable = array_keys($modules);
+        // Paid add-ons a tenant may not have switched on.
+        $switchable = ['rentals'];
 
         $rows = array_map(function (Tenant $t) use ($usage, $switchable) {
             $cells = [];

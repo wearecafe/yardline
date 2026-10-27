@@ -80,28 +80,54 @@ return [
     | authentication before they can open it, unless this is switched off
     | (for local development only).
     |
-    | Plans and modules are labels staff record against each tenant. The
-    | price is set per tenant; there's no subscription billing yet, and the
-    | module switches don't hide anything from tenants yet.
+    | Plan labels for reporting. Plans and prices come from each tenant's
+    | subscription (see "Subscription billing" below), not from staff.
     |
     */
 
     'back_office' => [
         'require_two_factor' => (bool) env('YARDLINE_ADMIN_REQUIRE_2FA', true),
 
+        // Worked out from the tenant's subscription (see App\Billing\Plan).
         'plans' => [
             'yard' => 'Yard',
             'yard_rentals' => 'Yard + Rentals',
-            'multi_yard' => 'Multi-yard',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Subscription billing
+    |--------------------------------------------------------------------------
+    |
+    | What tenants pay YardRunner, billed through Stripe Billing on
+    | YardRunner's own Stripe account (STRIPE_SECRET). "stripe" sends owners
+    | to Stripe Checkout and the customer portal. "fake" subscribes them on
+    | the spot without Stripe (non-production only).
+    |
+    | Prices are found in Stripe by lookup key. `php artisan
+    | yardline:billing:stripe-setup` creates the products and prices from
+    | the amounts below. Change an amount here and run it again to add a
+    | new price; existing subscriptions move to it on their next change.
+    |
+    */
+
+    'billing' => [
+        'driver' => env('YARDLINE_BILLING_DRIVER', 'fake'),
+        'trial_days' => 14,
+        'currency' => 'cad',
+
+        'items' => [
+            'base' => ['name' => 'YardRunner', 'lookup_key' => 'yardrunner_base_monthly', 'amount_cents' => 74_900],
+            'rentals' => ['name' => 'YardRunner Rentals', 'lookup_key' => 'yardrunner_rentals_monthly', 'amount_cents' => 19_900],
+            'time' => ['name' => 'YardRunner Time & Attendance', 'lookup_key' => 'yardrunner_time_user_monthly', 'amount_cents' => 2_000, 'per_user' => true],
         ],
 
-        'modules' => [
-            'rentals' => 'Equipment rentals',
-            'dispatch' => 'Dispatch and driver app',
-            'counter' => 'Counter sales screen',
-            'portal' => 'Contractor portal',
-            'purchasing' => 'Purchasing',
-        ],
+        // Stripe Tax on the subscription (HST/GST/QST). Needs Stripe Tax on.
+        'automatic_tax' => (bool) env('YARDLINE_BILLING_AUTOMATIC_TAX', true),
+        'webhook_secret' => env('STRIPE_BILLING_WEBHOOK_SECRET'),
+        // Optional: a customer portal configuration (bpc_...); the default is used otherwise.
+        'portal_configuration' => env('STRIPE_BILLING_PORTAL_CONFIGURATION'),
     ],
 
 ];

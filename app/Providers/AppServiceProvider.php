@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Billing\BillingGateway;
+use App\Billing\Gateways\FakeBillingGateway;
+use App\Billing\Gateways\StripeBillingGateway;
 use App\Models\ContractPrice;
 use App\Models\CreditNote;
 use App\Models\Customer;
@@ -111,6 +114,21 @@ class AppServiceProvider extends ServiceProvider
                 'stripe' => $app->make(StripeCheckoutLinks::class),
                 'fake' => new FakeCheckoutLinks,
                 default => throw new RuntimeException("Unknown YARDLINE_PAYMENTS_DRIVER: {$driver}"),
+            };
+        });
+
+        // What tenants pay YardRunner: Stripe Billing, or subscribed on the spot locally.
+        $this->app->bind(BillingGateway::class, function (Application $app) {
+            $driver = config('yardline.billing.driver');
+
+            if ($driver === 'fake' && $app->isProduction()) {
+                throw new RuntimeException('The fake billing driver cannot be used in production.');
+            }
+
+            return match ($driver) {
+                'stripe' => $app->make(StripeBillingGateway::class),
+                'fake' => new FakeBillingGateway,
+                default => throw new RuntimeException("Unknown YARDLINE_BILLING_DRIVER: {$driver}"),
             };
         });
     }

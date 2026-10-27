@@ -64,6 +64,7 @@ class IntegrationHealthController extends Controller
         return Inertia::render('admin/integrations', [
             'services' => [
                 $this->webhookService('Stripe webhooks', $webhooks['stripe'] ?? []),
+                $this->webhookService('Billing webhooks', $webhooks['stripe_billing'] ?? []),
                 [
                     'name' => 'QuickBooks sync',
                     'value' => (string) $qbWaiting,

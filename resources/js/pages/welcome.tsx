@@ -14,11 +14,24 @@ import {
 } from '@/components/marketing/mocks';
 import { Chip } from '@/components/yard/chip';
 import type { ChipTone } from '@/components/yard/chip';
+import { formatWholeMoney } from '@/lib/format';
 import { dashboard, login, register } from '@/routes';
+
+type Pricing = {
+    currency: string;
+    trial_days: number;
+    items: {
+        key: 'base' | 'rentals' | 'time';
+        name: string;
+        amount_cents: number;
+        per_user: boolean;
+    }[];
+};
 
 type Props = {
     demo: boolean;
     canRegister: boolean;
+    pricing: Pricing;
 };
 
 const nav = [
@@ -28,6 +41,7 @@ const nav = [
     { href: '#drivers', label: 'Driver app' },
     { href: '#time', label: 'Time clock' },
     { href: '#day', label: 'A day in the yard' },
+    { href: '#pricing', label: 'Pricing' },
     { href: '#faq', label: 'FAQ' },
     { href: '/help', label: 'Help' },
 ];
@@ -321,7 +335,7 @@ const ctaPrimary =
 const ctaSecondary =
     'inline-flex h-11 items-center rounded-md border border-border bg-card px-5 font-medium hover:border-foreground';
 
-export default function Welcome({ demo, canRegister }: Props) {
+export default function Welcome({ demo, canRegister, pricing }: Props) {
     const { auth } = usePage().props;
     const signedIn = Boolean(auth.user);
 
@@ -898,6 +912,17 @@ export default function Welcome({ demo, canRegister }: Props) {
                         </div>
                     </section>
 
+                    <PricingSection
+                        pricing={pricing}
+                        cta={
+                            canRegister && !signedIn ? (
+                                <Link href={register()} className={ctaPrimary}>
+                                    Start your free trial
+                                </Link>
+                            ) : null
+                        }
+                    />
+
                     {/* FAQ */}
                     <section
                         id="faq"
@@ -1012,6 +1037,133 @@ export default function Welcome({ demo, canRegister }: Props) {
                 </footer>
             </div>
         </>
+    );
+}
+
+const pricingCopy: Record<
+    Pricing['items'][number]['key'],
+    { title: string; label: string; points: string[] }
+> = {
+    base: {
+        title: 'YardRunner',
+        label: 'Everything a supply yard runs on',
+        points: [
+            'Counter sales, quotes and orders',
+            'Picking, dispatch and the driver app',
+            'Stock by yard, purchasing and colour runs',
+            'Price lists, contract prices and credit',
+            'Pallet deposits, returns and receivables',
+            'Contractor portal and QuickBooks Online',
+            'Unlimited users',
+        ],
+    },
+    rentals: {
+        title: 'Rentals',
+        label: 'Add-on',
+        points: [
+            'Fleet, calendar and rate mixing',
+            'Agreements signed on a phone or tablet',
+            'Deposits, inspections and maintenance',
+            'Online booking page',
+        ],
+    },
+    time: {
+        title: 'Time and attendance',
+        label: 'Add-on',
+        points: [
+            'Counter tablet, phone and driver-app time clock',
+            'Timesheets and Ontario and Quebec overtime',
+            'Exports for QuickBooks, ADP or any payroll',
+        ],
+    },
+};
+
+function PricingSection({
+    pricing,
+    cta,
+}: {
+    pricing: Pricing;
+    cta: ReactNode;
+}) {
+    const money = (cents: number) => formatWholeMoney(cents, pricing.currency);
+    const amount = (key: Pricing['items'][number]['key']) =>
+        pricing.items.find((item) => item.key === key)?.amount_cents ?? 0;
+    // A worked example: Rentals on, ten people on the clock.
+    const example = amount('base') + amount('rentals') + amount('time') * 10;
+
+    return (
+        <section
+            id="pricing"
+            className="mx-auto w-full max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6"
+        >
+            <Eyebrow>Pricing</Eyebrow>
+            <h2 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
+                One subscription. Add what your yard does.
+            </h2>
+            <p className="mt-4 max-w-2xl text-muted-foreground">
+                Every plan starts with a {pricing.trial_days}-day free trial
+                with the add-ons switched on, and no card to start. Prices are
+                monthly in {pricing.currency}, plus applicable taxes.
+            </p>
+
+            <div className="mt-10 grid gap-4 lg:grid-cols-[1.25fr_1fr_1fr]">
+                {pricing.items.map((item) => {
+                    const copy = pricingCopy[item.key];
+                    const base = item.key === 'base';
+
+                    return (
+                        <div
+                            key={item.key}
+                            className={
+                                base
+                                    ? 'flex flex-col rounded-lg border-2 border-primary bg-card p-6'
+                                    : 'flex flex-col rounded-lg border border-border bg-card p-6'
+                            }
+                        >
+                            <p className="font-mono text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+                                {copy.label}
+                            </p>
+                            <h3 className="mt-2 text-xl font-semibold">
+                                {copy.title}
+                            </h3>
+                            <p className="mt-4 flex items-baseline gap-1">
+                                <span className="text-4xl font-bold tracking-tight tabular-nums">
+                                    {base ? '' : '+'}
+                                    {money(item.amount_cents)}
+                                </span>
+                                <span className="text-sm text-muted-foreground">
+                                    {item.per_user
+                                        ? 'per user / month'
+                                        : '/ month'}
+                                </span>
+                            </p>
+                            {item.per_user && (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    For each person whose time you track.
+                                </p>
+                            )}
+                            <ul className="mt-6 grid gap-2 text-sm">
+                                {copy.points.map((point) => (
+                                    <li key={point} className="flex gap-2">
+                                        <Check />
+                                        <span>{point}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            {base && cta && (
+                                <div className="mt-auto pt-8">{cta}</div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            <p className="mt-6 text-sm text-muted-foreground">
+                For example, a yard with rentals and ten people on the clock
+                pays {money(example)} a month. Switch add-ons on or off any
+                time; the next bill is adjusted for the days used.
+            </p>
+        </section>
     );
 }
 

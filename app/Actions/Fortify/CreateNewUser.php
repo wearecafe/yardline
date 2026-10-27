@@ -2,6 +2,8 @@
 
 namespace App\Actions\Fortify;
 
+use App\Billing\Billing;
+use App\Billing\Trial;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Enums\TenantStatus;
@@ -17,7 +19,8 @@ use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 /**
  * Signing up creates a new business (tenant) with the person as its owner,
- * plus a first yard so orders can be taken straight away.
+ * plus a first yard so orders can be taken straight away. The business
+ * starts a free trial with every add-on available to switch on.
  *
  * Inviting staff into an existing business is a separate flow (not built yet).
  */
@@ -43,7 +46,9 @@ class CreateNewUser implements CreatesNewUsers
                 'name' => $input['business_name'],
                 'slug' => $this->uniqueSlug($input['business_name']),
                 'status' => TenantStatus::Trial,
+                'trial_ends_at' => Trial::endsOn(),
             ]);
+            Billing::refresh($tenant);
 
             CurrentTenant::run($tenant, fn () => Location::query()->create([
                 'name' => 'Main yard',

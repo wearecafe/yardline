@@ -21,7 +21,7 @@ import { navSections, reportsSection, teamSection } from '@/lib/navigation';
 import { dashboard } from '@/routes';
 
 export function AppSidebar() {
-    const { auth, time } = usePage().props;
+    const { auth, time, modules } = usePage().props;
     const team = teamSection(time, auth.can.manageTime);
     const reports = reportsSection(auth.can.viewProfit);
     // Drivers only reach settings pages here; their run is the way back.
@@ -58,7 +58,11 @@ export function AppSidebar() {
                   },
               ]
             : [
-                  ...navSections,
+                  // Rentals is a paid add-on.
+                  ...navSections.filter(
+                      (section) =>
+                          section.label !== 'Rental' || modules.rentals,
+                  ),
                   ...(reports ? [reports] : []),
                   ...(team ? [team] : []),
               ];

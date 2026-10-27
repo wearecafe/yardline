@@ -154,21 +154,24 @@ class BackOfficeTest extends TestCase
         Notification::fake();
         $this->signInAsStaff();
 
+        $this->get('/admin/tenants/create')
+            ->assertInertia(fn (Assert $page) => $page->where('defaultTrialEnds', now('America/Toronto')->addDays(13)->toDateString()));
+
         $this->post('/admin/tenants', [
             'name' => 'Niagara Hardscape Depot',
             'owner_name' => 'Dana Pereira',
             'owner_email' => 'dana@example.com',
-            'status' => 'trial',
-            'plan' => 'yard',
-            'monthly_price' => '390',
             'trial_ends_at' => now()->addDays(30)->toDateString(),
             'timezone' => 'America/Toronto',
         ])->assertSessionHasNoErrors()->assertRedirect();
 
         $tenant = Tenant::query()->where('name', 'Niagara Hardscape Depot')->firstOrFail();
         $this->assertSame(TenantStatus::Trial, $tenant->status);
-        $this->assertSame(39_000, $tenant->monthly_price_cents);
+        $this->assertSame(now()->addDays(30)->toDateString(), $tenant->trial_ends_at?->toDateString());
+        // The base subscription, with no add-ons until they switch them on.
+        $this->assertSame(74_900, $tenant->monthly_price_cents);
         $this->assertSame('yard', $tenant->plan);
+        $this->assertFalse($tenant->rentals_enabled);
 
         $owner = User::query()->where('email', 'dana@example.com')->firstOrFail();
         $this->assertSame($tenant->id, $owner->tenant_id);
@@ -183,33 +186,40 @@ class BackOfficeTest extends TestCase
     {
         $tenant = $this->tenantWithOrders('Halton Stone', 1);
         $staff = $this->signInAsStaff();
+        $extended = now()->addDays(21)->toDateString();
 
         $this->patch("/admin/tenants/{$tenant->id}", [
-            'status' => 'past_due',
-            'plan' => 'multi_yard',
-            'monthly_price' => '1180.00',
-            'modules' => ['rentals' => false],
+            'trial_ends_at' => $extended,
             'staff_notes' => 'Pilot customer.',
         ])->assertSessionHasNoErrors();
 
+        // Plan, price, status and module switches aren't staff's to set any more.
+        $this->patch("/admin/tenants/{$tenant->id}", [
+            'status' => 'active',
+            'plan' => 'yard',
+            'monthly_price' => '1.00',
+            'modules' => ['rentals' => false],
+        ])->assertSessionHasNoErrors();
+
         $tenant->refresh();
-        $this->assertSame(TenantStatus::PastDue, $tenant->status);
-        $this->assertNotNull($tenant->status_changed_at);
-        $this->assertSame(118_000, $tenant->monthly_price_cents);
-        $this->assertFalse($tenant->hasModule('rentals'));
-        $this->assertTrue($tenant->hasModule('dispatch'));
+        $this->assertSame($extended, $tenant->trial_ends_at?->toDateString());
+        $this->assertSame(TenantStatus::Trial, $tenant->status);
+        $this->assertTrue($tenant->rentals_enabled);
         $this->assertSame('Pilot customer.', $tenant->staff_notes);
 
         $event = AuditEvent::query()->withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('subject_type', 'tenant')->firstOrFail();
         $this->assertSame($staff->id, $event->user_id);
-        $this->assertSame(['active', 'past_due'], $event->changes['status'] ?? null);
+        $this->assertSame($extended, $event->changes['trial_ends_at'][1] ?? null);
         $this->assertSame(['…', '…'], $event->changes['staff_notes'] ?? null);
 
         $this->get("/admin/tenants/{$tenant->id}")
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('admin/tenants/show')
-                ->where('tenant.status', 'past_due')
+                ->where('tenant.status', 'trial')
+                ->where('tenant.billing.trial_editable', true)
+                ->where('tenant.billing.total_cents', 74_900 + 19_900)
+                ->missing('tenant.modules')
                 ->where('stats.orders', 1)
                 ->where('audit.0.who', $staff->name.' (YardRunner staff)'));
 
@@ -219,6 +229,29 @@ class BackOfficeTest extends TestCase
         $this->actingAs($owner)
             ->get(route('audit.index'))
             ->assertInertia(fn (Assert $page) => $page->where('events.data', fn ($events) => collect($events)->doesntContain('subject_type', 'tenant')));
+    }
+
+    public function test_staff_can_suspend_and_restore_a_tenant(): void
+    {
+        $tenant = $this->tenantWithOrders('Halton Stone', 0);
+        $this->signInAsStaff();
+
+        $this->patch("/admin/tenants/{$tenant->id}", ['suspended' => true])->assertSessionHasNoErrors();
+        $this->assertSame(TenantStatus::Suspended, $tenant->fresh()?->status);
+        $this->assertFalse($tenant->fresh()?->billing()->hasAccess);
+
+        $this->patch("/admin/tenants/{$tenant->id}", ['suspended' => false])->assertSessionHasNoErrors();
+        $this->assertSame(TenantStatus::Trial, $tenant->fresh()?->status);
+    }
+
+    public function test_a_paid_trial_cant_be_moved(): void
+    {
+        $tenant = $this->tenantWithOrders('Halton Stone', 0);
+        $tenant->forceFill(['stripe_subscription_id' => 'sub_test_1', 'stripe_customer_id' => 'cus_test_1', 'subscription_status' => 'active'])->save();
+        $this->signInAsStaff();
+
+        $this->patch("/admin/tenants/{$tenant->id}", ['trial_ends_at' => now()->addMonth()->toDateString()])
+            ->assertSessionHasErrors('trial_ends_at');
     }
 
     public function test_activity_is_recorded_for_weekly_users(): void

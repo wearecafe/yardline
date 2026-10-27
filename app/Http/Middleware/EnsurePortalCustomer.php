@@ -29,6 +29,9 @@ class EnsurePortalCustomer
             return is_string($slug) ? redirect()->route('portal.login', $slug) : redirect('/');
         }
 
+        // A yard whose YardRunner account is paused takes no portal orders.
+        abort_unless(CurrentTenant::get()?->billing()->hasAccess ?? false, 404);
+
         $request->attributes->set('portalCustomer', $customer);
         Audit::$customerId = $customer->id;
         $tenant = CurrentTenant::get();

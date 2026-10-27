@@ -1,10 +1,12 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import BillingController from '@/actions/App/Http/Controllers/Settings/BillingController';
 import TimeSettingsController from '@/actions/App/Http/Controllers/Settings/TimeSettingsController';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox, Field, NativeSelect } from '@/components/yard/field';
 import { Notice } from '@/components/yard/page-header';
+import { formatMoney } from '@/lib/format';
 
 type Settings = {
     enabled: boolean;
@@ -45,6 +47,7 @@ type Props = {
     weekdays: Option[];
     yards: Yard[];
     tracked: number;
+    price_per_user_cents: number;
 };
 
 /**
@@ -60,6 +63,7 @@ export default function TimeSettings({
     weekdays,
     yards,
     tracked,
+    price_per_user_cents,
 }: Props) {
     const form = useForm({
         ...settings,
@@ -132,6 +136,17 @@ export default function TimeSettings({
                         title="Time and attendance"
                         description="Clock in from the counter tablet, a phone or the driver app; review timesheets and send hours to payroll. A paid add-on, billed per person who clocks in."
                     />
+                    <p className="text-sm text-muted-foreground">
+                        {formatMoney(price_per_user_cents)} per person a month,
+                        free during your trial. See{' '}
+                        <Link
+                            href={BillingController.edit()}
+                            className="underline underline-offset-4"
+                        >
+                            Billing
+                        </Link>
+                        .
+                    </p>
                     <Checkbox
                         id="enabled"
                         label="Track time for this business"
@@ -139,7 +154,7 @@ export default function TimeSettings({
                         onChange={(v) => form.setData('enabled', v)}
                         hint={
                             settings.enabled
-                                ? `${tracked} ${tracked === 1 ? 'person clocks' : 'people clock'} in.`
+                                ? `${tracked} ${tracked === 1 ? 'person clocks' : 'people clock'} in: ${formatMoney(tracked * price_per_user_cents)} a month.`
                                 : 'Turning it on sets up everyone who signs in; you add PINs and yard hands after.'
                         }
                     />

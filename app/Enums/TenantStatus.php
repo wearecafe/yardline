@@ -3,14 +3,15 @@
 namespace App\Enums;
 
 /**
- * Where a tenant stands with YardRunner. Set by staff in the back office;
- * it doesn't change what the tenant can do yet.
+ * Where a tenant stands with YardRunner. Worked out from their trial and
+ * Stripe subscription (App\Billing\BillingState); staff can only suspend.
  */
 enum TenantStatus: string
 {
     case Trial = 'trial';
     case Active = 'active';
     case PastDue = 'past_due';
+    case Expired = 'expired';
     case Suspended = 'suspended';
     case Cancelled = 'cancelled';
 
@@ -20,6 +21,7 @@ enum TenantStatus: string
             self::Trial => 'Trial',
             self::Active => 'Active',
             self::PastDue => 'Past due',
+            self::Expired => 'Trial ended',
             self::Suspended => 'Suspended',
             self::Cancelled => 'Cancelled',
         };
@@ -34,7 +36,7 @@ enum TenantStatus: string
     /** Still a customer (or about to be): counted as a live tenant. */
     public function isLive(): bool
     {
-        return $this !== self::Suspended && $this !== self::Cancelled;
+        return $this === self::Trial || $this === self::Active || $this === self::PastDue;
     }
 
     /**

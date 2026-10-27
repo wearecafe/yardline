@@ -47,6 +47,9 @@ STRIPE_KEY=pk_live_...
 STRIPE_SECRET=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
+YARDLINE_BILLING_DRIVER=stripe
+STRIPE_BILLING_WEBHOOK_SECRET=whsec_...
+
 MAIL_MAILER=resend
 RESEND_API_KEY=re_...
 MAIL_FROM_ADDRESS=...        # on a domain verified in Resend
@@ -86,6 +89,34 @@ environment can use Stripe test keys with the same drivers.
 - If yards get their own Stripe accounts via Connect, add a Connect
   webhook with the same events, and set each business's `acct_...` ID in
   Settings, Business.
+
+## Stripe: tenant subscriptions
+
+What yards pay YardRunner runs on the same Stripe account
+(`STRIPE_SECRET`). See [features.md](features.md#billing).
+
+1. Turn on Stripe Tax with your registrations (needed for
+   `YARDLINE_BILLING_AUTOMATIC_TAX=true`, the default).
+2. Create the products, prices and webhook from Cloud's Commands tab:
+
+    ```
+    php artisan yardline:billing:stripe-setup --webhook=https://<your-domain>/webhooks/stripe/billing
+    ```
+
+    Put the printed secret in `STRIPE_BILLING_WEBHOOK_SECRET` and redeploy.
+    It's a separate endpoint from the card-payments one, with its own
+    secret. (In the dashboard instead: events
+    `customer.subscription.created`, `.updated`, `.deleted`, `.paused`
+    and `.resumed`.)
+
+3. Set up the customer portal (Settings → Billing → Customer portal):
+   allow updating payment methods, billing address and tax IDs, invoice
+   history, and cancelling at the end of the period. Turn **off**
+   switching plans and changing quantities: YardRunner sets the items.
+4. Under Billing → Revenue recovery, keep Smart Retries on and choose
+   "mark the subscription as unpaid" after the last retry. Unpaid locks
+   the tenant until they update their card; cancelling would end it.
+5. Set `YARDLINE_BILLING_DRIVER=stripe`.
 
 ## QuickBooks Online
 

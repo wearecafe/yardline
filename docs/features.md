@@ -317,24 +317,25 @@ Staff must turn on two-factor authentication before `/admin` opens
 users get a 404 there, and staff are sent back to `/admin` from the yard
 screens (`KeepStaffInBackOffice`).
 
-| Screen             | What's on it                                                                                                                | Code                                               |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Overview           | Tenants, trials, MRR, sales and orders across tenants, busiest tenants, what needs attention, growth, module adoption       | `Admin\OverviewController`, `BackOffice\Attention` |
-| Tenants            | Every tenant with status, plan, connections, activity and health; set up a new tenant (emails the owner)                    | `Admin\TenantController`                           |
-| Tenant page        | 30-day activity, integrations, yards, users (send a password link), audit log; plan, status, price, modules and staff notes | `Admin\TenantController`                           |
-| Activity reports   | Volume per week, module usage by tenant, engagement and churn risk, retention by signup month                               | `Admin\ReportController`                           |
-| Integration health | Webhooks, QuickBooks connections, open issues, failed jobs (retry or clear)                                                 | `Admin\IntegrationHealthController`                |
+| Screen             | What's on it                                                                                                                 | Code                                               |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Overview           | Tenants, trials, MRR, sales and orders across tenants, busiest tenants, what needs attention, growth, module adoption        | `Admin\OverviewController`, `BackOffice\Attention` |
+| Tenants            | Every tenant with status, plan, connections, activity and health; set up a new tenant (emails the owner)                     | `Admin\TenantController`                           |
+| Tenant page        | 30-day activity, integrations, yards, users (send a password link), audit log; subscription, trial end, suspend, staff notes | `Admin\TenantController`                           |
+| Activity reports   | Volume per week, module usage by tenant, engagement and churn risk, retention by signup month                                | `Admin\ReportController`                           |
+| Integration health | Webhooks, QuickBooks connections, open issues, failed jobs (retry or clear)                                                  | `Admin\IntegrationHealthController`                |
 
 Figures come from `App\BackOffice\TenantMetrics`, which reads tables
 directly and groups by `tenant_id` (staff have no tenant, so scoped models
 would return nothing). Health and churn risk are in `TenantHealth`.
 
-- **Plan, price and status** are recorded by staff (`tenants.plan`,
-  `monthly_price_cents`, `status`, `trial_ends_at`); MRR is the sum of
-  active and past-due prices. Nothing is charged and the status doesn't
-  block sign-in yet. Plans are listed in `config/yardline.php`.
-- **Modules** (`tenants.modules`) are recorded only; nothing is hidden
-  from the tenant yet. Modules are on unless switched off.
+- **Plan, price and status** follow the tenant's trial, add-ons and
+  Stripe subscription (see [Billing](#billing)). Staff can move the trial
+  end (also on Stripe while the subscription is trialing), suspend or
+  restore access, and open the customer and subscription in Stripe. MRR
+  is the sum of active and past-due tenants' monthly prices.
+- **Add-ons** (Rentals, Time and attendance) are switched on by the
+  tenant under Settings → Billing, not by staff.
 - **Activity**: `TrackActivity` notes each user's last visit, the
   tenant's, and one `user_activity_days` row per user per day (weekly
   users, retention), writing at most every five minutes per user.
@@ -343,7 +344,49 @@ would return nothing). Health and churn risk are in `TenantHealth`.
   days.
 - Staff changes to a tenant are written to that tenant's audit log, but
   the tenant's own audit page leaves them out.
-- New sign-ups start as a trial with no end date; staff set one.
+- New sign-ups and tenants staff set up start a 14-day trial.
+
+## Billing
+
+What tenants pay YardRunner: a base subscription ($749 CAD a month),
+Rentals ($199 a month) and Time and attendance ($20 per person tracked a
+month), plus tax. Amounts and Stripe lookup keys are in
+`config/yardline.php` (`billing`); the marketing home page's pricing table
+reads them too. Billed through Stripe Billing on YardRunner's own Stripe
+account, never on a yard's connected account. Code is in `app/Billing`.
+
+| What                                                                            | Where                      | Code                                   |
+| ------------------------------------------------------------------------------- | -------------------------- | -------------------------------------- |
+| 14-day trial on sign-up (today is day 1); every add-on can be switched on free  | Settings → Billing         | `Trial`, `AddOns`, `BillingController` |
+| Add payment details in Stripe Checkout; the trial carries over                  | Settings → Billing         | `StripeBillingGateway::checkoutUrl`    |
+| Card, address, invoices and cancelling in Stripe's customer portal              | Settings → Billing         | `StripeBillingGateway::portalUrl`      |
+| Add-on or tracked-people changes update the subscription, prorated              | Billing, Time, Employees   | `Billing::changed`, `SyncSubscription` |
+| Subscription state copied from Stripe's webhooks                                | `/webhooks/stripe/billing` | `StripeBillingWebhookController`       |
+| Locked when the trial ends unpaid, unpaid after retries, cancelled or suspended | Everywhere                 | `BillingState`, `EnsureBilling`        |
+| Rentals screens and the booking page only with the add-on on                    | Rentals                    | `EnsureRentals`                        |
+
+- **Access** is worked out on every request from the trial date and the
+  last subscription status Stripe sent (`BillingState`), so a trial ends
+  at midnight in the yard's time zone with nothing scheduled. Past due
+  keeps working while Stripe retries; `unpaid`, `canceled` or a suspension
+  by staff locks the tenant. Owners and admins land on Settings → Billing;
+  everyone else on a paused page. Profile, security, sign-out and help
+  still work, and the contractor portal and booking page close.
+- **Time and attendance seats** are active employees with "tracks time"
+  on. Adding, archiving or changing one queues `SyncSubscription`, which
+  waits 30 seconds so a burst of changes becomes one update.
+- **Checkout's trial** must end at least 48 hours out, so a tenant
+  subscribing in the last two days of their trial gets the difference
+  free; the trial end Stripe sends back becomes `trial_ends_at`.
+- **Prices** are found in Stripe by lookup key. `php artisan
+  yardline:billing:stripe-setup` creates the products and prices (and,
+  with `--webhook=<url>`, the webhook). Change an amount in config and
+  run it again: it adds a new price and moves the lookup key, and each
+  subscription moves to it on its next change.
+- `php artisan yardline:billing:refresh` runs nightly to update the
+  status shown in the back office (Trial → Trial ended).
+- Locally `YARDLINE_BILLING_DRIVER=fake` subscribes on the spot with no
+  Stripe. The demo yard is never billed.
 
 ## Demo yard
 
