@@ -25,6 +25,10 @@ class AuditController extends Controller
         'organization' => 'Credit terms',
         'credit_note' => 'Credits',
         'user' => 'Users',
+        'employee' => 'Employees',
+        'time_adjustment' => 'Time corrections',
+        'timesheet' => 'Timesheets',
+        'pay_period' => 'Pay periods',
     ];
 
     public function index(Request $request): Response

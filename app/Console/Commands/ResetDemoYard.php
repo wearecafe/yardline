@@ -26,6 +26,12 @@ class ResetDemoYard extends Command
      */
     private const TABLES = [
         'audit_events',
+        'payroll_exports',
+        'timesheets',
+        'pay_periods',
+        'time_punches',
+        'time_adjustments',
+        'employees',
         'cycle_count_lines',
         'cycle_counts',
         'stock_transfer_lines',

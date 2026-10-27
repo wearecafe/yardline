@@ -98,7 +98,7 @@ class DemoYardSeeder extends Seeder
             'name' => 'Gord Hessels',
             'role' => UserRole::Owner,
             'title' => 'Owner',
-            'description' => 'Sees everything. Sets contractor pricing and credit limits, and can override a credit limit.',
+            'description' => 'Sees everything. Sets contractor pricing and credit limits, can override a credit limit, and approves timesheets.',
         ],
         [
             'email' => 'lisa.marchetti@example.com',
@@ -119,7 +119,7 @@ class DemoYardSeeder extends Seeder
             'name' => 'Owen Bakker',
             'role' => UserRole::Staff,
             'title' => 'Yard lead',
-            'description' => 'Receives and counts stock, releases loads and checks rentals back in.',
+            'description' => 'Receives and counts stock, releases loads and checks rentals back in. Clocks in at the counter tablet with PIN 2222.',
         ],
         [
             'email' => 'sam.rinaldi@example.com',
@@ -215,6 +215,7 @@ class DemoYardSeeder extends Seeder
                 $this->portalActivity();
                 $this->auditHistory();
                 $this->pavers80ByLayer();
+                (new DemoTimeSeeder($tenant, $this->users, $this->waterdown, $this->stoneyCreek, self::TZ))->run();
             });
         });
 

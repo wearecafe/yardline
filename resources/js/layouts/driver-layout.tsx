@@ -1,7 +1,8 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { LogOut, MapPin, MapPinOff, Settings } from 'lucide-react';
+import { Clock, LogOut, MapPin, MapPinOff, Settings } from 'lucide-react';
 import type { ReactNode } from 'react';
 import DriverController from '@/actions/App/Http/Controllers/DriverController';
+import MyTimeController from '@/actions/App/Http/Controllers/Time/MyTimeController';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { useLocationSharing } from '@/hooks/use-location-sharing';
 import type { LocationSharing } from '@/hooks/use-location-sharing';
@@ -48,6 +49,40 @@ function SharingBadge({ sharing }: { sharing: LocationSharing }) {
 }
 
 /**
+ * On the clock or not, one tap from the clock itself.
+ */
+function ClockChip() {
+    const { time } = usePage().props;
+
+    if (!time?.tracks) {
+        return null;
+    }
+
+    const label = {
+        working: 'On the clock',
+        on_break: 'On break',
+        out: 'Clock in',
+    }[time.state ?? 'out'];
+
+    return (
+        <Link
+            href={MyTimeController.show()}
+            className={cn(
+                'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold',
+                time.state === 'working'
+                    ? 'bg-success-soft text-success'
+                    : time.state === 'on_break'
+                      ? 'bg-warning-soft text-warning'
+                      : 'bg-primary text-primary-foreground',
+            )}
+        >
+            <Clock className="size-3" />
+            {label}
+        </Link>
+    );
+}
+
+/**
  * The driver's phone: a slim header, the run below. Persists between the
  * run and its stops so location sharing keeps going.
  */
@@ -85,6 +120,7 @@ export default function DriverLayout({ children }: { children: ReactNode }) {
                             {tenant?.name}
                         </div>
                     </div>
+                    <ClockChip />
                     <SharingBadge sharing={sharing} />
                     <Link
                         href={edit()}

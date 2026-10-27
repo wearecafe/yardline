@@ -14,11 +14,12 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { navSections } from '@/lib/navigation';
+import { navSections, teamSection } from '@/lib/navigation';
 import { dashboard } from '@/routes';
 
 export function AppSidebar() {
-    const { auth } = usePage().props;
+    const { auth, time } = usePage().props;
+    const team = teamSection(time, auth.can.manageTime);
     // Drivers only reach settings pages here; their run is the way back.
     const sections = auth.can.drive
         ? [
@@ -33,7 +34,9 @@ export function AppSidebar() {
                   ],
               },
           ]
-        : navSections;
+        : team
+          ? [...navSections, team]
+          : navSections;
 
     return (
         <Sidebar collapsible="icon" variant="sidebar">

@@ -212,3 +212,4 @@ Route::post('webhooks/shopify', ShopifyWebhookController::class)->name('webhooks
 
 require __DIR__.'/settings.php';
 require __DIR__.'/rentals.php';
+require __DIR__.'/time.php';

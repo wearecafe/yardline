@@ -24,8 +24,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $postal_code
  * @property string $country
  * @property bool $is_default
+ * @property string|null $latitude
+ * @property string|null $longitude
+ * @property int|null $geofence_m radius for checking phone punches
  */
-#[Fillable(['name', 'code', 'address_line1', 'address_line2', 'city', 'region', 'postal_code', 'country', 'is_default', 'pallet_deposits'])]
+#[Fillable(['name', 'code', 'address_line1', 'address_line2', 'city', 'region', 'postal_code', 'country', 'is_default', 'pallet_deposits', 'latitude', 'longitude', 'geofence_m'])]
 class Location extends Model
 {
     /** @use HasFactory<LocationFactory> */
@@ -36,6 +39,9 @@ class Location extends Model
         return [
             'is_default' => 'boolean',
             'pallet_deposits' => 'boolean',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
+            'geofence_m' => 'integer',
         ];
     }
 

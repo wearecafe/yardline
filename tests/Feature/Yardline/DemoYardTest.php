@@ -181,7 +181,7 @@ class DemoYardTest extends TestCase
         config(['yardline.demo' => true]);
         $this->post('/demo', ['email' => self::OWNER]);
 
-        foreach (['dashboard', 'orders.index', 'orders.queue', 'dispatch.board', 'counter.show', 'inventory.index', 'purchasing.index', 'returns.index', 'receivables.index', 'products.index', 'organizations.index', 'customers.index', 'price-lists.index', 'fleet.index', 'rentals.calendar', 'rentals.index', 'maintenance.index', 'rental-payments.index', 'audit.index', 'delivery-settings.edit', 'rental-settings.edit'] as $name) {
+        foreach (['dashboard', 'orders.index', 'orders.queue', 'dispatch.board', 'counter.show', 'inventory.index', 'purchasing.index', 'returns.index', 'receivables.index', 'products.index', 'organizations.index', 'customers.index', 'price-lists.index', 'fleet.index', 'rentals.calendar', 'rentals.index', 'maintenance.index', 'rental-payments.index', 'audit.index', 'delivery-settings.edit', 'rental-settings.edit', 'time.board', 'time.timesheets.index', 'time.employees.index', 'time.kiosk', 'time.self.show', 'time-settings.edit'] as $name) {
             $this->get(route($name))->assertOk();
         }
     }

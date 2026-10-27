@@ -179,6 +179,7 @@ class FakeQuickBooks
             'companyinfo' => 'CompanyInfo',
             'taxcode' => 'TaxCode',
             'taxrate' => 'TaxRate',
+            'timeactivity' => 'TimeActivity',
             default => ucfirst($path),
         };
     }

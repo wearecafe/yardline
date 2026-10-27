@@ -1,5 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    Clock,
     Boxes,
     Factory,
     LifeBuoy,
@@ -45,6 +46,7 @@ const icons: Record<string, LucideIcon> = {
     wrench: Wrench,
     plug: Plug,
     users: Users,
+    clock: Clock,
 };
 
 export function CategoryIcon({
