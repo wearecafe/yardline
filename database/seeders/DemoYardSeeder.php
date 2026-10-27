@@ -193,6 +193,9 @@ class DemoYardSeeder extends Seeder
                 'slug' => self::SLUG,
                 'currency' => 'CAD',
                 'timezone' => self::TZ,
+                // The demo yard never pays: it shows every add-on.
+                'rentals_enabled' => true,
+                'status' => 'active',
             ]);
 
             CurrentTenant::run($tenant, function () use ($tenant) {

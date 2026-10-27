@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\BillingController;
 use App\Http\Controllers\Settings\BusinessController;
 use App\Http\Controllers\Settings\DriverAccountsController;
 use App\Http\Controllers\Settings\OrderPickingController;
@@ -51,6 +52,18 @@ Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function (
     Route::delete('settings/quickbooks', [QuickBooksController::class, 'destroy'])->name('quickbooks.destroy');
     Route::post('settings/quickbooks/log/{sync}/resend', [QuickBooksController::class, 'resend'])->name('quickbooks.resend');
 });
+
+// The business's YardRunner subscription. Reachable while the account is
+// paused (see EnsureBilling), so owners and admins can subscribe.
+Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function () {
+    Route::get('settings/billing', [BillingController::class, 'edit'])->name('billing.edit');
+    Route::put('settings/billing/add-ons', [BillingController::class, 'addOns'])->name('billing.add-ons');
+    Route::post('settings/billing/checkout', [BillingController::class, 'checkout'])->middleware('throttle:10,1')->name('billing.checkout');
+    Route::get('settings/billing/subscribed', [BillingController::class, 'subscribed'])->name('billing.subscribed');
+    Route::post('settings/billing/portal', [BillingController::class, 'portal'])->middleware('throttle:10,1')->name('billing.portal');
+});
+
+Route::get('account-paused', [BillingController::class, 'paused'])->middleware(['auth'])->name('billing.paused');
 
 Route::middleware(['auth', 'verified', 'can:manage-users'])->group(function () {
     Route::get('settings/users', [UserAccountsController::class, 'index'])->name('users.index');

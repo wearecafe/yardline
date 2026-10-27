@@ -25,7 +25,8 @@ class SendRentalReminders extends Command
     {
         $sent = 0;
 
-        foreach (Tenant::query()->cursor() as $tenant) {
+        // Only businesses with the Rentals add-on on.
+        foreach (Tenant::query()->where('rentals_enabled', true)->cursor() as $tenant) {
             $sent += CurrentTenant::run($tenant, function () use ($tenant, $notifier) {
                 $settings = RentalSettings::for($tenant);
                 $count = 0;

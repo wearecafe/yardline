@@ -3,6 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Audit\Audit;
+use App\Billing\Billing;
+use App\Billing\BillingGateway;
+use App\Billing\BillingState;
+use App\Billing\Plan;
+use App\Billing\Trial;
 use App\BackOffice\TenantHealth;
 use App\BackOffice\TenantMetrics;
 use App\Enums\IntegrationProvider;
@@ -26,8 +31,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 /**
  * Tenants in the back office: the list, setting one up for a new
@@ -123,15 +130,14 @@ class TenantController extends Controller
     public function create(): Response
     {
         return Inertia::render('admin/tenants/create', [
-            'plans' => $this->plans(),
-            'statuses' => array_values(array_filter(TenantStatus::options(), fn (array $o) => in_array($o['value'], ['trial', 'active'], true))),
-            'defaultTrialEnds' => now()->addDays(30)->toDateString(),
+            'defaultTrialEnds' => Trial::endsOn(),
         ]);
     }
 
     /**
      * Sets up a business for a new customer: the tenant, a first yard, and
-     * the owner, who's emailed a link to choose a password.
+     * the owner, who's emailed a link to choose a password. They start on
+     * a free trial, which staff can lengthen here.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -139,10 +145,7 @@ class TenantController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'owner_name' => ['required', 'string', 'max:255'],
             'owner_email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-            'status' => ['required', Rule::in([TenantStatus::Trial->value, TenantStatus::Active->value])],
-            'plan' => ['nullable', Rule::in(array_keys($this->planLabels()))],
-            'monthly_price' => ['nullable', 'numeric', 'min:0', 'max:100000'],
-            'trial_ends_at' => ['nullable', 'date', 'required_if:status,trial'],
+            'trial_ends_at' => ['required', 'date', 'after_or_equal:today'],
             'timezone' => ['required', 'timezone:all'],
         ]);
 
@@ -151,11 +154,10 @@ class TenantController extends Controller
                 'name' => $data['name'],
                 'slug' => $this->uniqueSlug($data['name']),
                 'timezone' => $data['timezone'],
-                'status' => $data['status'],
-                'plan' => $data['plan'] ?? null,
-                'monthly_price_cents' => $this->cents($data['monthly_price'] ?? null),
-                'trial_ends_at' => $data['status'] === TenantStatus::Trial->value ? ($data['trial_ends_at'] ?? null) : null,
+                'status' => TenantStatus::Trial,
+                'trial_ends_at' => CarbonImmutable::parse($data['trial_ends_at'])->toDateString(),
             ]);
+            Billing::refresh($tenant);
 
             $owner = CurrentTenant::run($tenant, function () use ($tenant, $data) {
                 Location::query()->create(['name' => 'Main yard', 'code' => 'MAIN', 'is_default' => true]);
@@ -191,6 +193,8 @@ class TenantController extends Controller
 
     public function show(Tenant $tenant, TenantMetrics $metrics): Response
     {
+        Billing::refresh($tenant); // a trial may have ended since the nightly refresh
+
         $now = CarbonImmutable::now();
         $ids = [$tenant->id];
 
@@ -251,11 +255,7 @@ class TenantController extends Controller
                 'last_active_at' => $tenant->last_active_at?->toIso8601String(),
                 'status_changed_at' => $tenant->status_changed_at?->toIso8601String(),
                 'staff_notes' => $tenant->staff_notes,
-                'modules' => collect($this->moduleLabels())->map(fn (string $label, string $key) => [
-                    'key' => $key,
-                    'label' => $label,
-                    'on' => $tenant->hasModule($key),
-                ])->values(),
+                'billing' => $this->billing($tenant),
                 'owner' => $users->first(fn (User $u) => $u->role === UserRole::Owner)?->only('id', 'name', 'email'),
                 'health' => TenantHealth::of($tenant, $orders['orders'], $prior['orders'], $integrations, $quickBooks, (int) ($webhooks[WebhookDelivery::FAILED] ?? 0)),
             ],
@@ -309,42 +309,45 @@ class TenantController extends Controller
                     'note' => $e->note,
                     'who' => $e->user === null ? 'System' : $e->user->name.($e->user->isPlatformStaff() ? ' (YardRunner staff)' : ''),
                 ]),
-            'options' => [
-                'statuses' => TenantStatus::options(),
-                'plans' => $this->plans(),
-            ],
         ]);
     }
 
     /**
-     * Staff record the plan, price, status and notes, and switch modules.
-     * Each change is written to the tenant's audit log.
+     * Staff lengthen (or shorten) the free trial, suspend or restore the
+     * account, and keep notes. Plan, price and status follow the tenant's
+     * add-ons and Stripe subscription. Each change goes in the tenant's
+     * audit log.
      */
-    public function update(Request $request, Tenant $tenant): RedirectResponse
+    public function update(Request $request, Tenant $tenant, BillingGateway $gateway): RedirectResponse
     {
         $data = $request->validate([
-            'status' => ['sometimes', 'required', Rule::enum(TenantStatus::class)],
-            'plan' => ['sometimes', 'nullable', Rule::in(array_keys($this->planLabels()))],
-            'monthly_price' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100000'],
-            'trial_ends_at' => ['sometimes', 'nullable', 'date'],
+            'trial_ends_at' => ['sometimes', 'required', 'date'],
+            'suspended' => ['sometimes', 'boolean'],
             'staff_notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
-            'modules' => ['sometimes', 'array'],
-            'modules.*' => ['boolean'],
         ]);
 
-        if (array_key_exists('modules', $data)) {
-            $requested = is_array($data['modules']) ? $data['modules'] : [];
-            $data['modules'] = collect(array_keys($this->moduleLabels()))->mapWithKeys(fn (string $key) => [
-                $key => (bool) ($requested[$key] ?? $tenant->hasModule($key)),
-            ])->all();
+        $trialMoved = false;
+
+        if (array_key_exists('trial_ends_at', $data)) {
+            if ($tenant->billing()->subscribed && $tenant->subscription_status !== 'trialing') {
+                throw ValidationException::withMessages(['trial_ends_at' => 'Their trial is over and they’re paying, so the trial can’t be changed.']);
+            }
+
+            $tenant->setAttribute('trial_ends_at', CarbonImmutable::parse((string) $data['trial_ends_at'])->toDateString());
+            $trialMoved = $tenant->isDirty('trial_ends_at');
         }
 
-        if (array_key_exists('monthly_price', $data)) {
-            $data['monthly_price_cents'] = $this->cents($data['monthly_price']);
-            unset($data['monthly_price']);
+        if (array_key_exists('suspended', $data)) {
+            $suspend = (bool) $data['suspended'];
+
+            if ($suspend !== ($tenant->suspended_at !== null)) {
+                $tenant->suspended_at = $suspend ? now() : null;
+            }
         }
 
-        $tenant->fill($data);
+        if (array_key_exists('staff_notes', $data)) {
+            $tenant->staff_notes = $data['staff_notes'];
+        }
 
         if (! $tenant->isDirty()) {
             return back();
@@ -361,13 +364,57 @@ class TenantController extends Controller
             $changes['staff_notes'] = ['…', '…'];
         }
 
+        if ($trialMoved && $tenant->subscription_status === 'trialing') {
+            try {
+                $gateway->updateTrialEnd($tenant, BillingState::trialEndsAtMoment($tenant) ?? CarbonImmutable::now());
+            } catch (Throwable $e) {
+                report($e);
+                Inertia::flash('toast', ['type' => 'error', 'message' => 'Stripe didn’t accept the new trial end, so nothing was saved: '.$e->getMessage()]);
+
+                return back();
+            }
+        }
+
         $tenant->save();
+        Billing::refresh($tenant);
 
         CurrentTenant::run($tenant, fn () => Audit::record($tenant, 'updated', $changes, 'Changed by YardRunner staff'));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Saved {$tenant->name}."]);
 
         return back();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function billing(Tenant $tenant): array
+    {
+        $state = $tenant->billing();
+        $plan = Plan::for($tenant);
+        $live = ! str_starts_with((string) config('services.stripe.secret'), 'sk_test_');
+        $dashboard = 'https://dashboard.stripe.com'.($live ? '' : '/test');
+
+        return [
+            'status_label' => $state->status->label(),
+            'has_access' => $state->hasAccess,
+            'subscribed' => $state->subscribed,
+            'exempt' => $state->exempt,
+            'suspended' => $tenant->suspended_at !== null,
+            'subscription_status' => $tenant->subscription_status,
+            // Only a trial that isn't yet paid for can be moved.
+            'trial_editable' => ! $state->subscribed || $tenant->subscription_status === 'trialing',
+            'trial_days_left' => $state->trialDaysLeft,
+            'period_ends_at' => $state->periodEndsAt?->toIso8601String(),
+            'cancelling' => $state->cancelling,
+            'billed_seats' => $tenant->billed_seats,
+            'lines' => $plan->lines(),
+            'total_cents' => $plan->monthlyCents(),
+            'stripe_customer_url' => $tenant->stripe_customer_id === null ? null : "{$dashboard}/customers/{$tenant->stripe_customer_id}",
+            'stripe_subscription_url' => $tenant->stripe_subscription_id === null || str_starts_with($tenant->stripe_subscription_id, 'sub_fake_')
+                ? null
+                : "{$dashboard}/subscriptions/{$tenant->stripe_subscription_id}",
+        ];
     }
 
     /**
@@ -473,27 +520,12 @@ class TenantController extends Controller
         return $plans;
     }
 
-    /**
-     * @return array<string, string>
-     */
-    private function moduleLabels(): array
-    {
-        /** @var array<string, string> $modules */
-        $modules = config('yardline.back_office.modules', []);
-
-        return $modules;
-    }
-
-    private function cents(mixed $amount): ?int
-    {
-        return $amount === null || $amount === '' ? null : (int) round((float) $amount * 100);
-    }
-
     private function auditValue(mixed $value): mixed
     {
         return match (true) {
             $value instanceof TenantStatus => $value->value,
             $value instanceof CarbonImmutable => $value->toDateString(),
+            is_bool($value) => $value,
             default => $value,
         };
     }

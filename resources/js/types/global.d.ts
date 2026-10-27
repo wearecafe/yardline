@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { SharedBilling } from '@/types/billing';
 import type { SharedTimeStatus } from '@/types/time';
 
 declare module 'react' {
@@ -27,6 +28,8 @@ declare module '@inertiajs/core' {
             isDemo: boolean;
             shareLocation: boolean;
             time: SharedTimeStatus;
+            modules: { rentals: boolean };
+            billing: SharedBilling | null;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

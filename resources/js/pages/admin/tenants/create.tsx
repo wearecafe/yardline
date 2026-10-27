@@ -6,23 +6,14 @@ import { Field, NativeSelect } from '@/components/yard/field';
 import { PageBody, PageHeader, Section } from '@/components/yard/page-header';
 
 type Props = {
-    plans: { value: string; label: string }[];
-    statuses: { value: 'trial' | 'active'; label: string }[];
     defaultTrialEnds: string;
 };
 
-export default function CreateTenant({
-    plans,
-    statuses,
-    defaultTrialEnds,
-}: Props) {
+export default function CreateTenant({ defaultTrialEnds }: Props) {
     const form = useForm({
         name: '',
         owner_name: '',
         owner_email: '',
-        status: 'trial' as 'trial' | 'active',
-        plan: plans[0]?.value ?? '',
-        monthly_price: '',
         trial_ends_at: defaultTrialEnds,
         timezone: 'America/Toronto',
     });
@@ -136,86 +127,23 @@ export default function CreateTenant({
                     </Section>
 
                     <Section
-                        title="Plan"
-                        description="Recorded for reporting and MRR. Nothing is charged from here."
+                        title="Free trial"
+                        description="They can use everything, add-ons included, until the trial ends, then add payment details under Settings → Billing."
                     >
                         <div className="grid gap-4 sm:grid-cols-2">
                             <Field
-                                label="Status"
-                                htmlFor="status"
-                                error={form.errors.status}
-                            >
-                                <NativeSelect
-                                    id="status"
-                                    value={form.data.status}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'status',
-                                            e.target.value as
-                                                | 'trial'
-                                                | 'active',
-                                        )
-                                    }
-                                >
-                                    {statuses.map((s) => (
-                                        <option key={s.value} value={s.value}>
-                                            {s.label}
-                                        </option>
-                                    ))}
-                                </NativeSelect>
-                            </Field>
-                            {form.data.status === 'trial' && (
-                                <Field
-                                    label="Trial ends"
-                                    htmlFor="trial_ends_at"
-                                    error={form.errors.trial_ends_at}
-                                >
-                                    <Input
-                                        id="trial_ends_at"
-                                        type="date"
-                                        value={form.data.trial_ends_at}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'trial_ends_at',
-                                                e.target.value,
-                                            )
-                                        }
-                                    />
-                                </Field>
-                            )}
-                            <Field
-                                label="Plan"
-                                htmlFor="plan"
-                                error={form.errors.plan}
-                            >
-                                <NativeSelect
-                                    id="plan"
-                                    value={form.data.plan}
-                                    onChange={(e) =>
-                                        form.setData('plan', e.target.value)
-                                    }
-                                >
-                                    <option value="">Not set</option>
-                                    {plans.map((p) => (
-                                        <option key={p.value} value={p.value}>
-                                            {p.label}
-                                        </option>
-                                    ))}
-                                </NativeSelect>
-                            </Field>
-                            <Field
-                                label="Monthly price (CAD)"
-                                htmlFor="monthly_price"
-                                error={form.errors.monthly_price}
-                                hint="Before tax. Leave blank if not agreed yet."
+                                label="Last day of trial"
+                                htmlFor="trial_ends_at"
+                                error={form.errors.trial_ends_at}
                             >
                                 <Input
-                                    id="monthly_price"
-                                    inputMode="decimal"
-                                    value={form.data.monthly_price}
+                                    id="trial_ends_at"
+                                    type="date"
+                                    required
+                                    value={form.data.trial_ends_at}
                                     onChange={(e) =>
                                         form.setData(
-                                            'monthly_price',
+                                            'trial_ends_at',
                                             e.target.value,
                                         )
                                     }

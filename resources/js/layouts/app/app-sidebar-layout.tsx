@@ -3,6 +3,7 @@ import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
+import { BillingBanner } from '@/components/billing-banner';
 import type { AppLayoutProps } from '@/types';
 
 export default function AppSidebarLayout({
@@ -21,6 +22,7 @@ export default function AppSidebarLayout({
                         every night.
                     </p>
                 )}
+                <BillingBanner />
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 {children}
             </AppContent>

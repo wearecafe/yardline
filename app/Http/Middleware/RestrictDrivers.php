@@ -36,6 +36,7 @@ class RestrictDrivers
         'passkey*',
         'verification.*',
         'logout',
+        'billing.paused',
         'help.*',
         'home',
         'well-known.*',

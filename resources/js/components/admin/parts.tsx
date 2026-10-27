@@ -9,6 +9,7 @@ export type TenantStatus =
     | 'trial'
     | 'active'
     | 'past_due'
+    | 'expired'
     | 'suspended'
     | 'cancelled';
 
@@ -16,6 +17,7 @@ const statuses: Record<TenantStatus, [string, ChipTone]> = {
     trial: ['Trial', 'info'],
     active: ['Active', 'success'],
     past_due: ['Past due', 'warning'],
+    expired: ['Trial ended', 'neutral'],
     suspended: ['Suspended', 'danger'],
     cancelled: ['Cancelled', 'neutral'],
 };

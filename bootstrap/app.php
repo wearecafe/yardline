@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Middleware\EnsureBilling;
 use App\Http\Middleware\EnsurePlatformStaff;
 use App\Http\Middleware\EnsurePortalCustomer;
+use App\Http\Middleware\EnsureRentals;
 use App\Http\Middleware\EnsureTimeTracking;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -30,12 +32,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'portal' => EnsurePortalCustomer::class,
             'time' => EnsureTimeTracking::class,
+            'rentals' => EnsureRentals::class,
             'back-office' => EnsurePlatformStaff::class,
         ]);
 
         $middleware->web(append: [
             IdentifyTenant::class,
             ProtectDemoAccounts::class,
+            EnsureBilling::class,
             RestrictDrivers::class,
             KeepStaffInBackOffice::class,
             RestrictPickers::class,

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Audit\Audited;
+use App\Billing\Billing;
 use App\Tenancy\BelongsToTenant;
 use App\Time\TimeSettings;
 use Carbon\CarbonImmutable;
@@ -57,6 +58,18 @@ class Employee extends Model
         'take_home_truck' => false,
         'photo_on_punch' => false,
     ];
+
+    protected static function booted(): void
+    {
+        // Time & attendance is billed per person tracked.
+        static::saved(function (Employee $employee) {
+            if ($employee->wasRecentlyCreated || $employee->wasChanged(['tracks_time', 'archived_at'])) {
+                Billing::seatsChanged($employee->tenant_id);
+            }
+        });
+
+        static::deleted(fn (Employee $employee) => Billing::seatsChanged($employee->tenant_id));
+    }
 
     protected function casts(): array
     {

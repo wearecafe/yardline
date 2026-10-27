@@ -73,6 +73,28 @@ class HandleInertiaRequests extends Middleware
                     && $user->truckAssignments()->where('date', app(DriverRun::class)->today()->toDateString())->exists();
             },
             'tenant' => fn () => CurrentTenant::get()?->only('id', 'name', 'currency'),
+            // Paid add-ons the business has switched on (time is under `time`).
+            'modules' => fn () => ['rentals' => (bool) CurrentTenant::get()?->rentals_enabled],
+            // The trial countdown and payment problems, for the banner.
+            'billing' => function () use ($request) {
+                $tenant = CurrentTenant::get();
+
+                if ($tenant === null || $request->user() === null || $request->user()->isPlatformStaff()) {
+                    return null;
+                }
+
+                $state = $tenant->billing();
+
+                return $state->exempt ? null : [
+                    'status' => $state->status->value,
+                    'has_access' => $state->hasAccess,
+                    'subscribed' => $state->subscribed,
+                    'trial_days_left' => $state->subscribed ? null : $state->trialDaysLeft,
+                    'trial_ends_at' => $state->trialEndsAt?->toDateString(),
+                    'cancelling' => $state->cancelling,
+                    'period_ends_at' => $state->periodEndsAt?->toIso8601String(),
+                ];
+            },
             'isDemo' => fn () => Demo::isDemoUser($request->user()),
             'portal_flash' => fn () => $request->hasSession() ? $request->session()->get('portal_flash') : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

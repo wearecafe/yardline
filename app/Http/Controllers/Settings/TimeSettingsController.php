@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Billing\Billing;
+use App\Billing\Plan;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Time\EmployeeController;
 use App\Models\Employee;
@@ -33,6 +35,7 @@ class TimeSettingsController extends Controller
             'weekdays' => self::options(TimeSettings::WEEKDAYS),
             'yards' => Location::query()->orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'latitude', 'longitude', 'geofence_m']),
             'tracked' => Employee::query()->tracked()->count(),
+            'price_per_user_cents' => Plan::amount(Plan::TIME),
         ]);
     }
 
@@ -111,6 +114,11 @@ class TimeSettingsController extends Controller
                 ? EmployeeController::provision()
                 : 0;
         });
+
+        // Time and attendance is billed per person tracked.
+        if ($wasEnabled !== (bool) $settings['time']['enabled']) {
+            Billing::changed($tenant);
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => $added > 0
             ? "Time and attendance is on. Added {$added} people; give the yard hands a PIN under Team → Employees."

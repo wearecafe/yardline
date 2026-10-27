@@ -31,3 +31,6 @@ Schedule::command('yardline:payments:fees')->hourly()->withoutOverlapping();
 
 // Drivers' phone positions and the webhook log are kept for 30 days.
 Schedule::command('model:prune', ['--model' => [DriverPing::class, WebhookDelivery::class]])->dailyAt('02:15')->timezone('America/Toronto')->withoutOverlapping();
+
+// Tenants whose trial ended overnight show as "Trial ended" in the back office.
+Schedule::command('yardline:billing:refresh')->dailyAt('00:10')->timezone('America/Toronto')->withoutOverlapping();

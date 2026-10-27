@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Billing\BillingState;
 use App\Enums\TenantStatus;
+use App\Time\TimeSettings;
 use Carbon\CarbonImmutable;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -24,8 +26,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $status_changed_at
  * @property string|null $plan
  * @property int|null $monthly_price_cents
- * @property CarbonImmutable|null $trial_ends_at
- * @property array<string, bool>|null $modules
+ * @property CarbonImmutable|null $trial_ends_at last day of the free trial
+ * @property bool $rentals_enabled the Rentals add-on
+ * @property string|null $stripe_customer_id on YardRunner's own Stripe account, for billing
+ * @property string|null $stripe_subscription_id
+ * @property string|null $subscription_status Stripe's: trialing, active, past_due, unpaid, canceled…
+ * @property CarbonImmutable|null $subscription_period_ends_at
+ * @property bool $subscription_cancels_at_period_end
+ * @property CarbonImmutable|null $subscription_synced_at
+ * @property int|null $billed_seats Time & attendance people on the subscription
+ * @property CarbonImmutable|null $suspended_at by YardRunner staff
  * @property string|null $staff_notes
  * @property CarbonImmutable|null $last_active_at
  * @property CarbonImmutable|null $created_at
@@ -33,7 +43,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 #[Fillable([
     'name', 'slug', 'currency', 'timezone', 'stripe_account_id', 'settings',
-    'status', 'plan', 'monthly_price_cents', 'trial_ends_at', 'modules', 'staff_notes',
+    'status', 'trial_ends_at', 'rentals_enabled', 'staff_notes',
 ])]
 class Tenant extends Model
 {
@@ -54,7 +64,12 @@ class Tenant extends Model
             'status' => TenantStatus::class,
             'status_changed_at' => 'datetime',
             'trial_ends_at' => 'immutable_date',
-            'modules' => 'array',
+            'rentals_enabled' => 'boolean',
+            'subscription_period_ends_at' => 'immutable_datetime',
+            'subscription_cancels_at_period_end' => 'boolean',
+            'subscription_synced_at' => 'immutable_datetime',
+            'billed_seats' => 'integer',
+            'suspended_at' => 'immutable_datetime',
             'last_active_at' => 'datetime',
         ];
     }
@@ -69,12 +84,21 @@ class Tenant extends Model
     }
 
     /**
-     * Whether staff have a module switched on. Modules are on unless
-     * switched off. Recorded only: nothing is hidden from the tenant yet.
+     * Whether the tenant has a paid add-on switched on. Everything else is
+     * part of the base subscription.
      */
     public function hasModule(string $module): bool
     {
-        return (bool) ($this->modules[$module] ?? true);
+        return match ($module) {
+            'rentals' => (bool) $this->rentals_enabled,
+            'time' => TimeSettings::for($this)->enabled,
+            default => true,
+        };
+    }
+
+    public function billing(): BillingState
+    {
+        return BillingState::for($this);
     }
 
     public function planLabel(): ?string

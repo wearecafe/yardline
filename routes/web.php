@@ -1,5 +1,6 @@
 <?php
 
+use App\Billing\Plan;
 use App\Http\Controllers\ContractPriceController;
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\CustomerController;
@@ -37,6 +38,7 @@ use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockLevelController;
 use App\Http\Controllers\StockTransferController;
+use App\Http\Controllers\Webhooks\StripeBillingWebhookController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use App\Support\Demo;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +48,7 @@ use Laravel\Fortify\Features;
 Route::get('/', fn () => Inertia::render('welcome', [
     'demo' => Demo::enabled(),
     'canRegister' => Features::enabled(Features::registration()),
+    'pricing' => Plan::catalog(),
 ]))->name('home');
 
 // The public help center. Articles are Markdown in resources/help.
@@ -223,6 +226,8 @@ Route::get('q/{token}', [QuoteController::class, 'show'])->name('quotes.public')
 Route::post('q/{token}/accept', [QuoteController::class, 'accept'])->middleware('throttle:10,1')->name('quotes.accept');
 
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
+// Tenants' YardRunner subscriptions (YardRunner's own Stripe account).
+Route::post('webhooks/stripe/billing', StripeBillingWebhookController::class)->name('webhooks.stripe-billing');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/admin.php';
