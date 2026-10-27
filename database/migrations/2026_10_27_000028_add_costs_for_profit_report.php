@@ -73,8 +73,8 @@ return new class extends Migration
             ->whereNotNull('orders.confirmed_at')
             ->whereNull('order_lines.cost_source')
             ->select('order_lines.id', 'order_lines.product_id', 'order_lines.product_unit_id')
-            ->orderBy('order_lines.id')
-            ->chunk(500, function ($lines) use ($products, $unitPrices) {
+            // By id, not by page: each update takes the line out of the filter.
+            ->chunkById(500, function ($lines) use ($products, $unitPrices) {
                 foreach ($lines as $line) {
                     $product = $line->product_id !== null ? $products->get($line->product_id) : null;
                     $cost = $product?->cost_cents;
@@ -92,7 +92,7 @@ return new class extends Migration
                             : $product?->price_cents,
                     ]);
                 }
-            });
+            }, 'order_lines.id', 'id');
     }
 
     public function down(): void

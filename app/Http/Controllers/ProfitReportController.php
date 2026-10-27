@@ -12,6 +12,7 @@ use Dompdf\Options;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Facades\Context;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -134,7 +135,19 @@ class ProfitReportController extends Controller
 
     private function filters(Request $request): ProfitFilters
     {
-        return ProfitFilters::fromInput($request->query(), CurrentTenant::get()->timezone ?? 'America/Toronto');
+        $filters = ProfitFilters::fromInput($request->query(), CurrentTenant::get()->timezone ?? 'America/Toronto');
+
+        // Shown with any error logged from here on, so a failure says which
+        // report was asked for (period, yard, business, channel, view, line).
+        Context::add('profit_report', [
+            ...$filters->toQuery(),
+            'from' => $filters->fromDate(),
+            'to' => $filters->toDate(),
+            'view' => $request->query('view'),
+            'line' => $request->query('line'),
+        ]);
+
+        return $filters;
     }
 
     /**

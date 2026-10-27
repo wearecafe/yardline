@@ -181,16 +181,16 @@ class ProfitReport
             ->leftJoin('products', 'products.id', '=', 'order_lines.product_id')
             ->toBase()
             ->groupBy('products.category')
-            ->selectRaw('products.category as category')
-            ->selectRaw('COALESCE(SUM(order_lines.line_total_cents), 0) as sales')
-            ->selectRaw('COALESCE(SUM('.self::LINE_COST.'), 0) as cost')
-            ->selectRaw("SUM(CASE WHEN order_lines.cost_source = 'missing' THEN 1 ELSE 0 END) as missing")
+            ->selectRaw('products.category as pl_category')
+            ->selectRaw('COALESCE(SUM(order_lines.line_total_cents), 0) as pl_sales')
+            ->selectRaw('COALESCE(SUM('.self::LINE_COST.'), 0) as pl_cost')
+            ->selectRaw("SUM(CASE WHEN order_lines.cost_source = 'missing' THEN 1 ELSE 0 END) as pl_missing")
             ->get();
 
         return $this->ranked($rows->map(fn ($row) => [
-            'category' => filled($row->category ?? null) ? (string) $row->category : 'Uncategorized',
-            ...$this->profitRow((int) $row->sales, (int) $row->cost),
-            'missing' => (int) $row->missing,
+            'category' => filled($row->pl_category ?? null) ? (string) $row->pl_category : 'Uncategorized',
+            ...$this->profitRow((int) $row->pl_sales, (int) $row->pl_cost),
+            'missing' => (int) $row->pl_missing,
         ])->all());
     }
 
@@ -209,23 +209,23 @@ class ProfitReport
             ->leftJoin('products', 'products.id', '=', 'order_lines.product_id')
             ->toBase()
             ->groupBy('order_lines.product_id')
-            ->selectRaw('order_lines.product_id as product_id')
-            ->selectRaw('MAX(products.sku) as sku, MAX(products.name) as name, MAX(products.category) as category, MAX(products.unit) as unit')
-            ->selectRaw('SUM(COALESCE(order_lines.base_quantity, order_lines.quantity * order_lines.unit_factor)) as quantity')
-            ->selectRaw('COALESCE(SUM(order_lines.line_total_cents), 0) as sales')
-            ->selectRaw('COALESCE(SUM('.self::LINE_COST.'), 0) as cost')
-            ->selectRaw("SUM(CASE WHEN order_lines.cost_source = 'missing' THEN 1 ELSE 0 END) as missing")
+            ->selectRaw('order_lines.product_id as pl_product_id')
+            ->selectRaw('MAX(products.sku) as pl_sku, MAX(products.name) as pl_name, MAX(products.category) as pl_category, MAX(products.unit) as pl_unit')
+            ->selectRaw('SUM(COALESCE(order_lines.base_quantity, order_lines.quantity * order_lines.unit_factor)) as pl_quantity')
+            ->selectRaw('COALESCE(SUM(order_lines.line_total_cents), 0) as pl_sales')
+            ->selectRaw('COALESCE(SUM('.self::LINE_COST.'), 0) as pl_cost')
+            ->selectRaw("SUM(CASE WHEN order_lines.cost_source = 'missing' THEN 1 ELSE 0 END) as pl_missing")
             ->get();
 
         $ranked = $this->ranked($rows->map(fn ($row) => [
-            'product_id' => $row->product_id !== null ? (int) $row->product_id : null,
-            'sku' => $row->sku !== null ? (string) $row->sku : null,
-            'name' => $row->name !== null ? (string) $row->name : 'Lines with no product',
-            'category' => $row->category !== null ? (string) $row->category : null,
-            'quantity' => round((float) $row->quantity, 3),
-            'unit' => $row->unit !== null ? (string) $row->unit : null,
-            ...$this->profitRow((int) $row->sales, (int) $row->cost),
-            'missing' => (int) $row->missing,
+            'product_id' => $row->pl_product_id !== null ? (int) $row->pl_product_id : null,
+            'sku' => $row->pl_sku !== null ? (string) $row->pl_sku : null,
+            'name' => $row->pl_name !== null ? (string) $row->pl_name : 'Lines with no product',
+            'category' => $row->pl_category !== null ? (string) $row->pl_category : null,
+            'quantity' => round((float) $row->pl_quantity, 3),
+            'unit' => $row->pl_unit !== null ? (string) $row->pl_unit : null,
+            ...$this->profitRow((int) $row->pl_sales, (int) $row->pl_cost),
+            'missing' => (int) $row->pl_missing,
         ])->all());
 
         return array_slice($ranked, 0, $limit);
@@ -248,21 +248,21 @@ class ProfitReport
             ->leftJoin('price_lists', 'price_lists.id', '=', 'organizations.price_list_id')
             ->toBase()
             ->groupBy('orders.organization_id')
-            ->selectRaw('orders.organization_id as organization_id')
-            ->selectRaw('MAX(organizations.name) as name, MAX(price_lists.name) as price_list')
-            ->selectRaw('COUNT(DISTINCT orders.id) as orders')
-            ->selectRaw('COALESCE(SUM(order_lines.line_total_cents), 0) as sales')
-            ->selectRaw('COALESCE(SUM('.self::LINE_COST.'), 0) as cost')
-            ->selectRaw('COALESCE(SUM('.self::LINE_DISCOUNT.'), 0) as discounts')
+            ->selectRaw('orders.organization_id as pl_organization_id')
+            ->selectRaw('MAX(organizations.name) as pl_name, MAX(price_lists.name) as pl_price_list')
+            ->selectRaw('COUNT(DISTINCT orders.id) as pl_orders')
+            ->selectRaw('COALESCE(SUM(order_lines.line_total_cents), 0) as pl_sales')
+            ->selectRaw('COALESCE(SUM('.self::LINE_COST.'), 0) as pl_cost')
+            ->selectRaw('COALESCE(SUM('.self::LINE_DISCOUNT.'), 0) as pl_discounts')
             ->get();
 
         $ranked = $this->ranked($rows->map(fn ($row) => [
-            'organization_id' => $row->organization_id !== null ? (int) $row->organization_id : null,
-            'name' => $row->organization_id !== null ? (string) $row->name : 'Walk-in customers',
-            'price_list' => $row->price_list !== null ? (string) $row->price_list : null,
-            'orders' => (int) $row->orders,
-            ...$this->profitRow((int) $row->sales, (int) $row->cost),
-            'discounts' => (int) $row->discounts,
+            'organization_id' => $row->pl_organization_id !== null ? (int) $row->pl_organization_id : null,
+            'name' => $row->pl_organization_id !== null ? (string) $row->pl_name : 'Walk-in customers',
+            'price_list' => $row->pl_price_list !== null ? (string) $row->pl_price_list : null,
+            'orders' => (int) $row->pl_orders,
+            ...$this->profitRow((int) $row->pl_sales, (int) $row->pl_cost),
+            'discounts' => (int) $row->pl_discounts,
         ])->all());
 
         return array_slice($ranked, 0, $limit);
@@ -286,15 +286,15 @@ class ProfitReport
             ->whereNotNull('rental_items.rental_unit_id')
             ->toBase()
             ->groupBy('rental_items.rental_unit_id')
-            ->selectRaw('rental_items.rental_unit_id as unit_id, COUNT(DISTINCT rental_items.rental_id) as rentals, COALESCE(SUM(rental_items.charge_cents), 0) as revenue')
+            ->selectRaw('rental_items.rental_unit_id as pl_unit_id, COUNT(DISTINCT rental_items.rental_id) as pl_rentals, COALESCE(SUM(rental_items.charge_cents), 0) as pl_revenue')
             ->get()
-            ->keyBy('unit_id');
+            ->keyBy('pl_unit_id');
 
         $maintenance = $this->maintenance($f)
             ->toBase()
             ->groupBy('maintenance_records.rental_unit_id')
-            ->selectRaw('maintenance_records.rental_unit_id as unit_id, COALESCE(SUM(maintenance_records.cost_cents), 0) as cost')
-            ->pluck('cost', 'unit_id');
+            ->selectRaw('maintenance_records.rental_unit_id as pl_unit_id, COALESCE(SUM(maintenance_records.cost_cents), 0) as pl_cost')
+            ->pluck('pl_cost', 'pl_unit_id');
 
         $ids = $revenue->keys()->merge($maintenance->keys())->map(fn ($id) => (int) $id)->unique();
 
@@ -304,14 +304,14 @@ class ProfitReport
             ->get()
             ->map(function (RentalUnit $unit) use ($revenue, $maintenance) {
                 $row = $revenue->get($unit->id);
-                $charges = (int) ($row->revenue ?? 0);
+                $charges = (int) ($row->pl_revenue ?? 0);
                 $cost = (int) $maintenance->get($unit->id, 0);
 
                 return [
                     'unit_id' => $unit->id,
                     'serial' => $unit->serial,
                     'name' => $unit->product->name ?? 'Rental unit',
-                    'rentals' => (int) ($row->rentals ?? 0),
+                    'rentals' => (int) ($row->pl_rentals ?? 0),
                     'revenue' => $charges,
                     'maintenance' => $cost,
                     'profit' => $charges - $cost,
@@ -788,15 +788,17 @@ class ProfitReport
         $base = $query->toBase();
         $base->columns = null;
 
+        // Aliases get a prefix so none is a reserved word on any database
+        // (MySQL reserves "lines" and "manual", for one).
         foreach ($expressions as $alias => $sql) {
-            $base->selectRaw("COALESCE({$sql}, 0) as {$alias}");
+            $base->selectRaw("COALESCE({$sql}, 0) as pl_{$alias}");
         }
 
         $row = (array) $base->first();
         $sums = [];
 
         foreach (array_keys($expressions) as $alias) {
-            $sums[$alias] = (int) round((float) ($row[$alias] ?? 0));
+            $sums[$alias] = (int) round((float) ($row["pl_{$alias}"] ?? 0));
         }
 
         return $sums;

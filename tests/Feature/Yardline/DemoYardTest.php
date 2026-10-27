@@ -4,6 +4,7 @@ namespace Tests\Feature\YardRunner;
 
 use App\Models\AuditEvent;
 use App\Models\DriverPing;
+use App\Models\Location;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Rental;
@@ -13,6 +14,7 @@ use App\Models\Truck;
 use App\Models\User;
 use App\Payments\CheckoutLinks;
 use App\Payments\FakeCheckoutLinks;
+use App\Reports\ProfitReport;
 use App\Support\Demo;
 use App\Tax\FlatRateTaxCalculator;
 use App\Tax\TaxCalculator;
@@ -181,9 +183,46 @@ class DemoYardTest extends TestCase
         config(['yardline.demo' => true]);
         $this->post('/demo', ['email' => self::OWNER]);
 
-        foreach (['dashboard', 'orders.index', 'orders.queue', 'dispatch.board', 'counter.show', 'inventory.index', 'purchasing.index', 'returns.index', 'receivables.index', 'products.index', 'organizations.index', 'customers.index', 'price-lists.index', 'fleet.index', 'rentals.calendar', 'rentals.index', 'maintenance.index', 'rental-payments.index', 'audit.index', 'delivery-settings.edit', 'rental-settings.edit', 'time.board', 'time.timesheets.index', 'time.employees.index', 'time.kiosk', 'time.self.show', 'time-settings.edit'] as $name) {
+        foreach (['dashboard', 'orders.index', 'orders.queue', 'dispatch.board', 'counter.show', 'inventory.index', 'purchasing.index', 'returns.index', 'receivables.index', 'products.index', 'organizations.index', 'customers.index', 'price-lists.index', 'fleet.index', 'rentals.calendar', 'rentals.index', 'maintenance.index', 'rental-payments.index', 'audit.index', 'delivery-settings.edit', 'rental-settings.edit', 'time.board', 'time.timesheets.index', 'time.employees.index', 'time.kiosk', 'time.self.show', 'time-settings.edit', 'reports.profit'] as $name) {
             $this->get(route($name))->assertOk();
         }
+    }
+
+    /**
+     * The owner's profit report over the demo yard's data: every period,
+     * filter, view, drill-down and export.
+     */
+    public function test_the_demo_profit_report_opens(): void
+    {
+        config(['yardline.demo' => true]);
+        $this->post('/demo', ['email' => self::OWNER]);
+
+        $filters = [
+            [],
+            ['period' => 'last_month'],
+            ['period' => 'quarter', 'compare' => 'last_year'],
+            ['period' => 'ytd', 'business' => 'goods'],
+            ['period' => 'last_12', 'business' => 'rentals'],
+            ['period' => 'month', 'channel' => 'counter'],
+            ['period' => 'month', 'channel' => 'portal'],
+        ];
+
+        foreach ($filters as $query) {
+            $this->get(route('reports.profit', $query))->assertOk();
+        }
+
+        $yard = CurrentTenant::run(Tenant::query()->where('slug', DemoYardSeeder::SLUG)->firstOrFail(), fn () => Location::query()->value('id'));
+        $this->get(route('reports.profit', ['location_id' => $yard]))->assertOk();
+
+        foreach ([...array_keys(ProfitReport::LINES), 'missing'] as $line) {
+            $this->getJson(route('reports.profit.lines', ['period' => 'last_12', 'line' => $line]))->assertOk();
+        }
+
+        foreach (['summary', 'categories', 'products', 'customers', 'units'] as $view) {
+            $this->get(route('reports.profit.csv', ['period' => 'last_12', 'view' => $view]))->assertOk();
+        }
+
+        $this->get(route('reports.profit.pdf'))->assertOk();
     }
 
     public function test_visitors_can_try_the_driver_app(): void

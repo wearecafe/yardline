@@ -1,0 +1,56 @@
+name: mysql
+
+# Production runs on MySQL; the main suite runs on SQLite, which accepts SQL
+# that MySQL rejects (reserved words as aliases, for one). These tests cover
+# the raw SQL in the profit report and every page of the demo yard.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testing
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "mysqladmin ping -ppassword" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_DATABASE: testing
+      DB_USERNAME: root
+      DB_PASSWORD: password
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+          extensions: pdo_mysql
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - run: composer install --no-interaction --no-progress
+      - run: cp .env.example .env && php artisan key:generate
+      - run: npm install && npm run build
+      - name: Profit report and demo tests on MySQL
+        shell: bash --noprofile --norc {0}
+        run: |
+          php artisan config:clear
+          php artisan test --compact --filter='ProfitReportTest|DemoYardTest' > test.log 2>&1; s=$?
+          cat test.log
+          if [ $s -ne 0 ]; then
+            grep -nE 'FAILED|SQLSTATE|Exception|Error:|at app/|at tests/|Tests:' test.log | head -40 | while IFS= read -r line; do echo "::error::${line//%/%25}"; done
+          fi
+          exit $s
