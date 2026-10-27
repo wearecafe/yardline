@@ -55,4 +55,12 @@ jobs:
       - run: composer install --no-interaction --no-progress
       - run: cp .env.example .env && php artisan key:generate
       - run: npm install && npm run build
-      - run: php artisan config:clear && php artisan test --compact --filter='ProfitReportTest|DemoYardTest'
+      - shell: bash --noprofile --norc {0}
+        run: |
+          php artisan config:clear
+          php artisan test --compact --filter='ProfitReportTest|DemoYardTest' > test.log 2>&1; s=$?
+          cat test.log
+          if [ $s -ne 0 ]; then
+            grep -nE 'FAILED|SQLSTATE|Exception|Error:|at app/|at tests/|Tests:' test.log | head -40 | while IFS= read -r line; do echo "::error::${line//%/%25}"; done
+          fi
+          exit $s
