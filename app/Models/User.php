@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Access\AccessSettings;
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
@@ -21,7 +23,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 /**
  * @property int $id
  * @property int|null $tenant_id
- * @property UserRole $role
+ * @property UserRole $role the user's main role, the highest of their roles
+ * @property list<string>|null $roles every role they hold (null: just $role)
+ * @property array<string, bool>|null $permissions permissions granted (true) or removed (false) on top of their roles
  * @property string $name
  * @property string $email
  * @property string|null $phone
@@ -47,8 +51,19 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
      * @var array<string, mixed>
      */
     protected $attributes = [
-        'role' => 'staff',
+        'role' => 'sales',
     ];
+
+    protected static function booted(): void
+    {
+        // Setting only the main role (a factory, an older call site) means
+        // that's the one role they hold.
+        static::saving(function (User $user) {
+            if ($user->isDirty('role') && ! $user->isDirty('roles')) {
+                $user->roles = null;
+            }
+        });
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -61,6 +76,8 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'roles' => 'array',
+            'permissions' => 'array',
             'two_factor_confirmed_at' => 'datetime',
             'is_platform_staff' => 'boolean',
             'last_seen_at' => 'datetime',
@@ -127,19 +144,192 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             ->delete();
     }
 
-    public function canManageUsers(): bool
+    /**
+     * Every role this user holds, highest first.
+     *
+     * @return list<UserRole>
+     */
+    public function roleList(): array
     {
-        return $this->role->canManageUsers();
+        $values = $this->roles === null || ($this->isDirty('role') && ! $this->isDirty('roles'))
+            ? [$this->role]
+            : $this->roles;
+        $roles = [];
+
+        foreach ($values as $value) {
+            $role = $value instanceof UserRole ? $value : UserRole::fromValue(is_string($value) ? $value : null);
+
+            if ($role !== null && ! in_array($role, $roles, true)) {
+                $roles[] = $role;
+            }
+        }
+
+        usort($roles, fn (UserRole $a, UserRole $b) => $a->rank() <=> $b->rank());
+
+        return $roles;
     }
 
+    public function hasRole(UserRole ...$roles): bool
+    {
+        return array_intersect(array_map(fn (UserRole $r) => $r->value, $roles), array_map(fn (UserRole $r) => $r->value, $this->roleList())) !== [];
+    }
+
+    /**
+     * Give this user exactly these roles. The highest becomes their main
+     * role. Doesn't save.
+     *
+     * @param  list<UserRole>  $roles
+     */
+    public function setRoles(array $roles): static
+    {
+        $roles = array_values(array_unique($roles, SORT_REGULAR));
+        usort($roles, fn (UserRole $a, UserRole $b) => $a->rank() <=> $b->rank());
+
+        $this->role = $roles[0] ?? UserRole::Sales;
+        $this->roles = array_map(fn (UserRole $r) => $r->value, $roles);
+
+        return $this;
+    }
+
+    /** Owner or Admin: settings, price lists, credit settings, every screen. */
     public function canManageBusiness(): bool
     {
-        return $this->role->canManageBusiness();
+        return $this->hasRole(UserRole::Owner, UserRole::Admin);
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->hasPermission(Permission::ManageUsers);
+    }
+
+    /**
+     * Whether this user holds a permission: from their roles, as this
+     * business sets them, then anything granted or removed on them. The
+     * owner holds every permission.
+     */
+    public function hasPermission(Permission $permission): bool
+    {
+        if ($this->hasRole(UserRole::Owner)) {
+            return true;
+        }
+
+        if ($permission->requires() !== null && ! $this->hasPermission($permission->requires())) {
+            return false;
+        }
+
+        $own = $this->permissions ?? [];
+
+        if (array_key_exists($permission->value, $own)) {
+            return (bool) $own[$permission->value];
+        }
+
+        return $this->permissionFromRoles($permission);
+    }
+
+    /** What their roles give, before anything granted or removed on them. */
+    public function permissionFromRoles(Permission $permission): bool
+    {
+        $settings = AccessSettings::for($this->tenant);
+
+        foreach ($this->roleList() as $role) {
+            if ($settings->roleGives($role, $permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Permissions this user holds.
+     *
+     * @return list<Permission>
+     */
+    public function permissionList(): array
+    {
+        return array_values(array_filter(Permission::cases(), fn (Permission $p) => $this->hasPermission($p)));
+    }
+
+    /**
+     * The most one refund by this user can be, in cents, or null for no
+     * limit: the highest limit among their roles. Sales refunds goods and
+     * Rental desk refunds rentals, each up to their role's limit.
+     *
+     * @param  'goods'|'rental'|null  $kind
+     */
+    public function refundLimit(?string $kind = null): ?int
+    {
+        $settings = AccessSettings::for($this->tenant);
+        $limit = 0;
+
+        foreach ($this->roleList() as $role) {
+            if (($kind === 'rental' && $role === UserRole::Sales) || ($kind === 'goods' && $role === UserRole::RentalDesk)) {
+                continue;
+            }
+
+            $roleLimit = $settings->refundLimit($role);
+
+            if ($roleLimit === null) {
+                return null;
+            }
+
+            $limit = max($limit, $roleLimit);
+        }
+
+        return $limit;
+    }
+
+    /**
+     * @param  'goods'|'rental'|null  $kind
+     */
+    public function canRefund(int $cents, ?string $kind = null): bool
+    {
+        if ($this->hasPermission(Permission::RefundAboveLimit)) {
+            return true;
+        }
+
+        $limit = $this->refundLimit($kind);
+
+        return $limit === null || $cents <= $limit;
+    }
+
+    /** Sees selling prices, totals and balances (not yard crew, dispatch, drivers or service techs). */
+    public function seesPrices(): bool
+    {
+        foreach ($this->roleList() as $role) {
+            if ($role->seesPrices()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function isDriver(): bool
     {
-        return $this->role->isDriver();
+        return $this->hasRole(UserRole::Driver);
+    }
+
+    /** Holds only the Driver role: their run is all they see. */
+    public function isOnlyDriver(): bool
+    {
+        return $this->roleList() === [UserRole::Driver];
+    }
+
+    /** Can switch in on a shared tablet or truck device with a PIN. */
+    public function switchesWithPin(): bool
+    {
+        if ($this->canManageBusiness()) {
+            return false;
+        }
+
+        foreach ($this->roleList() as $role) {
+            if ($role->switchesWithPin()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -152,13 +342,14 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return $this->is_platform_staff && $this->tenant_id === null;
     }
 
-    public function isPicker(): bool
+    /** Works only the yards they're assigned (everyone but Owner and Admin). */
+    public function isYardScoped(): bool
     {
-        return $this->role->isPicker();
+        return ! $this->canManageBusiness();
     }
 
     /**
-     * The yards an order picker works. Everyone else works every yard.
+     * The yards this user is assigned to. Owner and Admin work every yard.
      *
      * @return BelongsToMany<Location, $this>
      */
@@ -180,22 +371,22 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * Yards this user may pick at, or null for every yard.
+     * Yards this user works, or null for every yard.
      *
      * @return list<int>|null
      */
-    public function pickingYardIds(): ?array
+    public function yardIds(): ?array
     {
-        if (! $this->isPicker()) {
+        if (! $this->isYardScoped()) {
             return null;
         }
 
         return array_values($this->yards()->pluck('locations.id')->map(fn ($id) => (int) $id)->all());
     }
 
-    public function canPickAt(?int $locationId): bool
+    public function worksAt(?int $locationId): bool
     {
-        $yards = $this->pickingYardIds();
+        $yards = $this->yardIds();
 
         return $yards === null || ($locationId !== null && in_array($locationId, $yards, true));
     }

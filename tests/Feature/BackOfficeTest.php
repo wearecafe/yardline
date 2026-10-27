@@ -37,7 +37,7 @@ class BackOfficeTest extends TestCase
         CurrentTenant::set(null);
 
         $staff = User::factory()
-            ->state(['tenant_id' => null, 'role' => UserRole::Staff])
+            ->state(['tenant_id' => null, 'role' => UserRole::Sales])
             ->when($twoFactor, fn ($f) => $f->withTwoFactor())
             ->create();
         $staff->forceFill(['is_platform_staff' => true])->save();
@@ -256,7 +256,7 @@ class BackOfficeTest extends TestCase
 
     public function test_activity_is_recorded_for_weekly_users(): void
     {
-        $user = $this->signInToNewTenant(UserRole::Staff);
+        $user = $this->signInToNewTenant(UserRole::Sales);
 
         $this->get(route('dashboard'))->assertOk();
 

@@ -111,16 +111,17 @@ class DemoYardSeeder extends Seeder
         [
             'email' => 'ryan.tran@example.com',
             'name' => 'Ryan Tran',
-            'role' => UserRole::Staff,
+            'role' => UserRole::Sales,
             'title' => 'Counter sales',
             'description' => 'Takes orders and payments at the counter. Can’t change prices or override credit.',
         ],
         [
             'email' => 'owen.bakker@example.com',
             'name' => 'Owen Bakker',
-            'role' => UserRole::Staff,
+            'role' => UserRole::YardCrew,
+            'roles' => [UserRole::YardCrew, UserRole::Purchasing],
             'title' => 'Yard lead',
-            'description' => 'Receives and counts stock, releases loads and checks rentals back in. Clocks in at the counter tablet with PIN 2222.',
+            'description' => 'Yard crew and purchasing: picks and loads, receives and counts stock, and checks rentals back in. Never sees prices. Clocks in at the counter tablet with PIN 2222.',
         ],
         [
             'email' => 'sam.rinaldi@example.com',
@@ -455,14 +456,14 @@ class DemoYardSeeder extends Seeder
     private function users(Tenant $tenant): void
     {
         foreach (self::ACCOUNTS as $account) {
-            $user = User::query()->create([
+            $user = new User([
                 'tenant_id' => $tenant->id,
                 'name' => $account['name'],
                 'email' => $account['email'],
-                'role' => $account['role'],
                 // Never used: demo accounts can only be entered through /demo.
                 'password' => Hash::make(Str::random(40)),
             ]);
+            $user->setRoles($account['roles'] ?? [$account['role']]);
             $user->forceFill(['email_verified_at' => now()])->save();
 
             $this->users[$account['email']] = $user;
@@ -491,6 +492,14 @@ class DemoYardSeeder extends Seeder
             'postal_code' => 'L8E 2L3',
             'country' => 'CA',
         ]);
+
+        // Everyone but the owner and admin works the yards they're given:
+        // both, here.
+        foreach ($this->users as $user) {
+            if ($user->isYardScoped()) {
+                $user->setYards([$this->waterdown->id, $this->stoneyCreek->id]);
+            }
+        }
     }
 
     private function catalog(): void

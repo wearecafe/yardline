@@ -1,4 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import {
+    RefundApprovalFields,
+    needsApproval,
+} from '@/components/yard/refund-approval';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import OrganizationController from '@/actions/App/Http/Controllers/OrganizationController';
 import ReturnController from '@/actions/App/Http/Controllers/ReturnController';
@@ -51,17 +55,35 @@ type Props = {
     };
     openOrders: { id: number; number: string; balance_cents: number }[];
     tenders: Option[];
+    refundLimitCents: number | null;
+    approvers: { id: number; name: string }[];
 };
 
 /**
  * A credit note: what it's for, and spending it on an invoice or a refund.
  */
-export default function CreditNotePage({ credit, openOrders, tenders }: Props) {
+export default function CreditNotePage({
+    credit,
+    openOrders,
+    tenders,
+    refundLimitCents,
+    approvers,
+}: Props) {
     const apply = useForm({
         order_id: String(openOrders[0]?.id ?? ''),
         amount: '',
     });
-    const refund = useForm({ tender: 'card_terminal', amount: '' });
+    const refund = useForm({
+        tender: 'card_terminal',
+        amount: '',
+        approver_id: '',
+        approver_secret: '',
+    });
+    const approval = { limit_cents: refundLimitCents, approvers };
+    const refundCents =
+        refund.data.amount === ''
+            ? credit.remaining_cents
+            : Math.round(Number(refund.data.amount) * 100);
 
     return (
         <>
@@ -342,6 +364,9 @@ export default function CreditNotePage({ credit, openOrders, tenders }: Props) {
                                         refund.transform((d) => ({
                                             ...d,
                                             amount: d.amount || null,
+                                            approver_id: d.approver_id || null,
+                                            approver_secret:
+                                                d.approver_secret || null,
                                         }));
                                         refund.post(
                                             ReturnController.refund.url(
@@ -390,6 +415,30 @@ export default function CreditNotePage({ credit, openOrders, tenders }: Props) {
                                             }
                                         />
                                     </Field>
+                                    {needsApproval(approval, refundCents) && (
+                                        <RefundApprovalFields
+                                            id="refund"
+                                            approval={approval}
+                                            value={{
+                                                approver_id:
+                                                    refund.data.approver_id,
+                                                approver_secret:
+                                                    refund.data.approver_secret,
+                                            }}
+                                            onChange={(v) =>
+                                                refund.setData((d) => ({
+                                                    ...d,
+                                                    ...v,
+                                                }))
+                                            }
+                                            errors={
+                                                refund.errors as Record<
+                                                    string,
+                                                    string | undefined
+                                                >
+                                            }
+                                        />
+                                    )}
                                     <Button
                                         type="submit"
                                         variant="outline"

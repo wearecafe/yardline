@@ -118,9 +118,9 @@ class OrderLifecycleTest extends TestCase
         $this->assertSame($this->user->id, $order->credit_override_by);
     }
 
-    public function test_staff_cannot_override_the_credit_limit(): void
+    public function test_sales_cannot_override_the_credit_limit(): void
     {
-        $staff = User::factory()->create(['tenant_id' => $this->user->tenant_id, 'role' => UserRole::Staff]);
+        $staff = User::factory()->create(['tenant_id' => $this->user->tenant_id, 'role' => UserRole::Sales]);
         $this->actingAs($staff);
 
         $org = Organization::factory()->withCredit(10_000)->create();

@@ -13,6 +13,7 @@ use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -57,10 +58,23 @@ class ProductController extends Controller
 
     public function edit(Product $product): Response
     {
+        $props = ProductEditor::props($product);
+
+        // Costs and margins only for people who can see them.
+        if (Gate::denies('see-costs')) {
+            // Shown as blank; never saved from here.
+            $product->forceFill(['cost_cents' => null, 'previous_cost_cents' => null, 'cost_changed_at' => null]);
+            $props['costChange'] = null;
+        }
+
         return Inertia::render('products/edit', [
             'product' => $product,
             ...$this->formOptions(),
-            ...ProductEditor::props($product),
+            ...$props,
+            'can' => [
+                'setSellingPrices' => Gate::allows('manage-business'),
+                'seeCosts' => Gate::allows('see-costs'),
+            ],
         ]);
     }
 
@@ -68,6 +82,16 @@ class ProductController extends Controller
     {
         $data = $this->validated($request, $product);
         $oldCost = $product->cost_cents;
+
+        // Purchasing edits products but not what they sell for; nobody
+        // changes a cost they can't see.
+        if (Gate::denies('manage-business')) {
+            $data = Arr::except($data, ['price_cents', 'deposit_cents', 'price_list_exempt', ...array_map(fn ($f) => "{$f}_cents", self::RENTAL_MONEY)]);
+        }
+
+        if (Gate::denies('see-costs')) {
+            unset($data['cost_cents']);
+        }
 
         $product->fill($data);
 

@@ -95,7 +95,8 @@ class OrderLineController extends Controller
     }
 
     /**
-     * Manual prices bypass the price list, so only owners/admins may set them.
+     * Manual prices bypass the price list, so only people with Set manual
+     * line prices (owner and admin by default) may set them.
      * Products exempt from price lists go further: only the roles the
      * business allows, with a reason.
      */
@@ -105,8 +106,8 @@ class OrderLineController extends Controller
             return null;
         }
 
-        if (Gate::denies('manage-business')) {
-            OrderRules::fail('Only an owner or admin can change a line price.', 'unit_price');
+        if (Gate::denies('set-prices')) {
+            OrderRules::fail('You need the Set manual line prices permission to change a line price.', 'unit_price');
         }
 
         if ($product?->price_list_exempt) {

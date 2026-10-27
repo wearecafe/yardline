@@ -16,6 +16,14 @@ import {
     PageHeader,
     Section,
 } from '@/components/yard/page-header';
+import {
+    RefundApprovalFields,
+    needsApproval,
+} from '@/components/yard/refund-approval';
+import type {
+    ApprovalData,
+    RefundApprovalProps,
+} from '@/components/yard/refund-approval';
 import { RentalStatusChip } from '@/components/yard/rental-status';
 import { ToggleButtons } from '@/components/yard/toggle-buttons';
 import { Button } from '@/components/ui/button';
@@ -53,6 +61,7 @@ type Props = {
     paymentMethods: Option[];
     tenders?: Option[];
     settings: { damage_waiver_percent: number; timezone: string };
+    refundApproval?: RefundApprovalProps & { refundable_cents: number };
 };
 
 type FormItem = { product_id: number; rental_unit_id: number | null };
@@ -107,6 +116,7 @@ function RentalForm({
     paymentMethods,
     tenders,
     settings,
+    refundApproval,
 }: Props) {
     const tz = settings.timezone;
     const firstProduct =
@@ -765,28 +775,11 @@ function RentalForm({
                         )}
 
                         {rental && (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                className="text-destructive"
-                                onClick={() => {
-                                    if (
-                                        confirm(
-                                            `Cancel ${rental.number}? Payments are refunded and holds released.`,
-                                        )
-                                    ) {
-                                        router.post(
-                                            RentalController.cancel.url(
-                                                rental.id,
-                                            ),
-                                            {},
-                                            { preserveScroll: true },
-                                        );
-                                    }
-                                }}
-                            >
-                                Cancel rental
-                            </Button>
+                            <CancelRentalButton
+                                rentalId={rental.id}
+                                number={rental.number}
+                                approval={refundApproval}
+                            />
                         )}
 
                         <p className="text-xs text-muted-foreground">
@@ -1548,4 +1541,91 @@ function capitalize(text: string): string {
 
 function trimPercent(value: number): string {
     return String(Number(value.toFixed(2)));
+}
+
+/**
+ * Cancelling refunds what's been paid. Above the person's refund limit,
+ * someone who can refund above it approves on the spot.
+ */
+function CancelRentalButton({
+    rentalId,
+    number,
+    approval,
+}: {
+    rentalId: number;
+    number: string;
+    approval?: RefundApprovalProps & { refundable_cents: number };
+}) {
+    const [asking, setAsking] = useState(false);
+    const form = useForm<ApprovalData>({
+        approver_id: '',
+        approver_secret: '',
+    });
+    const needed =
+        approval !== undefined &&
+        approval.refundable_cents > 0 &&
+        needsApproval(approval, approval.refundable_cents);
+
+    function cancel() {
+        form.post(RentalController.cancel.url(rentalId), {
+            preserveScroll: true,
+        });
+    }
+
+    if (asking && approval) {
+        return (
+            <div className="grid gap-2">
+                <RefundApprovalFields
+                    id="cancel-refund"
+                    approval={approval}
+                    value={form.data}
+                    onChange={(v) => form.setData(v)}
+                    errors={form.errors as Record<string, string | undefined>}
+                />
+                <div className="flex gap-2">
+                    <Button
+                        type="button"
+                        variant="destructive"
+                        disabled={form.processing}
+                        onClick={cancel}
+                    >
+                        Cancel and refund{' '}
+                        {formatMoney(approval.refundable_cents)}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setAsking(false)}
+                    >
+                        Back
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <Button
+            type="button"
+            variant="ghost"
+            className="text-destructive"
+            onClick={() => {
+                if (needed) {
+                    setAsking(true);
+
+                    return;
+                }
+
+                if (
+                    confirm(
+                        `Cancel ${number}? Payments are refunded and holds released.`,
+                    )
+                ) {
+                    cancel();
+                }
+            }}
+        >
+            Cancel rental
+        </Button>
+    );
 }

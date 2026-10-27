@@ -78,7 +78,7 @@ class TimeAndAttendanceTest extends TestCase
         $this->yard = Location::query()->firstOrFail();
         $this->yard->update(['name' => 'Waterdown yard', 'region' => 'ON']);
 
-        $this->owen = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Staff, 'name' => 'Owen Bakker']);
+        $this->owen = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Sales, 'name' => 'Owen Bakker']);
         $this->sam = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Driver, 'name' => 'Sam Rinaldi']);
 
         // Monday, Oct 19 2026: the second week of the Oct 11 – Oct 24 pay period.

@@ -282,7 +282,7 @@ class DriverTest extends TestCase
         $this->delete(route('drivers.destroy', $this->owner))->assertNotFound();
 
         // Staff can't add drivers.
-        $staff = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Staff]);
+        $staff = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Sales]);
         $this->actingAs($staff);
         $this->get(route('drivers.index'))->assertForbidden();
     }

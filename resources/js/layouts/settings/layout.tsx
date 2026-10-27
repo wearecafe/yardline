@@ -6,6 +6,7 @@ import DeliverySettingsController from '@/actions/App/Http/Controllers/Settings/
 import DriverAccountsController from '@/actions/App/Http/Controllers/Settings/DriverAccountsController';
 import OrderPickingController from '@/actions/App/Http/Controllers/Settings/OrderPickingController';
 import QuickBooksController from '@/actions/App/Http/Controllers/Settings/QuickBooksController';
+import RoleSettingsController from '@/actions/App/Http/Controllers/Settings/RoleSettingsController';
 import RentalSettingsController from '@/actions/App/Http/Controllers/Settings/RentalSettingsController';
 import TimeSettingsController from '@/actions/App/Http/Controllers/Settings/TimeSettingsController';
 import UserAccountsController from '@/actions/App/Http/Controllers/Settings/UserAccountsController';
@@ -38,9 +39,22 @@ const sidebarNavItems: NavItem[] = [
     },
 ];
 
-const usersNavItem: NavItem = {
-    title: 'Users',
-    href: UserAccountsController.index(),
+const usersNavItems: NavItem[] = [
+    {
+        title: 'Users',
+        href: UserAccountsController.index(),
+        icon: null,
+    },
+    {
+        title: 'Roles',
+        href: RoleSettingsController.edit(),
+        icon: null,
+    },
+];
+
+const quickBooksNavItem: NavItem = {
+    title: 'QuickBooks',
+    href: QuickBooksController.edit(),
     icon: null,
 };
 
@@ -85,11 +99,6 @@ const businessNavItems: NavItem[] = [
         href: AuditController.index(),
         icon: null,
     },
-    {
-        title: 'QuickBooks',
-        href: QuickBooksController.edit(),
-        icon: null,
-    },
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
@@ -102,8 +111,10 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const navItems = [
         ...sidebarNavItems,
         ...(auth.can.manageBusiness ? business.slice(0, 1) : []),
-        ...(auth.can.manageUsers ? [usersNavItem] : []),
+        ...(auth.can.manageUsers ? usersNavItems : []),
         ...(auth.can.manageBusiness ? business.slice(1) : []),
+        // Accounts sees QuickBooks sync errors too.
+        ...(auth.can.quickbooksLog ? [quickBooksNavItem] : []),
     ];
 
     return (

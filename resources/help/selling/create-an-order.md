@@ -20,7 +20,7 @@ Use an order when material needs picking, goes out for delivery, or when you wan
 
 Type a name or SKU under **Add item**, choose the unit and quantity, and select **Add**. Each line is priced for that account automatically. See [Which price applies](/help/products-pricing/which-price-applies).
 
-Owners and admins can type over a line's **Price**. Staff can't change prices on a line.
+People with **Set manual line prices** (owners and admins by default) can type over a line's **Price**. Sales can't, unless they're given it.
 
 ## Delivery details
 

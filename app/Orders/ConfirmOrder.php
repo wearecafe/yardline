@@ -6,6 +6,7 @@ use App\Credit\CreditAssessment;
 use App\Credit\CreditCheck;
 use App\Enums\FulfillmentMethod;
 use App\Enums\OrderStatus;
+use App\Enums\Permission;
 use App\Enums\Settlement;
 use App\Enums\StopStatus;
 use App\Models\Order;
@@ -121,8 +122,8 @@ class ConfirmOrder
             OrderRules::fail($assessment->message(), 'override_reason');
         }
 
-        if (! $user->canManageBusiness()) {
-            OrderRules::fail('Only an owner or admin can override the credit limit.', 'override_reason');
+        if (! $user->hasPermission(Permission::OverrideCredit)) {
+            OrderRules::fail('You need the Override credit limit permission to go over the credit limit.', 'override_reason');
         }
     }
 }

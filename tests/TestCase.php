@@ -39,9 +39,15 @@ abstract class TestCase extends BaseTestCase
         $tenant = Tenant::factory()->create();
         CurrentTenant::set($tenant);
 
-        Location::factory()->create(['is_default' => true]);
+        $yard = Location::factory()->create(['is_default' => true]);
 
         $user = User::factory()->create(['tenant_id' => $tenant->id, 'role' => $role]);
+
+        // Everyone but owners and admins works the yards they're given.
+        if ($user->isYardScoped()) {
+            $user->setYards([$yard->id]);
+        }
+
         $this->actingAs($user);
 
         return $user;

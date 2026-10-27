@@ -57,8 +57,8 @@ final readonly class PickingSettings
             $c = $v['checks'][$stage] ?? [];
             $roles = [];
 
-            foreach ((array) ($c['roles'] ?? [UserRole::Owner->value, UserRole::Admin->value, UserRole::Staff->value]) as $value) {
-                $role = UserRole::tryFrom((string) $value);
+            foreach ((array) ($c['roles'] ?? [UserRole::Owner->value, UserRole::Admin->value, UserRole::Sales->value]) as $value) {
+                $role = UserRole::fromValue((string) $value);
 
                 if ($role !== null && in_array($role, UserRole::checkers(), true) && ! in_array($role, $roles, true)) {
                     $roles[] = $role;

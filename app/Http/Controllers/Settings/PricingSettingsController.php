@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Access\AccessSettings;
+use App\Audit\Audit;
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Pricing\PricingSettings;
@@ -33,12 +36,37 @@ class PricingSettingsController extends Controller
         $settings = $tenant->settings ?? [];
         $settings['pricing'] = [
             'category_rules_override' => (bool) ($data['category_rules_override'] ?? false),
-            'exempt_price_roles' => array_values(array_unique($data['exempt_price_roles'] ?? [])),
         ];
         $tenant->update(['settings' => $settings]);
+
+        // Who may price exempt products is the Discount exempt products
+        // permission on each role (Settings → Roles). The owner always may.
+        if (array_key_exists('exempt_price_roles', $data)) {
+            $access = AccessSettings::for($tenant);
+            $before = $access;
+
+            foreach (PricingSettings::priceSettingRoles($tenant) as $role) {
+                if ($role !== UserRole::Owner) {
+                    $access = $access->withRolePermission($role, Permission::DiscountExempt, in_array($role->value, (array) $data['exempt_price_roles'], true));
+                }
+            }
+
+            if ($access->toArray() !== $before->toArray()) {
+                $access->save($tenant);
+                Audit::record($tenant, 'updated', ['roles that can discount exempt products' => [
+                    $this->labels($before),
+                    $this->labels($access),
+                ]]);
+            }
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Pricing rules saved.']);
 
         return back();
+    }
+
+    private function labels(AccessSettings $access): string
+    {
+        return implode(', ', array_map(fn (UserRole $role) => $role->label(), $access->rolesGiving(Permission::DiscountExempt)));
     }
 }

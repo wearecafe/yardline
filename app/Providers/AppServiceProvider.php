@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Billing\BillingGateway;
 use App\Billing\Gateways\FakeBillingGateway;
 use App\Billing\Gateways\StripeBillingGateway;
+use App\Enums\Permission;
+use App\Enums\UserRole;
 use App\Models\ContractPrice;
 use App\Models\CreditNote;
 use App\Models\Customer;
@@ -42,7 +44,6 @@ use App\Rentals\Payments\FakeRentalGateway;
 use App\Rentals\Payments\RentalGateway;
 use App\Rentals\Payments\StripeRentalGateway;
 use App\Rentals\RentalSettings;
-use App\Reports\ReportSettings;
 use App\Support\Demo;
 use App\Support\StripeGateway;
 use App\Tax\FlatRateTaxCalculator;
@@ -203,11 +204,17 @@ class AppServiceProvider extends ServiceProvider
     protected function configureGates(): void
     {
         Gate::define('manage-business', fn (User $user) => $user->canManageBusiness());
-        Gate::define('manage-users', fn (User $user) => $user->canManageUsers());
-        Gate::define('override-credit', fn (User $user) => $user->canManageBusiness());
+        Gate::define('manage-users', fn (User $user) => $user->hasPermission(Permission::ManageUsers));
+        Gate::define('override-credit', fn (User $user) => $user->hasPermission(Permission::OverrideCredit));
+        // Credit limits, terms and account holds: owner, admin and accounts.
+        Gate::define('manage-credit', fn (User $user) => $user->hasRole(UserRole::Owner, UserRole::Admin, UserRole::Accounts));
+        Gate::define('set-prices', fn (User $user) => $user->hasPermission(Permission::SetManualPrices));
+        Gate::define('see-costs', fn (User $user) => $user->hasPermission(Permission::SeeCosts));
         // Who's in, timesheet review and approval, corrections, payroll export.
-        Gate::define('manage-time', fn (User $user) => $user->canManageBusiness());
-        // Costs, margins and the profit report: the owner, and admins if the owner allows.
-        Gate::define('view-profit', fn (User $user) => ReportSettings::current()->canViewProfit($user));
+        Gate::define('manage-time', fn (User $user) => $user->hasPermission(Permission::ApproveTimesheets));
+        // The gross-profit P&L: the owner, and anyone given See gross-profit P&L.
+        Gate::define('view-profit', fn (User $user) => $user->hasPermission(Permission::SeeProfit));
+        // QuickBooks sync errors: owner, admin and accounts.
+        Gate::define('quickbooks-log', fn (User $user) => $user->hasRole(UserRole::Owner, UserRole::Admin, UserRole::Accounts));
     }
 }

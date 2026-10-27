@@ -281,6 +281,7 @@ export default function Queue({
                                 pickers={pickers}
                                 stages={stages}
                                 isPicker={auth.can.pick}
+                                readOnly={!auth.can.workQueue}
                             />
                         ) : (
                             <p className="text-sm text-muted-foreground">
@@ -299,11 +300,14 @@ function PickPanel({
     pickers,
     stages,
     isPicker,
+    readOnly,
 }: {
     detail: Detail;
     pickers: Props['pickers'];
     stages: Props['stages'];
     isPicker: boolean;
+    /** Can look at the queue but not pick, load or cancel. */
+    readOnly: boolean;
 }) {
     const isNew = detail.shipment_id === null;
     const atYard =
@@ -452,45 +456,50 @@ function PickPanel({
             {detail.check && <CheckForm detail={detail} check={detail.check} />}
 
             {isNew ? (
-                <form
-                    className="grid gap-2"
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        const picker = new FormData(e.currentTarget).get(
-                            'picker_id',
-                        );
-                        router.post(
-                            FulfillmentController.start.url(detail.order_id),
-                            { picker_id: picker || null },
-                        );
-                    }}
-                >
-                    {stages.picking && !isPicker && (
-                        <NativeSelect
-                            name="picker_id"
-                            aria-label="Picker"
-                            defaultValue=""
-                        >
-                            <option value="">Assign picker later</option>
-                            {pickers.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.name}
-                                </option>
-                            ))}
-                        </NativeSelect>
-                    )}
-                    <Button type="submit">
-                        {!stages.picking
-                            ? 'Open pick list'
-                            : isPicker
-                              ? 'Claim and start picking'
-                              : 'Start picking'}
-                    </Button>
-                </form>
+                !readOnly && (
+                    <form
+                        className="grid gap-2"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            const picker = new FormData(e.currentTarget).get(
+                                'picker_id',
+                            );
+                            router.post(
+                                FulfillmentController.start.url(
+                                    detail.order_id,
+                                ),
+                                { picker_id: picker || null },
+                            );
+                        }}
+                    >
+                        {stages.picking && !isPicker && (
+                            <NativeSelect
+                                name="picker_id"
+                                aria-label="Picker"
+                                defaultValue=""
+                            >
+                                <option value="">Assign picker later</option>
+                                {pickers.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.name}
+                                    </option>
+                                ))}
+                            </NativeSelect>
+                        )}
+                        <Button type="submit">
+                            {!stages.picking
+                                ? 'Open pick list'
+                                : isPicker
+                                  ? 'Claim and start picking'
+                                  : 'Start picking'}
+                        </Button>
+                    </form>
+                )
             ) : (
                 <div className="grid gap-2">
                     {detail.status === 'picking' &&
                         stages.picking &&
+                        !readOnly &&
                         (isPicker ? (
                             detail.picker_id === null && (
                                 <Button
@@ -534,7 +543,7 @@ function PickPanel({
                                 ))}
                             </NativeSelect>
                         ))}
-                    {detail.status === 'picking' && (
+                    {detail.status === 'picking' && !readOnly && (
                         <Button asChild>
                             <Link
                                 href={FulfillmentController.pick.url(
@@ -546,6 +555,7 @@ function PickPanel({
                         </Button>
                     )}
                     {detail.status === 'picked' &&
+                        !readOnly &&
                         detail.next_step?.action === 'load' && (
                             <Button
                                 onClick={() =>
@@ -587,7 +597,7 @@ function PickPanel({
                             <Printer /> Print pick ticket
                         </a>
                     </Button>
-                    {atYard && detail.can_cancel && (
+                    {atYard && detail.can_cancel && !readOnly && (
                         <Button
                             variant="ghost"
                             onClick={() => {

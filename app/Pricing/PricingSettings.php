@@ -2,6 +2,8 @@
 
 namespace App\Pricing;
 
+use App\Access\AccessSettings;
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
@@ -12,8 +14,9 @@ use App\Tenancy\CurrentTenant;
  *
  *  - categoryRulesOverride: the default for price lists that don't choose,
  *    whether a category rule beats a product's price list entry.
- *  - exemptPriceRoles: roles that may set a price by hand on a product
- *    that's exempt from price lists. Empty locks exempt prices for everyone.
+ *  - exemptPriceRoles: roles that give Discount exempt products, so may set
+ *    a price by hand on a product that's exempt from price lists. Kept with
+ *    the other role permissions (AccessSettings); the owner always may.
  */
 final readonly class PricingSettings
 {
@@ -33,15 +36,14 @@ final readonly class PricingSettings
     public static function for(?Tenant $tenant): self
     {
         $v = $tenant?->settings['pricing'] ?? [];
+        $access = AccessSettings::for($tenant);
 
         return new self(
             categoryRulesOverride: (bool) ($v['category_rules_override'] ?? false),
-            exemptPriceRoles: array_key_exists('exempt_price_roles', $v)
-                ? array_values(array_filter(array_map(
-                    fn ($role) => UserRole::tryFrom((string) $role),
-                    (array) $v['exempt_price_roles'],
-                ), fn (?UserRole $role) => $role !== null && in_array($role, self::priceSettingRoles(), true)))
-                : [UserRole::Owner],
+            exemptPriceRoles: array_values(array_filter(
+                self::priceSettingRoles($tenant),
+                fn (UserRole $role) => $access->roleGives($role, Permission::DiscountExempt),
+            )),
         );
     }
 
@@ -51,14 +53,14 @@ final readonly class PricingSettings
      *
      * @return list<UserRole>
      */
-    public static function priceSettingRoles(): array
+    public static function priceSettingRoles(?Tenant $tenant = null): array
     {
-        return array_values(array_filter(UserRole::cases(), fn (UserRole $role) => $role->canManageBusiness()));
+        return AccessSettings::for($tenant ?? CurrentTenant::get())->rolesGiving(Permission::SetManualPrices);
     }
 
     public function canPriceExempt(?User $user): bool
     {
-        return $user !== null && in_array($user->role, $this->exemptPriceRoles, true);
+        return $user !== null && $user->hasPermission(Permission::DiscountExempt);
     }
 
     /**

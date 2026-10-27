@@ -218,7 +218,7 @@ class TenantController extends Controller
 
         $users = User::query()
             ->where('tenant_id', $tenant->id)
-            ->orderByRaw('case role when ? then 0 when ? then 1 when ? then 2 else 3 end', [UserRole::Owner->value, UserRole::Admin->value, UserRole::Staff->value])
+            ->orderByRaw('case role when ? then 0 when ? then 1 when ? then 2 else 3 end', [UserRole::Owner->value, UserRole::Admin->value, UserRole::Sales->value])
             ->orderBy('name')
             ->get();
 

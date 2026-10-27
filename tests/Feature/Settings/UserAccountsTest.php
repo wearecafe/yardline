@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Settings;
 
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\AuditEvent;
+use App\Models\Location;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Notifications\UserInviteMessage;
@@ -15,8 +17,10 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 /**
- * Settings → Users: the owner adds admins and staff, changes their role
- * and removes them. Drivers stay on their own page.
+ * Settings → Users: anyone with Manage users and roles (owner and admin)
+ * adds people with one or more roles, the yards they work and any
+ * permissions on top, and removes them. People who only drive stay on
+ * their own page.
  */
 class UserAccountsTest extends TestCase
 {
@@ -39,11 +43,12 @@ class UserAccountsTest extends TestCase
     {
         Notification::fake();
 
-        $this->post(route('users.store'), ['name' => 'Jess Palmer', 'email' => 'jess@example.com', 'role' => 'admin'])
+        $this->post(route('users.store'), ['name' => 'Jess Palmer', 'email' => 'jess@example.com', 'roles' => ['admin']])
             ->assertSessionHasNoErrors();
 
         $jess = User::query()->where('email', 'jess@example.com')->firstOrFail();
         $this->assertSame(UserRole::Admin, $jess->role);
+        $this->assertSame([UserRole::Admin], $jess->roleList());
         $this->assertSame($this->tenant->id, $jess->tenant_id);
         $this->assertNull($jess->email_verified_at);
         Notification::assertSentTo($jess, UserInviteMessage::class);
@@ -55,10 +60,11 @@ class UserAccountsTest extends TestCase
             ->where('users.0.is_you', true)
             ->where('users.0.manageable', false)
             ->where('users.1.name', 'Jess Palmer')
-            ->where('users.1.role', 'admin')
+            ->where('users.1.roles', ['admin'])
             ->where('users.1.joined', false)
             ->where('users.1.manageable', true)
-            ->has('roles', 3));
+            ->has('roles', 9)
+            ->has('permissions', count(Permission::cases())));
 
         $this->assertTrue(AuditEvent::query()->where('subject_type', 'user')->where('subject_id', $jess->id)->where('event', 'created')->exists());
 
@@ -70,70 +76,150 @@ class UserAccountsTest extends TestCase
         $this->assertNotNull($jess->refresh()->email_verified_at);
     }
 
-    public function test_only_admin_and_staff_roles_can_be_given(): void
+    public function test_people_can_hold_several_roles_and_work_some_yards(): void
     {
-        $this->post(route('users.store'), ['name' => 'A', 'email' => 'a@example.com', 'role' => 'owner'])->assertSessionHasErrors('role');
-        $this->post(route('users.store'), ['name' => 'B', 'email' => 'b@example.com', 'role' => 'driver'])->assertSessionHasErrors('role');
-        $this->post(route('users.store'), ['name' => 'C', 'email' => $this->owner->email, 'role' => 'staff'])->assertSessionHasErrors('email');
+        $waterdown = Location::factory()->create(['name' => 'Waterdown']);
+        $stoney = Location::factory()->create(['name' => 'Stoney Creek']);
 
-        $staff = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Staff]);
-        $this->patch(route('users.update', $staff), ['role' => 'owner'])->assertSessionHasErrors('role');
-        $this->assertSame(UserRole::Staff, $staff->refresh()->role);
+        $this->post(route('users.store'), [
+            'name' => 'Casey Counter',
+            'email' => 'casey@example.com',
+            'roles' => ['dispatcher', 'sales'],
+            'location_ids' => [$waterdown->id],
+        ])->assertSessionHasNoErrors();
+
+        $casey = User::query()->where('email', 'casey@example.com')->firstOrFail();
+        // The highest role is their main one; they hold both.
+        $this->assertSame(UserRole::Sales, $casey->role);
+        $this->assertSame([UserRole::Sales, UserRole::Dispatcher], $casey->roleList());
+        $this->assertSame([$waterdown->id], $casey->yardIds());
+        $this->assertTrue($casey->worksAt($waterdown->id));
+        $this->assertFalse($casey->worksAt($stoney->id));
+
+        // Someone added without yards starts with every yard.
+        $this->post(route('users.store'), ['name' => 'Pat', 'email' => 'pat@example.com', 'roles' => ['yard_crew']])->assertSessionHasNoErrors();
+        $pat = User::query()->where('email', 'pat@example.com')->firstOrFail();
+        $this->assertEqualsCanonicalizing([$waterdown->id, $stoney->id], $pat->yardIds());
+
+        $this->patch(route('users.update', $casey), ['roles' => ['sales', 'rental_desk'], 'location_ids' => [$waterdown->id, $stoney->id]])
+            ->assertSessionHasNoErrors();
+        $casey->refresh();
+        $this->assertSame([UserRole::Sales, UserRole::RentalDesk], $casey->roleList());
+        $this->assertCount(2, $casey->yardIds() ?? []);
+
+        $change = AuditEvent::query()->where('subject_type', 'user')->where('subject_id', $casey->id)->where('event', 'updated')->oldest('id')->firstOrFail();
+        $this->assertSame(['roles' => ['Sales, Dispatcher', 'Sales, Rental desk']], $change->changes);
+    }
+
+    public function test_only_assignable_roles_can_be_given(): void
+    {
+        $this->post(route('users.store'), ['name' => 'A', 'email' => 'a@example.com', 'roles' => ['owner']])->assertSessionHasErrors('roles.0');
+        $this->post(route('users.store'), ['name' => 'B', 'email' => 'b@example.com', 'roles' => []])->assertSessionHasErrors('roles');
+        $this->post(route('users.store'), ['name' => 'C', 'email' => $this->owner->email, 'roles' => ['sales']])->assertSessionHasErrors('email');
+
+        $sales = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Sales]);
+        $this->patch(route('users.update', $sales), ['roles' => ['owner']])->assertSessionHasErrors('roles.0');
+        $this->assertSame(UserRole::Sales, $sales->refresh()->role);
     }
 
     public function test_owners_change_roles_and_remove_users(): void
     {
         Notification::fake();
 
-        $staff = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Staff, 'name' => 'Sam Staff']);
+        $sales = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Sales, 'name' => 'Sam Sales']);
 
-        $this->patch(route('users.update', $staff), ['role' => 'admin'])->assertSessionHasNoErrors();
-        $this->assertSame(UserRole::Admin, $staff->refresh()->role);
+        $this->patch(route('users.update', $sales), ['roles' => ['admin']])->assertSessionHasNoErrors();
+        $this->assertSame(UserRole::Admin, $sales->refresh()->role);
 
         $change = AuditEvent::query()->where('subject_type', 'user')->where('event', 'updated')->latest('id')->firstOrFail();
-        $this->assertSame(['role' => ['staff', 'admin']], $change->changes);
+        $this->assertSame(['roles' => ['Sales', 'Admin']], $change->changes);
 
-        $this->post(route('users.resend', $staff))->assertRedirect();
-        Notification::assertSentTo($staff, UserInviteMessage::class);
+        $this->post(route('users.resend', $sales))->assertRedirect();
+        Notification::assertSentTo($sales, UserInviteMessage::class);
 
-        $this->delete(route('users.destroy', $staff))->assertRedirect();
-        $this->assertDatabaseMissing('users', ['id' => $staff->id]);
-        $this->assertTrue(AuditEvent::query()->where('subject_type', 'user')->where('subject_id', $staff->id)->where('event', 'deleted')->exists());
+        $this->delete(route('users.destroy', $sales))->assertRedirect();
+        $this->assertDatabaseMissing('users', ['id' => $sales->id]);
+        $this->assertTrue(AuditEvent::query()->where('subject_type', 'user')->where('subject_id', $sales->id)->where('event', 'deleted')->exists());
+    }
+
+    public function test_permissions_are_granted_and_removed_per_person(): void
+    {
+        $sales = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Sales]);
+        $this->assertFalse($sales->hasPermission(Permission::SetManualPrices));
+
+        $this->patch(route('users.update', $sales), ['permissions' => [
+            'set_manual_prices' => true,
+            'see_costs' => false,
+        ]])->assertSessionHasNoErrors();
+
+        $sales->refresh();
+        $this->assertTrue($sales->hasPermission(Permission::SetManualPrices));
+        $this->assertFalse($sales->hasPermission(Permission::SeeCosts));
+        $this->assertSame(['set_manual_prices' => true, 'see_costs' => false], $sales->permissions);
+
+        $logged = AuditEvent::query()->where('subject_id', $sales->id)->where('event', 'permissions changed')->firstOrFail();
+        $this->assertSame(['from roles', 'granted'], $logged->changes['Set manual line prices']);
+
+        // Back to following their roles.
+        $this->patch(route('users.update', $sales), ['permissions' => ['set_manual_prices' => null, 'see_costs' => null]])->assertSessionHasNoErrors();
+        $this->assertNull($sales->refresh()->permissions);
+        $this->assertFalse($sales->hasPermission(Permission::SetManualPrices));
     }
 
     public function test_the_owner_drivers_and_other_businesses_are_off_limits(): void
     {
         // Not yourself (the owner).
-        $this->patch(route('users.update', $this->owner), ['role' => 'staff'])->assertNotFound();
+        $this->patch(route('users.update', $this->owner), ['roles' => ['sales']])->assertNotFound();
         $this->delete(route('users.destroy', $this->owner))->assertNotFound();
 
-        // Not drivers: they're managed under Settings → Drivers, and not listed here.
+        // Not people who only drive: they're managed under Settings → Drivers, and not listed here.
         $driver = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Driver]);
-        $this->patch(route('users.update', $driver), ['role' => 'staff'])->assertNotFound();
+        $this->patch(route('users.update', $driver), ['roles' => ['sales']])->assertNotFound();
         $this->delete(route('users.destroy', $driver))->assertNotFound();
         $this->get(route('users.index'))->assertInertia(fn (Assert $page) => $page->has('users', 1));
 
         // Not another business's people.
         $other = Tenant::factory()->create();
-        $stranger = User::factory()->create(['tenant_id' => $other->id, 'role' => UserRole::Staff]);
-        $this->patch(route('users.update', $stranger), ['role' => 'admin'])->assertNotFound();
+        $stranger = User::factory()->create(['tenant_id' => $other->id, 'role' => UserRole::Sales]);
+        $this->patch(route('users.update', $stranger), ['roles' => ['admin']])->assertNotFound();
         $this->delete(route('users.destroy', $stranger))->assertNotFound();
-        $this->assertDatabaseHas('users', ['id' => $stranger->id, 'role' => 'staff']);
+        $this->assertDatabaseHas('users', ['id' => $stranger->id, 'role' => 'sales']);
     }
 
-    public function test_only_the_owner_manages_users(): void
+    public function test_admins_manage_users_but_not_the_profit_report(): void
     {
-        foreach ([UserRole::Admin, UserRole::Staff] as $role) {
+        $admin = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Admin]);
+        $sales = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Sales]);
+        $this->actingAs($admin);
+
+        $this->get(route('users.index'))->assertOk()->assertInertia(fn (Assert $page) => $page->where('isOwner', false));
+        $this->post(route('users.store'), ['name' => 'X', 'email' => 'x@example.com', 'roles' => ['admin']])->assertSessionHasNoErrors();
+
+        // Only the owner hands out the P&L.
+        $this->patch(route('users.update', $sales), ['permissions' => ['see_profit' => true]])->assertForbidden();
+        $this->put(route('users.reports'), ['admins_can_view_profit' => true])->assertForbidden();
+        $this->assertFalse($sales->refresh()->hasPermission(Permission::SeeProfit));
+
+        // Admins can't manage the owner.
+        $this->patch(route('users.update', $this->owner), ['roles' => ['sales']])->assertNotFound();
+    }
+
+    public function test_sales_and_other_roles_dont_manage_users(): void
+    {
+        foreach ([UserRole::Sales, UserRole::Accounts, UserRole::YardCrew] as $role) {
             $user = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => $role]);
             $this->actingAs($user);
 
-            $this->get(route('users.index'))->assertForbidden();
-            $this->post(route('users.store'), ['name' => 'X', 'email' => "x-{$role->value}@example.com", 'role' => 'admin'])->assertForbidden();
+            $this->post(route('users.store'), ['name' => 'X', 'email' => "x-{$role->value}@example.com", 'roles' => ['admin']])->assertForbidden();
         }
+    }
 
-        // Admins still manage the rest of the business settings.
-        $this->actingAs(User::query()->where('tenant_id', $this->tenant->id)->where('role', UserRole::Admin->value)->firstOrFail());
-        $this->get(route('business.edit'))->assertOk();
-        $this->get(route('drivers.index'))->assertOk();
+    public function test_a_person_can_be_given_manage_users(): void
+    {
+        $sales = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Sales]);
+        $this->patch(route('users.update', $sales), ['permissions' => ['manage_users' => true]])->assertSessionHasNoErrors();
+
+        $this->actingAs($sales->refresh());
+        $this->get(route('users.index'))->assertOk();
     }
 }

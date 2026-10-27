@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Access\RefundApproval;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentTender;
+use App\Enums\Permission;
 use App\Models\CreditNote;
 use App\Models\Customer;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\Organization;
+use App\Models\User;
 use App\Receivables\PalletLedger;
 use App\Receivables\ProcessReturn;
 use App\Receivables\ReturnsSettings;
@@ -107,7 +110,7 @@ class ReturnController extends Controller
         return to_route('credit-notes.show', $credit);
     }
 
-    public function show(CreditNote $creditNote): Response
+    public function show(Request $request, CreditNote $creditNote): Response
     {
         $creditNote->load(['lines', 'organization:id,name', 'customer:id,first_name,last_name', 'order:id,number', 'creator:id,name']);
         $openOrders = Order::query()
@@ -132,6 +135,9 @@ class ReturnController extends Controller
             ],
             'openOrders' => $openOrders,
             'tenders' => PaymentTender::manualOptions(),
+            // Refunds above the user's limit need someone to approve them.
+            'refundLimitCents' => $request->user()?->hasPermission(Permission::RefundAboveLimit) ? null : $request->user()?->refundLimit('goods'),
+            'approvers' => $request->user() ? RefundApproval::approvers($request->user()) : [],
         ]);
     }
 
@@ -155,9 +161,17 @@ class ReturnController extends Controller
         $data = $request->validate([
             'tender' => ['required', Rule::enum(PaymentTender::class)->only([PaymentTender::CardTerminal, PaymentTender::Cash, PaymentTender::Cheque, PaymentTender::ETransfer])],
             'amount' => ['nullable', 'numeric', 'min:0.01', 'max:9999999'],
+            'approver_id' => ['nullable', 'integer'],
+            'approver_secret' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $use->refund($creditNote, PaymentTender::from($data['tender']), $request->user(), isset($data['amount']) ? (int) Money::parse($data['amount']) : null);
+        /** @var User $user */
+        $user = $request->user();
+        $cents = isset($data['amount']) ? (int) Money::parse($data['amount']) : $creditNote->remainingCents();
+        $approver = RefundApproval::check($user, $cents, 'goods', $data);
+
+        $use->refund($creditNote, PaymentTender::from($data['tender']), $user, $cents);
+        RefundApproval::record($creditNote, $user, $approver, $cents);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Refund recorded.']);
 

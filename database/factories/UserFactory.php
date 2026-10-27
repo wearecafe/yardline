@@ -41,14 +41,22 @@ class UserFactory extends Factory
         ];
     }
 
-    public function staff(): static
+    public function sales(): static
     {
-        return $this->state(fn (array $attributes) => ['role' => UserRole::Staff]);
+        return $this->state(fn (array $attributes) => ['role' => UserRole::Sales]);
     }
 
     /**
      * Indicate that the model's email address should be unverified.
      */
+    /**
+     * @param  list<UserRole>  $roles
+     */
+    public function withRoles(UserRole ...$roles): static
+    {
+        return $this->afterMaking(fn (User $user) => $user->setRoles($roles));
+    }
+
     public function unverified(): static
     {
         return $this->state(fn (array $attributes) => [

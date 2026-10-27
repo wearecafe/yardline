@@ -120,9 +120,9 @@ class BillingTest extends TestCase
                 ->where('total_cents', 74_900 + 19_900));
     }
 
-    public function test_staff_and_drivers_cant_change_billing(): void
+    public function test_sales_and_drivers_cant_change_billing(): void
     {
-        $this->signInToNewTenant(UserRole::Staff);
+        $this->signInToNewTenant(UserRole::Sales);
 
         $this->get(route('billing.edit'))->assertForbidden();
         $this->put(route('billing.add-ons'), ['rentals' => true])->assertForbidden();
@@ -156,7 +156,7 @@ class BillingTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('billing.status', 'expired')->where('billing.has_access', false));
         $this->get(route('profile.edit'))->assertOk();
 
-        $counter = User::factory()->create(['tenant_id' => $tenant->id, 'role' => UserRole::Staff]);
+        $counter = User::factory()->create(['tenant_id' => $tenant->id, 'role' => UserRole::Sales]);
         $this->actingAs($counter)->get(route('dashboard'))->assertRedirect(route('billing.paused'));
         $this->get(route('billing.paused'))->assertOk()->assertInertia(fn (Assert $page) => $page->component('billing/paused'));
 

@@ -138,11 +138,17 @@ class QuickBooksConnectionTest extends TestCase
         Http::assertSent(fn (Request $r) => $r->url() === QuickBooksOAuth::REVOKE_URL);
     }
 
-    public function test_only_owners_and_admins_can_connect(): void
+    public function test_only_owners_admins_and_accounts_reach_quickbooks(): void
     {
-        $this->signInToNewTenant(UserRole::Staff);
+        $sales = $this->signInToNewTenant(UserRole::Sales);
 
         $this->get(route('quickbooks.edit'))->assertForbidden();
+        $this->post(route('quickbooks.connect'))->assertForbidden();
+
+        // Accounts sees the page and its sync errors, but doesn't connect.
+        $sales->setRoles([UserRole::Accounts])->save();
+        $this->actingAs($sales->refresh());
+        $this->get(route('quickbooks.edit'))->assertOk();
         $this->post(route('quickbooks.connect'))->assertForbidden();
     }
 }

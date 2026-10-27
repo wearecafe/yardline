@@ -2,15 +2,17 @@
 
 namespace App\Reports;
 
+use App\Access\AccessSettings;
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Tenancy\CurrentTenant;
 
 /**
- * Who sees the profit report, kept in tenants.settings['reports']. The
- * owner always does; admins only when the owner lets them. Staff, order
- * pickers and drivers never see costs or margins.
+ * Who sees the profit report: anyone holding See gross-profit P&L. The
+ * owner always does; admins when the owner gives the Admin role that
+ * permission (Settings → Roles, or the switch on Settings → Users).
  */
 final readonly class ReportSettings
 {
@@ -23,18 +25,12 @@ final readonly class ReportSettings
 
     public static function for(?Tenant $tenant): self
     {
-        $v = $tenant?->settings['reports'] ?? [];
-
-        return new self(adminsCanViewProfit: (bool) ($v['admins_can_view_profit'] ?? false));
+        return new self(AccessSettings::for($tenant)->roleGives(UserRole::Admin, Permission::SeeProfit));
     }
 
     public function canViewProfit(?User $user): bool
     {
-        return match ($user?->role) {
-            UserRole::Owner => true,
-            UserRole::Admin => $this->adminsCanViewProfit,
-            default => false,
-        };
+        return $user !== null && $user->hasPermission(Permission::SeeProfit);
     }
 
     /**

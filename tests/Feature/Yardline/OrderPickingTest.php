@@ -24,7 +24,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 /**
- * The order picker role, the yard's fulfillment stages, and quality-check
+ * The Yard crew role, the yard's fulfillment stages, and quality-check
  * sign-offs at Picked and Loaded.
  */
 class OrderPickingTest extends TestCase
@@ -69,7 +69,14 @@ class OrderPickingTest extends TestCase
 
     private function user(UserRole $role, string $name): User
     {
-        return User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => $role, 'name' => $name]);
+        $user = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => $role, 'name' => $name]);
+
+        // Everyone but owners and admins works the yards they're given.
+        if ($user->isYardScoped()) {
+            $user->setYards(Location::query()->pluck('id')->all());
+        }
+
+        return $user;
     }
 
     private function confirmedOrder(?Location $yard = null, string $fulfillment = 'pickup'): Order
@@ -112,7 +119,7 @@ class OrderPickingTest extends TestCase
     public function test_a_load_waits_at_picked_until_an_allowed_role_signs_off(): void
     {
         $this->picking(['checks' => ['picked' => ['required' => true, 'roles' => ['admin'], 'different_user' => true]]]);
-        $picker = $this->user(UserRole::Picker, 'Pat Picker');
+        $picker = $this->user(UserRole::YardCrew, 'Pat Picker');
         $picker->setYards([$this->yard->id]);
         $admin = $this->user(UserRole::Admin, 'Alex Admin');
 
@@ -157,9 +164,9 @@ class OrderPickingTest extends TestCase
 
     public function test_a_rejected_load_goes_back_a_stage_with_the_reason(): void
     {
-        $this->picking(['checks' => ['loaded' => ['required' => true, 'roles' => ['staff'], 'different_user' => true]]]);
-        $jess = $this->user(UserRole::Staff, 'Jess');
-        $sam = $this->user(UserRole::Staff, 'Sam');
+        $this->picking(['checks' => ['loaded' => ['required' => true, 'roles' => ['yard_crew'], 'different_user' => true]]]);
+        $jess = $this->user(UserRole::YardCrew, 'Jess');
+        $sam = $this->user(UserRole::YardCrew, 'Sam');
 
         $order = $this->confirmedOrder(fulfillment: 'delivery');
         $shipment = $this->pickAll($order, $jess);
@@ -175,7 +182,8 @@ class OrderPickingTest extends TestCase
 
         // Nobody checks their own work.
         $this->post(route('shipments.sign-off', $shipment))->assertSessionHasErrors('order');
-        $this->post(route('shipments.complete', $shipment), ['name' => 'Pat'])->assertSessionHasErrors();
+        // Yard crew never take proof of delivery.
+        $this->post(route('shipments.complete', $shipment), ['name' => 'Pat'])->assertForbidden();
 
         $this->actingAs($sam)->post(route('shipments.reject', $shipment))->assertSessionHasErrors('reason');
         $this->post(route('shipments.reject', $shipment), ['reason' => 'Wrong colour run'])->assertSessionHasNoErrors();
@@ -272,7 +280,7 @@ class OrderPickingTest extends TestCase
         $this->assertTrue($shipment->refresh()->isReleased());
     }
 
-    public function test_order_pickers_only_see_their_yards_and_never_money(): void
+    public function test_yard_crew_only_see_their_yards_and_never_money(): void
     {
         $other = Location::factory()->create(['name' => 'Stoney Creek yard']);
         app(InventoryLedger::class)->record($this->sand, $other, 100, StockMovementType::Receipt);
@@ -280,7 +288,7 @@ class OrderPickingTest extends TestCase
         $mine = $this->confirmedOrder();
         $theirs = $this->confirmedOrder($other);
 
-        $picker = $this->user(UserRole::Picker, 'Pat');
+        $picker = $this->user(UserRole::YardCrew, 'Pat');
         $picker->setYards([$this->yard->id]);
         $this->actingAs($picker);
 
@@ -297,11 +305,14 @@ class OrderPickingTest extends TestCase
         // Another yard's order is out of reach.
         $this->post(route('orders.pick', $theirs))->assertNotFound();
 
-        // Everything except the queue sends them back to it.
+        // Screens Yard crew don't reach send them back to the queue.
         $this->get(route('dashboard'))->assertRedirect(route('orders.queue'));
         $this->get(route('orders.show', $mine))->assertRedirect(route('orders.queue'));
-        $this->get(route('inventory.index'))->assertRedirect(route('orders.queue'));
+        $this->get(route('counter.show'))->assertRedirect(route('orders.queue'));
         $this->post(route('orders.store'), ['type' => 'sale'])->assertForbidden();
+        // Stock they can look at, not change.
+        $this->get(route('inventory.index'))->assertOk();
+        $this->post(route('inventory.adjustments.store'), [])->assertForbidden();
 
         // They claim and pick their own order, but can't cancel a pick list.
         $this->post(route('orders.pick', $mine), ['picker_id' => $this->owner->id])->assertSessionHasNoErrors();
@@ -318,7 +329,7 @@ class OrderPickingTest extends TestCase
         $valid = [
             'stages' => ['picking' => true, 'picked' => true, 'loaded' => true, 'out' => false],
             'checks' => [
-                'picked' => ['required' => true, 'roles' => ['admin', 'picker'], 'different_user' => true],
+                'picked' => ['required' => true, 'roles' => ['admin', 'yard_crew'], 'different_user' => true],
                 'loaded' => ['required' => false, 'roles' => [], 'different_user' => true],
             ],
         ];
@@ -335,31 +346,57 @@ class OrderPickingTest extends TestCase
         $settings = PickingSettings::for($this->tenant->refresh());
         $this->assertFalse($settings->stageOn('out'));
         $this->assertTrue($settings->requiresCheck('picked'));
-        $this->assertEquals([UserRole::Admin, UserRole::Picker], $settings->checkRoles('picked'));
+        $this->assertEquals([UserRole::Admin, UserRole::YardCrew], $settings->checkRoles('picked'));
         $this->assertFalse($settings->requiresCheck('loaded'));
 
         // Only owners and admins change it.
-        $this->actingAs($this->user(UserRole::Staff, 'Jess'))->put(route('picking-settings.update'), $valid)->assertForbidden();
+        $this->actingAs($this->user(UserRole::Sales, 'Jess'))->put(route('picking-settings.update'), $valid)->assertForbidden();
     }
 
-    public function test_owner_adds_an_order_picker_who_switches_in_with_their_time_clock_pin(): void
+    public function test_older_check_settings_still_name_the_right_roles(): void
+    {
+        // Saved before roles were split by job: staff is Sales, picker is Yard crew.
+        $this->picking(['checks' => ['picked' => ['required' => true, 'roles' => ['staff', 'picker']]]]);
+
+        $this->assertEquals([UserRole::Sales, UserRole::YardCrew], PickingSettings::current()->checkRoles('picked'));
+    }
+
+    public function test_quality_check_sign_off_permission_signs_off_any_stage(): void
+    {
+        $this->picking(['checks' => ['picked' => ['required' => true, 'roles' => ['admin'], 'different_user' => true]]]);
+        $picker = $this->user(UserRole::YardCrew, 'Pat');
+        $lead = $this->user(UserRole::YardCrew, 'Lee Lead');
+
+        $shipment = $this->pickAll($this->confirmedOrder(), $picker);
+        $this->post(route('shipments.picked', $shipment))->assertSessionHasNoErrors();
+
+        // Yard crew aren't listed for this check…
+        $this->actingAs($lead)->post(route('shipments.sign-off', $shipment))->assertSessionHasErrors('order');
+
+        // …but Lee has been given the permission.
+        $lead->forceFill(['permissions' => ['quality_check_sign_off' => true]])->save();
+        $this->actingAs($lead->refresh())->post(route('shipments.sign-off', $shipment))->assertSessionHasNoErrors();
+        $this->assertNull($shipment->refresh()->check_stage);
+    }
+
+    public function test_owner_adds_yard_crew_who_switch_in_with_their_time_clock_pin(): void
     {
         $other = Location::factory()->create(['name' => 'Stoney Creek yard']);
 
         $this->post(route('users.store'), [
             'name' => 'Pat Picker',
             'email' => 'pat@example.com',
-            'role' => 'picker',
+            'roles' => ['yard_crew'],
             'location_ids' => [$other->id],
         ])->assertSessionHasNoErrors();
 
         $picker = User::query()->where('email', 'pat@example.com')->firstOrFail();
-        $this->assertSame(UserRole::Picker, $picker->role);
-        $this->assertSame([$other->id], $picker->pickingYardIds());
+        $this->assertSame(UserRole::YardCrew, $picker->role);
+        $this->assertSame([$other->id], $picker->yardIds());
 
-        // A picker added without yards works every yard.
-        $this->post(route('users.store'), ['name' => 'Lee', 'email' => 'lee@example.com', 'role' => 'picker'])->assertSessionHasNoErrors();
-        $this->assertCount(2, User::query()->where('email', 'lee@example.com')->firstOrFail()->pickingYardIds());
+        // Yard crew added without yards work every yard.
+        $this->post(route('users.store'), ['name' => 'Lee', 'email' => 'lee@example.com', 'roles' => ['yard_crew']])->assertSessionHasNoErrors();
+        $this->assertCount(2, User::query()->where('email', 'lee@example.com')->firstOrFail()->yardIds() ?? []);
 
         // They've accepted the invite.
         $picker->forceFill(['email_verified_at' => now()])->save();
@@ -369,27 +406,32 @@ class OrderPickingTest extends TestCase
         $employee->setPin('4821');
         $employee->save();
 
-        $staff = $this->user(UserRole::Staff, 'Jess');
-        $this->actingAs($staff)->get(route('orders.queue'))
+        $sales = $this->user(UserRole::Sales, 'Jess');
+        $this->actingAs($sales)->get(route('orders.queue'))
             ->assertInertia(fn (Assert $page) => $page->where('switchable', [['id' => $picker->id, 'name' => 'Pat Picker']]));
 
         // On a shared tablet, someone signed in switches to the picker.
         $this->post(route('picker.switch'), ['user_id' => $picker->id, 'pin' => '0000'])->assertSessionHasErrors('pin');
-        $this->assertAuthenticatedAs($staff);
+        $this->assertAuthenticatedAs($sales);
 
         $this->post(route('picker.switch'), ['user_id' => $picker->id, 'pin' => '4821'])->assertRedirect(route('orders.queue'));
         $this->assertAuthenticatedAs($picker);
 
-        // Only order picker accounts can be switched to by PIN.
+        // Owners and admins can't be switched to by PIN.
         $owners = Employee::query()->create(['user_id' => $this->owner->id, 'name' => 'Owner']);
         $owners->setPin('1111');
         $owners->save();
         $this->post(route('picker.switch'), ['user_id' => $this->owner->id, 'pin' => '1111'])->assertSessionHasErrors('pin');
         $this->assertAuthenticatedAs($picker);
 
-        // Changing them to staff clears their yards.
-        $this->actingAs($this->owner)->patch(route('users.update', $picker), ['role' => 'staff'])->assertSessionHasNoErrors();
-        $this->assertSame(0, $picker->refresh()->yards()->count());
-        $this->assertNull($picker->pickingYardIds());
+        // Nor can Sales, who sign in with a password.
+        $salesPin = Employee::query()->create(['user_id' => $sales->id, 'name' => 'Jess']);
+        $salesPin->setPin('2222');
+        $salesPin->save();
+        $this->post(route('picker.switch'), ['user_id' => $sales->id, 'pin' => '2222'])->assertSessionHasErrors('pin');
+
+        // Moving them to Sales keeps the yards they work.
+        $this->actingAs($this->owner)->patch(route('users.update', $picker), ['roles' => ['sales']])->assertSessionHasNoErrors();
+        $this->assertSame([$other->id], $picker->refresh()->yardIds());
     }
 }

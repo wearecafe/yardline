@@ -10,8 +10,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\KeepStaffInBackOffice;
 use App\Http\Middleware\ProtectDemoAccounts;
-use App\Http\Middleware\RestrictDrivers;
-use App\Http\Middleware\RestrictPickers;
+use App\Http\Middleware\RestrictByRole;
 use App\Http\Middleware\TrackActivity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -40,9 +39,8 @@ return Application::configure(basePath: dirname(__DIR__))
             IdentifyTenant::class,
             ProtectDemoAccounts::class,
             EnsureBilling::class,
-            RestrictDrivers::class,
             KeepStaffInBackOffice::class,
-            RestrictPickers::class,
+            RestrictByRole::class,
             TrackActivity::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,

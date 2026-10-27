@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Access\RouteAccess;
 use App\Models\User;
 use App\Support\Demo;
 use Database\Seeders\DemoYardSeeder;
@@ -56,6 +57,6 @@ class DemoLoginController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return to_route($user->isDriver() ? 'driver.today' : 'dashboard');
+        return to_route(RouteAccess::home($user));
     }
 }

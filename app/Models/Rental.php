@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Accounting\QuickBooks\SendsToQuickBooks;
 use App\Enums\DepositStatus;
 use App\Enums\FulfillmentMethod;
+use App\Enums\PaymentState;
+use App\Enums\RentalPaymentKind;
 use App\Enums\RentalPaymentMethod;
 use App\Enums\RentalStatus;
 use App\Tenancy\BelongsToTenant;
@@ -237,6 +239,18 @@ class Rental extends Model
     public function isSigned(): bool
     {
         return $this->agreement?->signed_at !== null;
+    }
+
+    /**
+     * What cancelling would refund: card and other charges that went
+     * through. A deposit hold is released, not refunded.
+     */
+    public function refundableCents(): int
+    {
+        return (int) $this->payments()
+            ->where('kind', RentalPaymentKind::Charge->value)
+            ->where('status', PaymentState::Succeeded->value)
+            ->sum('amount_cents');
     }
 
     public function balanceCents(): int

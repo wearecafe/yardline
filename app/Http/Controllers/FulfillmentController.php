@@ -48,7 +48,7 @@ class FulfillmentController extends Controller
         /** @var User $user */
         $user = $request->user();
         $settings = PickingSettings::current();
-        $yards = $user->pickingYardIds();
+        $yards = $user->yardIds();
         $checksOnly = $request->boolean('checks');
 
         $new = Order::query()
@@ -121,10 +121,10 @@ class FulfillmentController extends Controller
             'checksOnly' => $checksOnly,
             'awaitingChecks' => $shipments->filter(fn (Shipment $s) => $s->awaitingCheck())->count(),
             'stages' => $settings->stages,
-            'pickers' => $user->isPicker()
-                ? [['id' => $user->id, 'name' => $user->name]]
-                : User::query()->where('tenant_id', $user->tenant_id)->where('role', '!=', UserRole::Driver->value)->orderBy('name')->get(['id', 'name']),
-            // Order pickers on a shared tablet switch with their time-clock PIN.
+            'pickers' => $user->canManageBusiness()
+                ? $this->pickers($user)
+                : [['id' => $user->id, 'name' => $user->name]],
+            // Yard crew on a shared tablet switch with their time-clock PIN.
             'switchable' => $this->switchablePickers($user),
             'today' => now()->setTimezone($user->tenant->timezone ?? 'America/Toronto')->format('D M j'),
         ]);
@@ -142,8 +142,8 @@ class FulfillmentController extends Controller
             'quantities.*' => ['numeric', 'min:0'],
         ]);
 
-        // An order picker claims the order for themselves, and picks all of it.
-        if ($user->isPicker()) {
+        // Yard crew claim the order for themselves, and pick all of it.
+        if (! $user->canManageBusiness()) {
             $data = ['picker_id' => $user->id];
         }
 
@@ -165,8 +165,8 @@ class FulfillmentController extends Controller
 
         $data = $request->validate(['picker_id' => ['nullable', TenantRule::exists('users')]]);
 
-        // Order pickers can only claim an unclaimed pick list for themselves.
-        if ($user->isPicker()) {
+        // Yard crew can only claim an unclaimed pick list for themselves.
+        if (! $user->canManageBusiness()) {
             abort_unless((int) ($data['picker_id'] ?? 0) === $user->id && in_array($shipment->picker_id, [null, $user->id], true), 403);
         }
 
@@ -346,7 +346,7 @@ class FulfillmentController extends Controller
         $order->loadMissing(['lines.productUnit', 'lines.product:id,weight_kg,track_lots', 'organizationLocation:id,name,delivery_notes']);
         $levels = StockLevel::query()->where('location_id', $order->location_id)->get()->keyBy('product_id');
         $card = FulfillmentPresenter::orderCard($order, $shipment);
-        $money = ! $user->isPicker();
+        $money = $user->seesPrices();
 
         return [
             ...$card,
@@ -366,7 +366,7 @@ class FulfillmentController extends Controller
             'sent_back' => $shipment ? $this->sentBack($shipment) : null,
             'sign_offs' => $shipment ? FulfillmentPresenter::signOffs($shipment) : [],
             'released' => (bool) $shipment?->isReleased(),
-            'can_cancel' => $shipment !== null && $shipment->isInYard() && ! $user->isPicker(),
+            'can_cancel' => $shipment !== null && $shipment->isInYard() && $user->canManageBusiness(),
         ];
     }
 
@@ -415,15 +415,15 @@ class FulfillmentController extends Controller
     }
 
     /**
-     * Order pickers see how many deposit items go on the load, not what
-     * they cost.
+     * Yard crew and dispatch see how many deposit items go on the load,
+     * not what they cost.
      *
      * @param  array<string, mixed>  $list
      * @return array<string, mixed>
      */
     private function hideMoney(array $list, User $user): array
     {
-        if ($user->isPicker() && is_array($list['deposits'] ?? null)) {
+        if (! $user->seesPrices() && is_array($list['deposits'] ?? null)) {
             $count = (int) $list['deposits']['count'];
             $list['deposits'] = ['count' => $count, 'cents' => null, 'label' => $count.' on deposit'];
         }
@@ -432,7 +432,26 @@ class FulfillmentController extends Controller
     }
 
     /**
-     * Order pickers with a time-clock PIN, who can switch in here.
+     * People who can be given a pick list: yard crew at this order's yards,
+     * and owners and admins.
+     *
+     * @return list<array{id: int, name: string}>
+     */
+    private function pickers(User $user): array
+    {
+        return array_values(User::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (User $u) => $u->hasRole(UserRole::Owner, UserRole::Admin, UserRole::YardCrew))
+            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name])
+            ->values()
+            ->all());
+    }
+
+    /**
+     * Yard crew (and service techs) with a time-clock PIN, who can switch
+     * in on this tablet.
      *
      * @return list<array{id: int, name: string}>
      */
@@ -442,12 +461,13 @@ class FulfillmentController extends Controller
 
         return array_values(User::query()
             ->where('tenant_id', $user->tenant_id)
-            ->where('role', UserRole::Picker->value)
             ->whereIn('id', $withPin)
             ->whereKeyNot($user->id)
             ->orderBy('name')
-            ->get(['id', 'name'])
+            ->get()
+            ->filter(fn (User $u) => $u->hasRole(UserRole::YardCrew) && $u->switchesWithPin())
             ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name])
+            ->values()
             ->all());
     }
 
@@ -465,11 +485,11 @@ class FulfillmentController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => $signedOff ? "Signed off. {$message}" : $message]);
     }
 
-    /** Order pickers only work the yards they're assigned to. */
+    /** Everyone but owners and admins works only their assigned yards. */
     private function ensureYard(?User $user, Order|Shipment $subject): void
     {
         $order = $subject instanceof Shipment ? $subject->order : $subject;
 
-        abort_unless($user !== null && $user->canPickAt($order->location_id), 404);
+        abort_unless($user !== null && $user->worksAt($order->location_id), 404);
     }
 }

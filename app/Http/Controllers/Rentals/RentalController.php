@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Rentals;
 
+use App\Access\RefundApproval;
 use App\Enums\FulfillmentMethod;
+use App\Enums\Permission;
 use App\Enums\ProductKind;
 use App\Enums\RentalPaymentMethod;
 use App\Enums\RentalStatus;
@@ -16,6 +18,7 @@ use App\Models\Organization;
 use App\Models\Product;
 use App\Models\Rental;
 use App\Models\RentalUnit;
+use App\Models\User;
 use App\Rentals\CancelRental;
 use App\Rentals\Notifications\RentalNotifier;
 use App\Rentals\Payments\RentalPayments;
@@ -100,12 +103,22 @@ class RentalController extends Controller
         return to_route('rentals.show', $rental);
     }
 
-    public function show(Rental $rental): Response
+    public function show(Request $request, Rental $rental): Response
     {
+        /** @var User $user */
+        $user = $request->user();
+
         return Inertia::render('rentals/edit', [
             'rental' => RentalPresenter::detail($rental),
             'defaults' => null,
             ...$this->formOptions($rental),
+            // Cancelling refunds what's been paid; above the user's limit
+            // someone approves it.
+            'refundApproval' => [
+                'refundable_cents' => $rental->refundableCents(),
+                'limit_cents' => $user->hasPermission(Permission::RefundAboveLimit) ? null : $user->refundLimit('rental'),
+                'approvers' => RefundApproval::approvers($user),
+            ],
             'tenders' => array_map(
                 fn (RentalTender $tender) => ['value' => $tender->value, 'label' => $tender->label()],
                 [RentalTender::CardTerminal, RentalTender::Cash, RentalTender::Cheque, RentalTender::ETransfer],
@@ -172,7 +185,18 @@ class RentalController extends Controller
 
     public function cancel(Request $request, Rental $rental, CancelRental $cancel): RedirectResponse
     {
-        $cancel->handle($rental, $request->user());
+        $data = $request->validate([
+            'approver_id' => ['nullable', 'integer'],
+            'approver_secret' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        /** @var User $user */
+        $user = $request->user();
+        $refund = $rental->refundableCents();
+        $approver = $refund > 0 ? RefundApproval::check($user, $refund, 'rental', $data) : null;
+
+        $cancel->handle($rental, $user);
+        RefundApproval::record($rental, $user, $approver, $refund);
 
         return $this->done("{$rental->number} cancelled.");
     }

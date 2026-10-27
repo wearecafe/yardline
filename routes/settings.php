@@ -6,6 +6,7 @@ use App\Http\Controllers\Settings\DriverAccountsController;
 use App\Http\Controllers\Settings\OrderPickingController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\QuickBooksController;
+use App\Http\Controllers\Settings\RoleSettingsController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\UserAccountsController;
 use Illuminate\Auth\Middleware\RequirePassword;
@@ -45,11 +46,15 @@ Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function (
     Route::get('settings/picking', [OrderPickingController::class, 'edit'])->name('picking-settings.edit');
     Route::put('settings/picking', [OrderPickingController::class, 'update'])->name('picking-settings.update');
 
-    Route::get('settings/quickbooks', [QuickBooksController::class, 'edit'])->name('quickbooks.edit');
     Route::post('settings/quickbooks/connect', [QuickBooksController::class, 'connect'])->name('quickbooks.connect');
     Route::get('settings/quickbooks/callback', [QuickBooksController::class, 'callback'])->name('quickbooks.callback');
     Route::put('settings/quickbooks', [QuickBooksController::class, 'update'])->name('quickbooks.update');
     Route::delete('settings/quickbooks', [QuickBooksController::class, 'destroy'])->name('quickbooks.destroy');
+});
+
+// The QuickBooks page and its sync log: Accounts fixes sync errors too.
+Route::middleware(['auth', 'verified', 'can:quickbooks-log'])->group(function () {
+    Route::get('settings/quickbooks', [QuickBooksController::class, 'edit'])->name('quickbooks.edit');
     Route::post('settings/quickbooks/log/{sync}/resend', [QuickBooksController::class, 'resend'])->name('quickbooks.resend');
 });
 
@@ -72,6 +77,10 @@ Route::middleware(['auth', 'verified', 'can:manage-users'])->group(function () {
     Route::post('settings/users/{user}/resend', [UserAccountsController::class, 'resend'])->name('users.resend');
     Route::delete('settings/users/{user}', [UserAccountsController::class, 'destroy'])->name('users.destroy');
     Route::put('settings/users/reports', [UserAccountsController::class, 'reports'])->name('users.reports');
+
+    // What each role gives by default, and refund limits.
+    Route::get('settings/roles', [RoleSettingsController::class, 'edit'])->name('roles.edit');
+    Route::put('settings/roles', [RoleSettingsController::class, 'update'])->name('roles.update');
 });
 
 Route::get('.well-known/passkey-endpoints', function () {

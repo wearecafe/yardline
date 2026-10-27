@@ -13,16 +13,26 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth & {
+                roles: { value: string; label: string }[];
                 can: {
                     manageBusiness: boolean;
                     manageUsers: boolean;
                     backOffice: boolean;
                     drive: boolean;
                     pick: boolean;
+                    workQueue: boolean;
+                    seePrices: boolean;
+                    seeCosts: boolean;
+                    setPrices: boolean;
                     priceExempt: boolean;
                     manageTime: boolean;
+                    quickbooksLog: boolean;
                     viewProfit: boolean;
                 };
+                /** Sidebar route names, and whether this person reaches each. */
+                routes: Record<string, boolean>;
+                /** The route name this person starts on. */
+                home: string | null;
             };
             tenant: { id: number; name: string; currency: string } | null;
             isDemo: boolean;

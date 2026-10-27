@@ -26,7 +26,7 @@ Switching a stage off doesn't affect orders already in it. They finish that stag
 
 You can require a sign-off at **Picked**, **Loaded**, or both. For each check you choose:
 
-- **Who can sign off**: any mix of owners, admins, staff and order pickers.
+- **Who can sign off**: any mix of owners, admins, Sales, Dispatchers and Yard crew. Anyone given **Quality-check sign-off** can sign off any stage.
 - **Must be checked by someone else**: on by default, so whoever marked the order picked (or loaded) can't sign off their own work.
 
 When a check is required, an order marked picked (or loaded) shows **Awaiting check** in the queue and can't move on until it's signed off. Select **Awaiting check** at the top of the queue to see only those orders.

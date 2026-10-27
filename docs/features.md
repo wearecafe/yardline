@@ -74,19 +74,19 @@ layer (9 sq ft) or the pallet (90 sq ft) and round up.
 
 ## Yard and delivery
 
-| Feature                                                                  | Screens                         | Code                                               |
-| ------------------------------------------------------------------------ | ------------------------------- | -------------------------------------------------- |
-| Pick queue, picking with 5% tolerance, bins                              | Orders → Queue, yard kiosk      | `StartPicking`, `RecordPick`                       |
-| Loading shipments onto trucks, partial shipments                         | Kiosk                           | `LoadShipment`                                     |
-| Stages on/off (Picking, Picked, Loaded, Out), sign-offs at Picked/Loaded | Settings → Order picking, Queue | `PickingSettings`, `PickingFlow`                   |
-| Order picker role: their yards' queue only, no money, PIN switching      | Queue, Settings → Users         | `RestrictPickers`, `PickerSwitchController`        |
-| Dispatch board: trucks × hours, rental drops and pallet pickups too      | Dispatch                        | `Dispatch`, `DispatchController`                   |
-| Delivery pricing by zone, distance or truckload                          | Settings → Delivery             | `DeliveryPricer`, `DeliverySettings`               |
-| ETA texts                                                                | Dispatch                        | `Dispatch::sendEtas`, `EtaMessage`                 |
-| Proof of delivery (signature, photo)                                     | Driver app, deliver screen      | `CompleteShipment`                                 |
-| Driver role: the day's truck run on their phone, nothing else            | `/driver`, Settings → Drivers   | `DriverRun`, `DriverController`, `RestrictDrivers` |
-| Truck locations from drivers' phones (kept 30 days)                      | Driver app, Dispatch            | `DriverRun::locate`, `DriverPing`                  |
-| Contractor tracking: stops before yours, truck map when next             | Portal order page               | `DeliveryTracking`                                 |
+| Feature                                                                  | Screens                         | Code                                           |
+| ------------------------------------------------------------------------ | ------------------------------- | ---------------------------------------------- |
+| Pick queue, picking with 5% tolerance, bins                              | Orders → Queue, yard kiosk      | `StartPicking`, `RecordPick`                   |
+| Loading shipments onto trucks, partial shipments                         | Kiosk                           | `LoadShipment`                                 |
+| Stages on/off (Picking, Picked, Loaded, Out), sign-offs at Picked/Loaded | Settings → Order picking, Queue | `PickingSettings`, `PickingFlow`               |
+| Yard crew role: their yards' queue only, no money, PIN switching         | Queue, Settings → Users         | `RouteAccess`, `PickerSwitchController`        |
+| Dispatch board: trucks × hours, rental drops and pallet pickups too      | Dispatch                        | `Dispatch`, `DispatchController`               |
+| Delivery pricing by zone, distance or truckload                          | Settings → Delivery             | `DeliveryPricer`, `DeliverySettings`           |
+| ETA texts                                                                | Dispatch                        | `Dispatch::sendEtas`, `EtaMessage`             |
+| Proof of delivery (signature, photo)                                     | Driver app, deliver screen      | `CompleteShipment`                             |
+| Driver role: the day's truck run on their phone, nothing else            | `/driver`, Settings → Drivers   | `DriverRun`, `DriverController`, `RouteAccess` |
+| Truck locations from drivers' phones (kept 30 days)                      | Driver app, Dispatch            | `DriverRun::locate`, `DriverPing`              |
+| Contractor tracking: stops before yours, truck map when next             | Portal order page               | `DeliveryTracking`                             |
 
 ### Order picking stages and checks
 
@@ -115,8 +115,8 @@ board from the drivers ticked for it (`truck_assignments`,
 unticking a truck drops their days ahead on it. Trucks hold no driver
 details: they carry material, rental equipment or both, with a list of
 capacities in tonnes, cubic yards, cubic metres or pallets
-(`trucks.capacities`). `RestrictDrivers` keeps them to `driver.*`, the
-deliver screen and their own account settings. While `/driver` is open
+(`trucks.capacities`). `RouteAccess` keeps people who only drive to
+`driver.*`, the deliver screen and their own account settings. While `/driver` is open
 on their phone, `useLocationSharing` posts the position about once a
 minute (`driver.locate`); the latest is kept on the truck for the board
 and every ping in `driver_pings`, pruned after 30 days. Browsers only
@@ -279,24 +279,69 @@ order and organization pages show their own history.
 
 ## Users and roles
 
-Every user belongs to one tenant with one role (`UserRole`): `owner`
-(one per business, created at sign-up), `admin`, `staff`, `picker`
-(order picker) or `driver`.
-Owners and admins pass `manage-business` (business settings, credit
-terms and overrides, line prices); only the owner passes `manage-users`.
-The owner adds admins and staff under Settings → Users
-(`UserAccountsController`): an emailed link to choose a password, role
-changes and removal, each written to the audit log. The owner, the
-signed-in user and drivers can't be changed there; drivers stay under
-Settings → Drivers.
+Every user belongs to one tenant and holds one or more job-based roles
+(`UserRole`): `owner` (one per business, created at sign-up), `admin`,
+`sales`, `rental_desk`, `yard_crew`, `dispatcher`, `driver`,
+`purchasing`, `accounts` and `service_tech`. `users.roles` lists them
+(null means just `users.role`); `users.role` is the highest, kept for
+sorting and owner lookups. Older values read through
+`UserRole::fromValue`: `staff` is Sales and `picker` is Yard crew (the
+`2026_10_28_000003` migration renames them in users and in tenant
+settings). `User::setRoles()` keeps both in step.
 
-Order pickers work only the yards ticked for them (`location_user`).
-`RestrictPickers` keeps them to the queue, the picker kiosk, sign-offs
-and their own account; the queue scopes to their yards and leaves out
-prices, payments and balances. On a shared tablet a picker switches in
-with their time-clock PIN (`Employee::checkPin`, via `picker.switch`,
-throttled); only picker accounts can be switched to that way. They keep
-their own time clock (`time.self.*`) and the counter time clock.
+**Screens.** `RouteAccess` maps each role to the route names it reaches:
+`full` routes with any method, `view` routes only with GET. Owner and
+Admin reach everything. `RestrictByRole` sends anyone else back to their
+home screen (`RouteAccess::home`) on a GET outside their roles and
+refuses anything else. Routes behind a `can:` gate (settings, the P&L,
+timesheets, users, QuickBooks) are left to that gate, so a permission
+given to one person works whatever their role. The sidebar hides what a
+person can't reach (`auth.routes`, `reachableSections`).
+
+**Yards.** Everyone but Owner and Admin works only their yards
+(`location_user`, `User::yardIds()`/`worksAt()`); the pick queue, pick
+lists and checks are scoped to them. New people start with every yard.
+
+**Permissions.** `Permission` lists the judgment calls: Set manual line
+prices, Discount exempt products (needs manual prices), Override credit
+limit, Refund above limit, Collect payment on delivery, Quality-check
+sign-off, See costs and margins, See gross-profit P&L, Approve
+timesheets and export payroll, Manage users and roles. Each has default
+roles; the business changes them per role under Settings → Roles
+(`AccessSettings`, `tenants.settings['access']`), and Owner or Admin
+grant or remove one for a person under Settings → Users (`users.permissions`,
+permission => true/false). `User::hasPermission()` checks the person,
+then their roles; the owner holds everything. Only the owner gives See
+gross-profit P&L. Gates: `manage-business` (Owner/Admin), `manage-users`,
+`override-credit`, `set-prices`, `see-costs`, `manage-time`,
+`view-profit`, `manage-credit` and `quickbooks-log` (Owner, Admin,
+Accounts). Exempt-product pricing on the price lists page and the
+"admins can see the profit report" switch write the same role
+permissions.
+
+**Prices and costs.** `User::seesPrices()` (not Yard crew, Dispatcher,
+Driver or Service tech) decides whether the queue and pick lists show
+money. Without See costs and margins, the product editor shows no cost
+and ignores one sent; without `manage-business` it ignores selling
+prices (Purchasing edits products, not what they sell for).
+
+**Refund limits.** `AccessSettings` holds a limit per role in cents
+(null for none): Sales $250 on goods, Rental desk $250 on rentals,
+Owner/Admin/Accounts unlimited, others 0. A user gets their highest.
+`RefundApproval::check` runs before a credit-note refund and a rental
+cancellation that refunds; above the limit someone with Refund above
+limit approves with their password or time-clock PIN, and
+`RefundApproval::record` logs both names.
+
+**Managing people.** Settings → Users (`UserAccountsController`) adds
+people with roles, yards and permissions, changes them and removes them,
+each in the audit log. Nobody manages the owner, themselves, or people
+who only drive (Settings → Drivers lists everyone holding Driver).
+
+**Shared devices.** Yard crew, Drivers and Service techs switch in on a
+shared tablet with their time-clock PIN (`picker.switch`,
+`Employee::checkPin`, throttled), landing on their home screen; anyone
+who also holds Owner or Admin can't be switched to that way.
 
 ## Integrations
 

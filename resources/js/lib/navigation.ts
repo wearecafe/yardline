@@ -59,68 +59,94 @@ export const navSections: NavSection[] = [
     {
         label: 'Supply yard',
         items: [
-            { title: 'Today', href: dashboard(), icon: LayoutGrid },
+            {
+                title: 'Today',
+                href: dashboard(),
+                icon: LayoutGrid,
+                route: 'dashboard',
+            },
             {
                 title: 'Counter',
                 href: CounterController.show(),
                 icon: ShoppingCart,
+                route: 'counter.show',
             },
             {
                 title: 'Orders and picking',
                 href: FulfillmentController.queue(),
                 icon: ClipboardList,
+                route: 'orders.queue',
             },
             {
                 title: 'Dispatch',
                 href: DispatchController.board(),
                 icon: Route,
+                route: 'dispatch.board',
             },
             {
                 title: 'Products',
                 href: ProductController.index(),
                 icon: Package,
+                route: 'products.index',
             },
             {
                 title: 'Stock',
                 href: InventoryController.index(),
                 icon: Boxes,
+                route: 'inventory.index',
             },
             {
                 title: 'Purchasing',
                 href: PurchasingController.index(),
                 icon: PackagePlus,
+                route: 'purchasing.index',
             },
             {
                 title: 'Returns',
                 href: ReturnController.index(),
                 icon: Undo2,
+                route: 'returns.index',
             },
-            { title: 'Yards', href: LocationController.index(), icon: MapPin },
+            {
+                title: 'Yards',
+                href: LocationController.index(),
+                icon: MapPin,
+                route: 'locations.index',
+            },
         ],
     },
     {
         label: 'Rental',
         items: [
-            { title: 'Fleet', href: FleetController.index(), icon: Truck },
+            {
+                title: 'Fleet',
+                href: FleetController.index(),
+                icon: Truck,
+                route: 'fleet.index',
+            },
             {
                 title: 'Calendar',
                 href: CalendarController.url(),
                 icon: CalendarRange,
+                route: 'rentals.calendar',
             },
             {
                 title: 'Rentals and contracts',
                 href: RentalController.index(),
                 icon: FileSignature,
+                route: 'rentals.index',
             },
             {
                 title: 'Maintenance',
                 href: MaintenanceController.index(),
                 icon: Wrench,
+                route: 'maintenance.index',
             },
             {
                 title: 'Rental payments',
                 href: RentalPaymentController.url(),
                 icon: CreditCard,
+                route: 'rental-payments.index',
             },
         ],
     },
@@ -131,25 +157,47 @@ export const navSections: NavSection[] = [
                 title: 'Organizations',
                 href: OrganizationController.index(),
                 icon: Factory,
+                route: 'organizations.index',
             },
             {
                 title: 'Customers',
                 href: CustomerController.index(),
                 icon: Contact,
+                route: 'customers.index',
             },
             {
                 title: 'Receivables',
                 href: ReceivablesController.index(),
                 icon: Receipt,
+                route: 'receivables.index',
             },
             {
                 title: 'Price lists',
                 href: PriceListController.index(),
                 icon: Tags,
+                route: 'price-lists.index',
             },
         ],
     },
 ];
+
+/**
+ * The sidebar sections with only the screens this person's roles reach.
+ * Items without a route are always shown.
+ */
+export function reachableSections(
+    sections: NavSection[],
+    routes: Record<string, boolean>,
+): NavSection[] {
+    return sections
+        .map((section) => ({
+            ...section,
+            items: section.items.filter(
+                (item) => !item.route || routes[item.route] !== false,
+            ),
+        }))
+        .filter((section) => section.items.length > 0);
+}
 
 /**
  * Reports with costs and margins: the owner, and admins if the owner allows.
@@ -217,6 +265,7 @@ export function teamSection(
         title: 'Time clock',
         href: KioskController.show(),
         icon: MonitorSmartphone,
+        route: 'time.kiosk',
     });
 
     return { label: 'Team', items };

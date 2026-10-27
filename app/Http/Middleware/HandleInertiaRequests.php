@@ -2,9 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Access\RouteAccess;
+use App\Enums\Permission;
+use App\Enums\UserRole;
 use App\Fulfillment\DriverRun;
-use App\Pricing\PricingSettings;
-use App\Reports\ReportSettings;
+use App\Models\User;
 use App\Support\Demo;
 use App\Tenancy\CurrentTenant;
 use App\Time\TimeStatus;
@@ -13,6 +15,15 @@ use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    /** Routes the sidebar links to. */
+    private const NAV_ROUTES = [
+        'dashboard', 'counter.show', 'orders.index', 'orders.queue', 'dispatch.board', 'products.index',
+        'inventory.index', 'purchasing.index', 'returns.index', 'locations.index',
+        'fleet.index', 'rentals.calendar', 'rentals.index', 'maintenance.index', 'rental-payments.index',
+        'organizations.index', 'customers.index', 'receivables.index', 'price-lists.index',
+        'driver.today', 'time.kiosk',
+    ];
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -46,20 +57,30 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'roles' => fn () => array_map(fn (UserRole $r) => ['value' => $r->value, 'label' => $r->label()], $request->user()?->roleList() ?? []),
                 'can' => [
                     'manageBusiness' => (bool) $request->user()?->canManageBusiness(),
-                    'manageUsers' => (bool) $request->user()?->canManageUsers(),
+                    'manageUsers' => (bool) $request->user()?->hasPermission(Permission::ManageUsers),
                     'backOffice' => (bool) $request->user()?->isPlatformStaff(),
-                    'drive' => (bool) $request->user()?->isDriver(),
-                    // Order pickers only work the order queue.
-                    'pick' => (bool) $request->user()?->isPicker(),
+                    // Holds only the Driver role: their run is all they see.
+                    'drive' => (bool) $request->user()?->isOnlyDriver(),
+                    // Not an owner or admin: picks only for themselves.
+                    'pick' => $request->user() !== null && ! $request->user()->canManageBusiness(),
+                    // Can work the queue (start, pick, load), not just look at it.
+                    'workQueue' => $request->user() !== null && RouteAccess::allowsRoute($request->user(), 'orders.pick', false),
+                    'seePrices' => (bool) $request->user()?->seesPrices(),
+                    'seeCosts' => (bool) $request->user()?->hasPermission(Permission::SeeCosts),
+                    'setPrices' => (bool) $request->user()?->hasPermission(Permission::SetManualPrices),
                     // Set a price by hand on a product exempt from price lists.
-                    'priceExempt' => (bool) $request->user()?->canManageBusiness()
-                        && PricingSettings::current()->canPriceExempt($request->user()),
-                    'manageTime' => (bool) $request->user()?->canManageBusiness(),
-                    // The profit report: the owner, and admins if the owner allows.
-                    'viewProfit' => ReportSettings::current()->canViewProfit($request->user()),
+                    'priceExempt' => (bool) $request->user()?->hasPermission(Permission::DiscountExempt),
+                    'manageTime' => (bool) $request->user()?->hasPermission(Permission::ApproveTimesheets),
+                    'quickbooksLog' => (bool) $request->user()?->hasRole(UserRole::Owner, UserRole::Admin, UserRole::Accounts),
+                    // The profit report: anyone with See gross-profit P&L.
+                    'viewProfit' => (bool) $request->user()?->hasPermission(Permission::SeeProfit),
                 ],
+                // The screens this person reaches, for the sidebar.
+                'routes' => fn () => $this->reachableRoutes($request->user()),
+                'home' => fn () => $request->user() ? RouteAccess::home($request->user()) : null,
             ],
             // Time and attendance: whether it's on, and the signed-in person's clock.
             'time' => fn () => TimeStatus::forUser($request->user()),
@@ -99,5 +120,21 @@ class HandleInertiaRequests extends Middleware
             'portal_flash' => fn () => $request->hasSession() ? $request->session()->get('portal_flash') : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * Sidebar screens, and whether this person reaches each.
+     *
+     * @return array<string, bool>
+     */
+    private function reachableRoutes(?User $user): array
+    {
+        $routes = [];
+
+        foreach (self::NAV_ROUTES as $name) {
+            $routes[$name] = $user !== null && RouteAccess::allowsRoute($user, $name);
+        }
+
+        return $routes;
     }
 }

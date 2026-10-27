@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Access\RouteAccess;
 use App\Audit\Audit;
-use App\Enums\UserRole;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -12,10 +12,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Yard tablets are shared, so an order picker switches in with their
- * time-clock PIN (Team → Employees) instead of a full sign-in. Only order
- * picker accounts can be switched to this way; anyone else signs in with
- * their password.
+ * Yard tablets and truck devices are shared, so Yard crew, Drivers and
+ * Service techs switch in with their time-clock PIN (Team → Employees)
+ * instead of a full sign-in. Nobody who also holds Owner or Admin can be
+ * switched to this way; they sign in with their password.
  */
 class PickerSwitchController extends Controller
 {
@@ -31,10 +31,9 @@ class PickerSwitchController extends Controller
 
         $picker = User::query()
             ->where('tenant_id', $current->tenant_id)
-            ->where('role', UserRole::Picker->value)
             ->find((int) $data['user_id']);
 
-        if ($picker === null || ! (Employee::forUser($picker)?->checkPin($data['pin']) ?? false)) {
+        if ($picker === null || ! $picker->switchesWithPin() || ! (Employee::forUser($picker)?->checkPin($data['pin']) ?? false)) {
             throw ValidationException::withMessages(['pin' => 'That PIN didn’t match.']);
         }
 
@@ -43,6 +42,6 @@ class PickerSwitchController extends Controller
         Auth::guard('web')->login($picker);
         $request->session()->regenerate();
 
-        return to_route('orders.queue');
+        return to_route(RouteAccess::home($picker));
     }
 }

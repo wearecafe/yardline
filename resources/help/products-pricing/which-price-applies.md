@@ -19,7 +19,7 @@ A contract or price list entry is for one unit. An entry for the base unit also 
 
 ## Changing a price by hand
 
-Owners and admins can type a different price on an order line. That line then keeps its price when the order is re-priced. Staff can't change line prices.
+People with **Set manual line prices** (owners and admins, unless you change it under **Settings → Roles**) can type a different price on an order line. That line then keeps its price when the order is re-priced.
 
 ## When prices are re-checked
 

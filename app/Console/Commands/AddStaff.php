@@ -62,7 +62,7 @@ class AddStaff extends Command
                 'tenant_id' => null,
                 'name' => $name !== '' ? $name : Str::before($email, '@'),
                 'email' => $email,
-                'role' => UserRole::Staff,
+                'role' => UserRole::Sales,
                 'email_verified_at' => now(),
                 // Replaced when they choose their own from the link below.
                 'password' => Hash::make(Str::random(40)),

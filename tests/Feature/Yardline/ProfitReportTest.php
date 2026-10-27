@@ -205,7 +205,7 @@ class ProfitReportTest extends TestCase
     public function test_only_the_owner_sees_it_unless_admins_are_allowed(): void
     {
         $admin = User::factory()->create(['tenant_id' => CurrentTenant::id(), 'role' => UserRole::Admin]);
-        $staff = User::factory()->create(['tenant_id' => CurrentTenant::id(), 'role' => UserRole::Staff]);
+        $staff = User::factory()->create(['tenant_id' => CurrentTenant::id(), 'role' => UserRole::Sales]);
 
         $this->actingAs($admin)->get(route('reports.profit'))->assertForbidden();
         $this->actingAs($staff)->get(route('reports.profit'))->assertForbidden();

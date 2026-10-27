@@ -3,6 +3,7 @@
 namespace App\Fulfillment;
 
 use App\Audit\Audit;
+use App\Enums\Permission;
 use App\Enums\ShipmentStatus;
 use App\Models\Shipment;
 use App\Models\ShipmentCheck;
@@ -149,11 +150,11 @@ class PickingFlow
 
         $settings = PickingSettings::current();
 
-        if (! in_array($user->role, $settings->checkRoles($stage), true)) {
+        if (! $user->hasRole(...$settings->checkRoles($stage)) && ! $user->hasPermission(Permission::QualityCheckSignOff)) {
             return 'Your role can’t sign off this check.';
         }
 
-        if (! $user->canPickAt($shipment->order->location_id)) {
+        if (! $user->worksAt($shipment->order->location_id)) {
             return 'This load is at a yard you don’t work.';
         }
 

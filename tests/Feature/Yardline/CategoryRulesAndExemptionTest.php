@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\YardRunner;
 
+use App\Access\AccessSettings;
 use App\Enums\DiscountType;
+use App\Enums\Permission;
 use App\Enums\UserRole;
 use App\Models\AuditEvent;
 use App\Models\ContractPrice;
@@ -185,7 +187,8 @@ class CategoryRulesAndExemptionTest extends TestCase
         $this->post(route('orders.lines.store', $order), ['product_id' => $this->block->id, 'quantity' => 10, 'unit_price' => '3.50', 'price_reason' => 'Damaged'])
             ->assertSessionHasErrors('unit_price');
 
-        $tenant->update(['settings' => ['pricing' => ['exempt_price_roles' => ['owner', 'admin']]]]);
+        // The business gives the Admin role Discount exempt products.
+        $tenant->update(['settings' => ['access' => ['role_permissions' => ['admin' => ['set_manual_prices', 'discount_exempt']]]]]);
         $this->assertTrue(PricingSettings::for($tenant->refresh())->canPriceExempt($admin));
 
         $this->post(route('orders.lines.store', $order), ['product_id' => $this->block->id, 'quantity' => 10, 'unit_price' => '3.50', 'price_reason' => 'Damaged'])
@@ -199,9 +202,11 @@ class CategoryRulesAndExemptionTest extends TestCase
 
         $settings = PricingSettings::for($this->tenant());
         $this->assertTrue($settings->categoryRulesOverride);
-        $this->assertSame([UserRole::Admin], $settings->exemptPriceRoles);
+        // The owner always can; the Admin role now gives it too.
+        $this->assertSame([UserRole::Owner, UserRole::Admin], $settings->exemptPriceRoles);
+        $this->assertTrue(AccessSettings::for($this->tenant())->roleGives(UserRole::Admin, Permission::DiscountExempt));
 
-        $this->put(route('pricing-settings.update'), ['exempt_price_roles' => ['staff']])
+        $this->put(route('pricing-settings.update'), ['exempt_price_roles' => ['sales']])
             ->assertSessionHasErrors('exempt_price_roles.0');
     }
 

@@ -31,13 +31,16 @@ class DriverAccountsController extends Controller
         $trucks = Truck::query()->orderBy('position')->orderBy('name')->get();
 
         return Inertia::render('settings/drivers', [
+            // Everyone who holds the Driver role, including people who also
+            // hold other roles (they're managed under Settings → Users too).
             'drivers' => User::query()
                 ->where('tenant_id', CurrentTenant::id())
-                ->where('role', UserRole::Driver->value)
                 ->with('drivableTrucks:id')
                 ->withMax('driverPings as last_seen', 'recorded_at')
                 ->orderBy('name')
                 ->get()
+                ->filter(fn (User $user) => $user->isDriver())
+                ->values()
                 ->map(fn (User $driver) => [
                     'id' => $driver->id,
                     'name' => $driver->name,
@@ -46,6 +49,7 @@ class DriverAccountsController extends Controller
                     'joined' => $driver->email_verified_at !== null,
                     'truck_ids' => $trucks->whereIn('id', $driver->drivableTrucks->modelKeys())->pluck('id')->values(),
                     'last_seen' => $driver->getAttribute('last_seen') ? CarbonImmutable::parse($driver->getAttribute('last_seen'))->toIso8601String() : null,
+                    'other_roles' => array_values(array_map(fn (UserRole $r) => $r->label(), array_filter($driver->roleList(), fn (UserRole $r) => $r !== UserRole::Driver))),
                 ]),
             'trucks' => $trucks->map(fn (Truck $t) => ['id' => $t->id, 'name' => $t->name, 'is_active' => $t->is_active])->values(),
         ]);
@@ -115,6 +119,9 @@ class DriverAccountsController extends Controller
     public function destroy(User $driver): RedirectResponse
     {
         $this->ensureDriver($driver);
+
+        // Someone with other roles too is removed under Settings → Users.
+        abort_unless($driver->isOnlyDriver(), 404);
 
         DB::transaction(function () use ($driver) {
             DB::table('sessions')->where('user_id', $driver->id)->delete();

@@ -514,8 +514,7 @@ function AddLine({
         exempt: ' (exempt from price lists)',
     };
     const exempt = product?.price_list_exempt ?? false;
-    const canSetPrice =
-        auth.can.manageBusiness && (!exempt || auth.can.priceExempt);
+    const canSetPrice = auth.can.setPrices && (!exempt || auth.can.priceExempt);
 
     function post(round: boolean) {
         router.post(

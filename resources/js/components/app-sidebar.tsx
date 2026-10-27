@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ClipboardList, LifeBuoy, Route } from 'lucide-react';
+import { LifeBuoy, Route } from 'lucide-react';
 import OverviewController from '@/actions/App/Http/Controllers/Admin/OverviewController';
 import DriverController from '@/actions/App/Http/Controllers/DriverController';
 import FulfillmentController from '@/actions/App/Http/Controllers/FulfillmentController';
@@ -17,7 +17,12 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { adminNavSections } from '@/lib/admin-navigation';
-import { navSections, reportsSection, teamSection } from '@/lib/navigation';
+import {
+    navSections,
+    reachableSections,
+    reportsSection,
+    teamSection,
+} from '@/lib/navigation';
 import { dashboard } from '@/routes';
 
 export function AppSidebar() {
@@ -28,44 +33,46 @@ export function AppSidebar() {
     // YardRunner staff get the back office instead of a yard.
     const sections = auth.can.backOffice
         ? adminNavSections
-        : // Order pickers only work the order queue.
-          auth.can.pick
+        : // Drivers who only drive see their run.
+          auth.can.drive
           ? [
                 {
-                    label: 'Yard',
+                    label: 'Driving',
                     items: [
                         {
-                            title: 'Orders and picking',
-                            href: FulfillmentController.queue(),
-                            icon: ClipboardList,
+                            title: 'My run',
+                            href: DriverController.today(),
+                            icon: Route,
                         },
                     ],
                 },
-                // Their own time clock, when the business tracks time.
-                ...(team ? [team] : []),
             ]
-          : auth.can.drive
-            ? [
-                  {
-                      label: 'Driving',
-                      items: [
-                          {
-                              title: 'My run',
-                              href: DriverController.today(),
-                              icon: Route,
-                          },
-                      ],
-                  },
-              ]
-            : [
-                  // Rentals is a paid add-on.
-                  ...navSections.filter(
-                      (section) =>
-                          section.label !== 'Rental' || modules.rentals,
-                  ),
-                  ...(reports ? [reports] : []),
-                  ...(team ? [team] : []),
-              ];
+          : reachableSections(
+                [
+                    // Rentals is a paid add-on.
+                    ...navSections.filter(
+                        (section) =>
+                            section.label !== 'Rental' || modules.rentals,
+                    ),
+                    ...(auth.routes['driver.today']
+                        ? [
+                              {
+                                  label: 'Driving',
+                                  items: [
+                                      {
+                                          title: 'My run',
+                                          href: DriverController.today(),
+                                          icon: Route,
+                                      },
+                                  ],
+                              },
+                          ]
+                        : []),
+                    ...(reports ? [reports] : []),
+                    ...(team ? [team] : []),
+                ],
+                auth.routes,
+            );
 
     return (
         <Sidebar collapsible="icon" variant="sidebar">
@@ -81,11 +88,20 @@ export function AppSidebar() {
                                 href={
                                     auth.can.backOffice
                                         ? OverviewController.url()
-                                        : auth.can.pick
+                                        : auth.home === 'orders.queue'
                                           ? FulfillmentController.queue()
-                                          : auth.can.drive
+                                          : auth.home === 'driver.today'
                                             ? DriverController.today()
-                                            : dashboard()
+                                            : auth.home === 'dashboard' ||
+                                                !auth.home
+                                              ? dashboard()
+                                              : (sections
+                                                    .flatMap((s) => s.items)
+                                                    .find(
+                                                        (i) =>
+                                                            i.route ===
+                                                            auth.home,
+                                                    )?.href ?? dashboard())
                                 }
                                 prefetch
                             >

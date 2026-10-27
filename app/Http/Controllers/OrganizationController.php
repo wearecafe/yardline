@@ -138,8 +138,8 @@ class OrganizationController extends Controller
     {
         $data = $this->validated($request, $organization);
 
-        // Credit settings are an owner/admin decision.
-        if (Gate::denies('manage-business')) {
+        // Credit settings: owner, admin and accounts.
+        if (Gate::denies('manage-credit')) {
             unset($data['credit_limit_cents'], $data['credit_hold'], $data['payment_terms']);
         }
 
@@ -190,7 +190,7 @@ class OrganizationController extends Controller
         return [
             'priceLists' => PriceList::query()->orderBy('name')->get(['id', 'name']),
             'paymentTerms' => PaymentTerms::options(),
-            'canManageCredit' => Gate::allows('manage-business'),
+            'canManageCredit' => Gate::allows('manage-credit'),
         ];
     }
 }

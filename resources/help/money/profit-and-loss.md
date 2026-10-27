@@ -52,4 +52,4 @@ The tabs break the period down:
 
 ## Who can see it
 
-The owner always can. To let admins see it too, go to **Settings → Users** and tick **Admins can see the profit report**. Staff, order pickers and drivers never see costs or margins.
+The owner always can. To let admins see it too, go to **Settings → Users** and tick **Admins can see the profit report**. Anyone else needs **See gross-profit P&L**, which only the owner can give, under **Settings → Roles** or for one person under **Settings → Users**.

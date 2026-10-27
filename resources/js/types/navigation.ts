@@ -11,4 +11,6 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    /** The route name, so the sidebar can hide screens a role can't reach. */
+    route?: string;
 };
