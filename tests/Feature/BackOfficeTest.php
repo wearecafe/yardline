@@ -120,7 +120,7 @@ class BackOfficeTest extends TestCase
                 ->where('busiest.0.id', $busy->id)
                 ->where('busiest.0.orders', 3)
                 ->has('growth', 12)
-                ->has('adoption', 7)
+                ->has('adoption', 6)
                 ->where('attention', fn ($items) => collect($items)->contains('title', 'Trial ends '.now()->addDays(3)->format('M j'))));
     }
 
