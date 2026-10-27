@@ -133,5 +133,5 @@ export default function Register({ passwordRules }: Props) {
 Register.layout = {
     title: 'Set up your yard',
     description:
-        'Create a Yardline account for your business. You’ll be its owner.',
+        'Create a YardRunner account for your business. You’ll be its owner.',
 };

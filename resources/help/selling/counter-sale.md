@@ -26,7 +26,7 @@ Container and pallet deposits are added at checkout. When the sale is done, prin
 | Walk-in  | Card on the terminal, cash, cheque or e-Transfer          |
 | Account  | The same, or **on account** if the sale fits their credit |
 
-For cash, enter the **Cash tendered** and Yardline shows the change. For a card terminal or cheque, enter the auth or cheque number as the **Reference**.
+For cash, enter the **Cash tendered** and YardRunner shows the change. For a card terminal or cheque, enter the auth or cheque number as the **Reference**.
 
 If an account sale goes over the credit limit, or the account is on credit hold, it has to be paid now unless an owner or admin overrides it. See [Credit limits and holds](/help/accounts/credit-limits).
 

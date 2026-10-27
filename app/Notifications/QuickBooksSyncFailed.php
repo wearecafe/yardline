@@ -21,9 +21,9 @@ class QuickBooksSyncFailed extends Notification
     {
         return (new MailMessage)
             ->subject('Something didn’t reach QuickBooks')
-            ->line('Yardline couldn’t send a record to QuickBooks after trying for a day.')
+            ->line('YardRunner couldn’t send a record to QuickBooks after trying for a day.')
             ->line("QuickBooks said: {$this->error}")
             ->action('Open the sync log', route('quickbooks.edit'))
-            ->line('Fix the cause in QuickBooks or Yardline, then press “Send again”.');
+            ->line('Fix the cause in QuickBooks or YardRunner, then press “Send again”.');
     }
 }

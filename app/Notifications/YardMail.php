@@ -6,7 +6,7 @@ use App\Models\Tenant;
 use Illuminate\Notifications\Messages\MailMessage;
 
 /**
- * Customer emails go out from Yardline's verified sending address under the
+ * Customer emails go out from YardRunner's verified sending address under the
  * yard's name, with replies routed to the yard when it has set an address.
  */
 class YardMail

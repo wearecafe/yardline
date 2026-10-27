@@ -5,7 +5,7 @@ order: 5
 related: getting-started/welcome
 ---
 
-The sidebar groups Yardline into three sections.
+The sidebar groups YardRunner into three sections.
 
 ## Supply yard
 

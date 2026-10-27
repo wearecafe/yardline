@@ -1,11 +1,11 @@
 ---
 title: Which price applies
-summary: How Yardline picks the price on each order line.
+summary: How YardRunner picks the price on each order line.
 order: 5
 related: products-pricing/price-lists, products-pricing/contract-prices
 ---
 
-Yardline works out the price on every line for that account, unit, quantity and date. The first of these that applies wins:
+YardRunner works out the price on every line for that account, unit, quantity and date. The first of these that applies wins:
 
 1. **Contract price**: a price agreed with the organization, in effect that day.
 2. **Price list**: the organization's price list. Of the prices in effect that day, the one with the highest **From quantity** the order reaches.

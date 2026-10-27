@@ -161,7 +161,7 @@ class PayrollExporter
                             'EmployeeRef' => ['value' => $ref],
                             'Hours' => intdiv($minutes, 60),
                             'Minutes' => $minutes % 60,
-                            'Description' => "{$what} · Yardline pay period ".$period->label(),
+                            'Description' => "{$what} · YardRunner pay period ".$period->label(),
                         ]);
                     }
                 }

@@ -28,7 +28,7 @@ No signal? Punch anyway. The punch waits on your phone with the time you made it
 
 ## Forgot to clock out?
 
-Clock in as usual the next day. Yardline starts a new shift and flags the one you didn't finish, and your manager adds the time you left.
+Clock in as usual the next day. YardRunner starts a new shift and flags the one you didn't finish, and your manager adds the time you left.
 
 ## Your timesheet
 

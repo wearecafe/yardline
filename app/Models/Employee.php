@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Someone whose hours Yardline keeps. Linked to a user when they sign
+ * Someone whose hours YardRunner keeps. Linked to a user when they sign
  * in; yard hands who only punch at the counter tablet don't need one.
  *
  * @property int $id

@@ -6,7 +6,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\TenantController;
 use Illuminate\Support\Facades\Route;
 
-// The back office, for Yardline staff only (see EnsurePlatformStaff).
+// The back office, for YardRunner staff only (see EnsurePlatformStaff).
 Route::middleware(['auth', 'verified', 'back-office'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', OverviewController::class)->name('overview');
 

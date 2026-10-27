@@ -5,7 +5,7 @@ namespace App\Accounting\QuickBooks;
 use App\Models\Integration;
 
 /**
- * The QuickBooks sales tax code used for each province Yardline taxes in.
+ * The QuickBooks sales tax code used for each province YardRunner taxes in.
  * Stripe Tax decides the amount; the code decides which line of the HST or
  * QST return it's filed on.
  */

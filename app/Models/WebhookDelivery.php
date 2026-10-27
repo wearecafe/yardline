@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Throwable;
 
 /**
- * One webhook Yardline received from Stripe, and what became of
+ * One webhook YardRunner received from Stripe, and what became of
  * it. Feeds integration health in the back office. Not tenant-scoped: a
  * delivery may not match any tenant (bad signature, unknown shop).
  *
@@ -31,16 +31,16 @@ class WebhookDelivery extends Model
 
     public const KEEP_DAYS = 30;
 
-    /** Handed to Yardline's own code to process. */
+    /** Handed to YardRunner's own code to process. */
     public const ACCEPTED = 'accepted';
 
-    /** Valid, but nothing for Yardline to do (an unknown shop, another event). */
+    /** Valid, but nothing for YardRunner to do (an unknown shop, another event). */
     public const IGNORED = 'ignored';
 
     /** Signature check failed. */
     public const REJECTED = 'rejected';
 
-    /** Yardline failed while handling it. */
+    /** YardRunner failed while handling it. */
     public const FAILED = 'failed';
 
     public $timestamps = false;

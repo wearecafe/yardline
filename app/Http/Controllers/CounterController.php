@@ -35,7 +35,7 @@ use Inertia\Response;
 
 /**
  * The counter sale screen: ring it up, take payment, hand it over, print
- * a receipt. Yardline is the yard's point of sale.
+ * a receipt. YardRunner is the yard's point of sale.
  */
 class CounterController extends Controller
 {
@@ -197,7 +197,7 @@ class CounterController extends Controller
                 'cashier' => $order->creator?->name,
             ],
             'change_cents' => $request->filled('change') ? $request->integer('change') : null,
-            'business' => ['name' => CurrentTenant::get()->name ?? 'Yardline'],
+            'business' => ['name' => CurrentTenant::get()->name ?? 'YardRunner'],
         ]);
     }
 

@@ -80,7 +80,7 @@ final class Attention
 
             if (in_array($tenant->status, [TenantStatus::Active, TenantStatus::PastDue], true)
                 && ($tenant->last_active_at === null || $tenant->last_active_at->lt(now()->subDays(TenantHealth::DORMANT_DAYS)))) {
-                $items[] = $this->item('warning', $tenant->last_active_at === null ? 'Hasn’t used Yardline yet' : 'No one has signed in for '.TenantHealth::DORMANT_DAYS.' days', 'A paying tenant gone quiet is a churn risk.', $tenant, 'tenant');
+                $items[] = $this->item('warning', $tenant->last_active_at === null ? 'Hasn’t used YardRunner yet' : 'No one has signed in for '.TenantHealth::DORMANT_DAYS.' days', 'A paying tenant gone quiet is a churn risk.', $tenant, 'tenant');
             }
         }
 

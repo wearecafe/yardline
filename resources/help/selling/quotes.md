@@ -17,7 +17,7 @@ The quote page shows the items, delivery, tax, any refundable deposits and the t
 
 ## Changing a quote
 
-Edit the draft and select **Send revised quote**. Each send after a change is a new revision, and Yardline keeps a copy of what the customer was shown each time.
+Edit the draft and select **Send revised quote**. Each send after a change is a new revision, and YardRunner keeps a copy of what the customer was shown each time.
 
 ## When the customer accepts
 

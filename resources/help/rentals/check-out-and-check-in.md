@@ -20,7 +20,7 @@ A rental can go out once it's reserved, the agreement is signed, it's paid in fu
 1. Open the rental and select **Check in**.
 2. Take return photos and enter the hour meter, fuel level and whether it's clean.
 3. For any new damage, select **New mark**, describe it, and enter the **Damage amount**. If the customer took the damage waiver, choose whether it's **Covered by waiver**; otherwise the customer pays.
-4. Yardline adds **Charges to add**:
+4. YardRunner adds **Charges to add**:
     - **Refuel to full**, if fuel and cleaning are billed and it isn't full
     - **Cleaning**, if it isn't clean
     - **Late return**, if it's back after your grace period, for the extra time at the best rate

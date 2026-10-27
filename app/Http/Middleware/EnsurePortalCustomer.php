@@ -36,7 +36,7 @@ class EnsurePortalCustomer
         Inertia::share('portal', [
             'customer' => ['id' => $customer->id, 'name' => $customer->full_name, 'first_name' => $customer->first_name],
             'organization' => $customer->organization?->only('id', 'name', 'account_number'),
-            'yard' => ['name' => $tenant->name ?? 'Yardline', 'slug' => $tenant->slug ?? ''],
+            'yard' => ['name' => $tenant->name ?? 'YardRunner', 'slug' => $tenant->slug ?? ''],
         ]);
 
         try {

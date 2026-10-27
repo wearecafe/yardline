@@ -87,5 +87,5 @@ export default function Demo({ yard, accounts, portalUrl, bookingUrl }: Props) {
 Demo.layout = {
     title: 'Try the demo yard',
     description:
-        'Pick someone at Escarpment Stone to see Yardline through their eyes.',
+        'Pick someone at Escarpment Stone to see YardRunner through their eyes.',
 };

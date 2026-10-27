@@ -34,7 +34,7 @@ export default function HelpIndex({
     return (
         <HelpLayout
             title="Help Center"
-            description="Guides for running your supply yard, counter, deliveries and equipment rentals on Yardline."
+            description="Guides for running your supply yard, counter, deliveries and equipment rentals on YardRunner."
             nav={nav}
             supportEmail={supportEmail}
             showSearch={false}

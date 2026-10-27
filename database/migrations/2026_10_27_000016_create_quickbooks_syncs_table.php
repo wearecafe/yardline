@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // One row per Yardline record that has been (or tried to be) sent
+        // One row per YardRunner record that has been (or tried to be) sent
         // to QuickBooks: where it stands, the last error, and what was sent.
         Schema::create('quickbooks_syncs', function (Blueprint $table) {
             $table->id();

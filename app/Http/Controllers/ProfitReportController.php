@@ -114,7 +114,7 @@ class ProfitReportController extends Controller
         $options->setDefaultFont('DejaVu Sans');
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml(view('pdf.profit', [
-            'tenant' => CurrentTenant::get()->name ?? 'Yardline',
+            'tenant' => CurrentTenant::get()->name ?? 'YardRunner',
             'label' => $filters->label(),
             'scope' => $this->scope($filters),
             'lines' => ProfitReport::LINES,

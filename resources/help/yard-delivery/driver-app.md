@@ -6,7 +6,7 @@ popular: true
 related: yard-delivery/setting-up-drivers, yard-delivery/truck-locations, yard-delivery/proof-of-delivery
 ---
 
-Drivers sign in to Yardline on their own phone and see one thing: the run for the truck they drive, in order. There's nothing to install. It runs in the phone's browser.
+Drivers sign in to YardRunner on their own phone and see one thing: the run for the truck they drive, in order. There's nothing to install. It runs in the phone's browser.
 
 > **Tip** Add the page to the home screen (**Share → Add to Home Screen** on iPhone, **⋮ → Add to Home screen** on Android) so the run is one tap away.
 
@@ -35,7 +35,7 @@ Tap a stop to see everything for it: what's on the truck for that stop, the PO n
 
 While the run is open on the phone, it shares the truck's position with dispatch about once a minute, and straight away when the truck has moved. The header shows **Sharing location**. The first time, the phone asks for permission: choose **Allow**.
 
-> **Heads up** Phones only share location while the page is on screen. If the phone is locked or another app is in front, sharing pauses and picks up again when the run is opened. Navigation apps on the same phone are fine: switch back to Yardline between stops.
+> **Heads up** Phones only share location while the page is on screen. If the phone is locked or another app is in front, sharing pauses and picks up again when the run is opened. Navigation apps on the same phone are fine: switch back to YardRunner between stops.
 
 If the header says **Location off**, location was refused for the site. Turn it back on in the phone's browser settings for this site.
 

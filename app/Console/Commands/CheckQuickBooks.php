@@ -78,7 +78,7 @@ class CheckQuickBooks extends Command
                     if ($theirs !== (int) $expected) {
                         $sync->forceFill([
                             'status' => 'failed',
-                            'message' => 'Nightly check: QuickBooks total $'.number_format($theirs / 100, 2).', Yardline $'.number_format((int) $expected / 100, 2).'.',
+                            'message' => 'Nightly check: QuickBooks total $'.number_format($theirs / 100, 2).', YardRunner $'.number_format((int) $expected / 100, 2).'.',
                         ])->save();
                     }
                 }

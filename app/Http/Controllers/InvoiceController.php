@@ -42,7 +42,7 @@ class InvoiceController extends Controller
                 'total_cents' => $order->amountDueCents(),
                 'paid_cents' => $order->amount_paid_cents,
             ],
-            'business' => ['name' => CurrentTenant::get()->name ?? 'Yardline'],
+            'business' => ['name' => CurrentTenant::get()->name ?? 'YardRunner'],
         ]);
     }
 }

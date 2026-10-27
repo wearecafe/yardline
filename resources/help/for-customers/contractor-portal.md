@@ -6,7 +6,7 @@ popular: true
 related: for-customers/portal-sign-in, for-customers/booking-equipment-online
 ---
 
-If your supplier runs on Yardline, you can manage your account online, from the office or the job site.
+If your supplier runs on YardRunner, you can manage your account online, from the office or the job site.
 
 ## What you can do
 

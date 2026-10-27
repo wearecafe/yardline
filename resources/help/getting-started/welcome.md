@@ -1,11 +1,11 @@
 ---
-title: What Yardline does
+title: What YardRunner does
 summary: How the counter, the yard, the office and rentals fit together in one system.
 order: 1
 related: getting-started/set-up-your-yard, getting-started/finding-your-way-around
 ---
 
-Yardline runs a masonry, landscape or building supply yard: what you sell and rent, who you sell it to, at what price, and how it gets out the gate. Everything happens in a browser, so the counter can use a desktop or tablet, the yard a rugged tablet, and drivers their phones.
+YardRunner runs a masonry, landscape or building supply yard: what you sell and rent, who you sell it to, at what price, and how it gets out the gate. Everything happens in a browser, so the counter can use a desktop or tablet, the yard a rugged tablet, and drivers their phones.
 
 ## The main parts
 
@@ -31,4 +31,4 @@ Rentals follow their own path, from quote to reservation, signed agreement, chec
 
 ## One system for the whole yard
 
-Yardline is the system of record for your products, prices, accounts and orders, and it's your point of sale too. Counter sales, orders your staff enter and orders from the contractor portal all land in the same place. Your books stay in QuickBooks Online. See [QuickBooks Online and your accounting](/help/integrations/quickbooks).
+YardRunner is the system of record for your products, prices, accounts and orders, and it's your point of sale too. Counter sales, orders your staff enter and orders from the contractor portal all land in the same place. Your books stay in QuickBooks Online. See [QuickBooks Online and your accounting](/help/integrations/quickbooks).

@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * A supply-yard business using Yardline.
+ * A supply-yard business using YardRunner.
  *
  * @property int $id
  * @property string $name

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 /**
- * Gives someone at Yardline access to the back office (/admin), or takes it
+ * Gives someone at YardRunner access to the back office (/admin), or takes it
  * away. Staff accounts have no yard of their own. There's deliberately no
  * screen for this: only someone with server access can add staff.
  */
@@ -21,7 +21,7 @@ class AddStaff extends Command
         {--name= : Their name (for a new account)}
         {--remove : Take back-office access away instead}';
 
-    protected $description = 'Add (or remove) a Yardline staff account for the back office';
+    protected $description = 'Add (or remove) a YardRunner staff account for the back office';
 
     public function handle(): int
     {
@@ -74,7 +74,7 @@ class AddStaff extends Command
         $token = Password::broker()->createToken($user);
         $url = route('password.reset', ['token' => $token, 'email' => $user->email]);
 
-        $this->info("{$user->email} is Yardline staff.");
+        $this->info("{$user->email} is YardRunner staff.");
         $this->line('Send them this link to choose a password (it expires in 60 minutes):');
         $this->line($url);
 

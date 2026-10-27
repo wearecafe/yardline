@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Yardline;
+namespace Tests\Feature\YardRunner;
 
 use App\Enums\QuantityRounding;
 use App\Enums\StockMovementType;

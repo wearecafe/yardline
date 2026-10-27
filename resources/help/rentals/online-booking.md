@@ -23,6 +23,6 @@ Returning customers are matched by email.
 
 ## Linking to it
 
-Your booking page is at `/book/` followed by your business's short name on Yardline. Contact us if you need the exact link for your website.
+Your booking page is at `/book/` followed by your business's short name on YardRunner. Contact us if you need the exact link for your website.
 
 > **Tip** Contractors signed in to the [contractor portal](/help/for-customers/contractor-portal) get a **Rent equipment** link straight to your booking page.

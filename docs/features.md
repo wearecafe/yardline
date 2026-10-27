@@ -1,4 +1,4 @@
-# What's in Yardline
+# What's in YardRunner
 
 A map of the modules, the screens that use them, and where the rules live.
 Mockups for each screen are in [scope/mockups](scope/mockups).
@@ -308,7 +308,7 @@ their own time clock (`time.self.*`) and the counter time clock.
 
 ## Back office
 
-`/admin`, for Yardline staff. Staff are users with no tenant and
+`/admin`, for YardRunner staff. Staff are users with no tenant and
 `is_platform_staff` set; add or remove them with
 `php artisan yardline:staff:add you@example.com --name="Your Name"`
 (`--remove` takes access away). There's no screen for it on purpose.

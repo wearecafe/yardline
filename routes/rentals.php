@@ -19,7 +19,7 @@ use App\Http\Controllers\Settings\RentalSettingsController;
 use Illuminate\Support\Facades\Route;
 
 /*
-| Equipment rental: the whole rental, payments included, lives in Yardline.
+| Equipment rental: the whole rental, payments included, lives in YardRunner.
 */
 
 Route::middleware(['auth', 'verified'])->group(function () {

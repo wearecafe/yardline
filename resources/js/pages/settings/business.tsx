@@ -38,7 +38,7 @@ export default function Business({ business, timezones }: Props) {
                 <Heading
                     variant="small"
                     title="Business"
-                    description="Your yard business as it appears in Yardline."
+                    description="Your yard business as it appears in YardRunner."
                 />
                 <form onSubmit={submit} className="grid gap-6">
                     <Field
@@ -96,7 +96,7 @@ export default function Business({ business, timezones }: Props) {
                         label="Stripe connected account"
                         htmlFor="stripe_account_id"
                         error={form.errors.stripe_account_id}
-                        hint="Optional. With Stripe Connect, card payments and tax go to this account (acct_…). Leave blank to use Yardline’s own Stripe account."
+                        hint="Optional. With Stripe Connect, card payments and tax go to this account (acct_…). Leave blank to use YardRunner’s own Stripe account."
                     >
                         <Input
                             id="stripe_account_id"

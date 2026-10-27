@@ -1,4 +1,4 @@
-# Yardline
+# YardRunner
 
 Inventory, pricing and order management for masonry and landscape supply
 yards. Built by Café.
@@ -31,7 +31,7 @@ trail, all dated relative to today. The contractor portal is at
 http://localhost:8000/portal/escarpment-stone. `php artisan
 yardline:demo:reset` rebuilds it.
 
-The back office for Yardline staff is at http://localhost:8000/admin. Give
+The back office for YardRunner staff is at http://localhost:8000/admin. Give
 yourself access with `php artisan yardline:staff:add you@example.com`, open
 the link it prints to choose a password, then turn on two-factor
 authentication (or set `YARDLINE_ADMIN_REQUIRE_2FA=false` locally). See
@@ -60,7 +60,7 @@ set, scoped queries return nothing. Validate incoming IDs with
 **What's in it.** See [docs/features.md](docs/features.md) for the
 modules and where each lives in the code.
 
-**Commerce.** Yardline owns organizations, customers, products, pricing
+**Commerce.** YardRunner owns organizations, customers, products, pricing
 and orders, and is the only sales channel (counter, staff-entered orders
 and the contractor portal). There is no Shopify integration. Prices resolve in
 `App\Pricing\PriceResolver`: products exempt from price lists sell at
@@ -95,7 +95,7 @@ the Stripe webhook marks them paid. Counter payments are recorded by
 hand. Tenants can have a Stripe Connect account ID; requests then go to
 that account.
 
-**Frontend.** Pages in `resources/js/pages`, Yardline components in
+**Frontend.** Pages in `resources/js/pages`, YardRunner components in
 `resources/js/components/yard`. Routes are typed with Wayfinder: import
 controllers from `@/actions/...` (generated at build time, not committed).
 

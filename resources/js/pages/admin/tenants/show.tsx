@@ -271,7 +271,7 @@ function Notes({ tenant }: Pick<Props, 'tenant'>) {
                     className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30"
                 />
                 <p className="text-xs text-muted-foreground">
-                    Only Yardline staff see these.
+                    Only YardRunner staff see these.
                 </p>
                 <div>
                     <Button

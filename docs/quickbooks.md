@@ -1,13 +1,13 @@
 # QuickBooks Online
 
-Yardline sends its money documents to QuickBooks Online one way, as they
+YardRunner sends its money documents to QuickBooks Online one way, as they
 happen. QuickBooks stays the general ledger. The full record-by-record map
-and the decisions behind it are in the "Yardline ↔ QuickBooks Online sync
+and the decisions behind it are in the "YardRunner ↔ QuickBooks Online sync
 map" doc; this is the short version for developers.
 
 ## What goes across
 
-| Yardline                                                                         | QuickBooks                                                                        | When                                                       |
+| YardRunner                                                                       | QuickBooks                                                                        | When                                                       |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | Organization                                                                     | Customer                                                                          | With its first document; updated when a sent field changes |
 | Customer with no organization                                                    | One shared "Cash sales" customer (name in the memo)                               | With its first document                                    |
@@ -29,7 +29,7 @@ Not sent: quotes, drafts, contacts, job sites, price lists, credit limits,
 stock and movements, suppliers and purchase orders, pallet movements,
 deposit holds and releases, fulfilment, Stripe fees and payouts.
 
-Payments entered in QuickBooks against invoices Yardline sent are pulled
+Payments entered in QuickBooks against invoices YardRunner sent are pulled
 back every 15 minutes (`yardline:quickbooks:pull`, QuickBooks' change feed).
 
 ## How it works
@@ -39,9 +39,9 @@ back every 15 minutes (`yardline:quickbooks:pull`, QuickBooks' change feed).
   `SendToQuickBooks` after commit on every save. `CancelOrder` queues the
   order. The job reads the record when it runs and decides what to send.
 - `QuickBooksPusher` builds each document. Sends are idempotent: the
-  QuickBooks id lives on `quickbooks_syncs`, one row per Yardline record,
+  QuickBooks id lives on `quickbooks_syncs`, one row per YardRunner record,
   with its status (`synced`, `waiting`, `skipped`, `failed`) and last error.
-- Amounts and tax are sent exactly as Yardline calculated them. Each line
+- Amounts and tax are sent exactly as YardRunner calculated them. Each line
   carries the QuickBooks tax code for the province the sale was taxed in;
   the document's tax is split across that code's rates (GST and QST) and
   overrides QuickBooks' own calculation.
@@ -58,5 +58,5 @@ back every 15 minutes (`yardline:quickbooks:pull`, QuickBooks' change feed).
 3. Set `QUICKBOOKS_CLIENT_ID`, `QUICKBOOKS_CLIENT_SECRET` and
    `QUICKBOOKS_ENVIRONMENT` (`sandbox` or `production`).
 4. A queue worker and the scheduler must be running.
-5. In Yardline, Settings → QuickBooks: connect, pick the start date, the
+5. In YardRunner, Settings → QuickBooks: connect, pick the start date, the
    accounts and the tax codes. Nothing is sent until all are chosen.

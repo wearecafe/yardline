@@ -1,6 +1,6 @@
 ---
 title: Overtime, breaks and rounding
-summary: How Yardline works out regular hours, overtime and breaks, and the Ontario and Quebec starting rules.
+summary: How YardRunner works out regular hours, overtime and breaks, and the Ontario and Quebec starting rules.
 order: 4
 related: time/setting-up-time-and-attendance, time/timesheets-and-approval
 ---

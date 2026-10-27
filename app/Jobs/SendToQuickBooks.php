@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Notification;
 use Throwable;
 
 /**
- * Sends one Yardline record to QuickBooks. It reads the record when it
+ * Sends one YardRunner record to QuickBooks. It reads the record when it
  * runs, so several quick saves become one send. Retried for about a day,
  * then left on the sync log with QuickBooks' error.
  */

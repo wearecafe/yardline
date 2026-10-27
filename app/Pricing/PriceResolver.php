@@ -12,7 +12,7 @@ use App\Models\ProductUnit;
 use Carbon\CarbonImmutable;
 
 /**
- * Yardline is the source of truth for price. For a product sold in a unit
+ * YardRunner is the source of truth for price. For a product sold in a unit
  * to an organization on a date, the first of these that applies wins:
  *
  *  1. Products exempt from price lists sell at the unit's retail price.

@@ -14,7 +14,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Activity across tenants: volume per week, which parts of Yardline each
+ * Activity across tenants: volume per week, which parts of YardRunner each
  * tenant uses, engagement and churn risk, and retention by signup month.
  */
 class ReportController extends Controller
@@ -169,7 +169,7 @@ class ReportController extends Controller
 
     /**
      * For tenants who signed up in each of the last six months, the share
-     * still using Yardline (anyone signed in) one to five months later.
+     * still using YardRunner (anyone signed in) one to five months later.
      *
      * @return list<array{month: string, size: int, cells: list<int|null>}>
      */

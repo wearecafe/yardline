@@ -13,7 +13,7 @@ A unit is unavailable when it's:
 - in the shop, or
 - due for service (locked out until the service is logged).
 
-Yardline never lets two rentals book the same unit at the same time.
+YardRunner never lets two rentals book the same unit at the same time.
 
 ## Moving a booking
 

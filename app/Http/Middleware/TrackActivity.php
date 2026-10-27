@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 /**
- * Notes when signed-in people use Yardline, for the back office: the
+ * Notes when signed-in people use YardRunner, for the back office: the
  * user's and tenant's last activity, and one row per user per day (weekly
  * users and retention). Writes at most every few minutes per user.
  */
@@ -46,7 +46,7 @@ class TrackActivity
             $user->syncOriginalAttribute('last_seen_at');
 
             if ($user->tenant_id === null) {
-                return; // Yardline staff
+                return; // YardRunner staff
             }
 
             DB::table('tenants')->where('id', $user->tenant_id)->update(['last_active_at' => $now]);

@@ -29,7 +29,7 @@ Then add the units. See [Adding units to the fleet](/help/rentals/fleet-units).
 
 ## How a rental is priced
 
-Yardline charges the cheapest combination of your rates that covers the time out:
+YardRunner charges the cheapest combination of your rates that covers the time out:
 
 - Time out is rounded up to whole hours, with a 30-minute grace, so a 9:00 to 9:20 next-day rental is one day.
 - Any mix of rates can be used, so a week replaces seven days whenever it's cheaper.

@@ -75,7 +75,7 @@ return [
     | Back office (/admin)
     |--------------------------------------------------------------------------
     |
-    | Where Yardline staff look after tenants. Staff accounts are added with
+    | Where YardRunner staff look after tenants. Staff accounts are added with
     | `php artisan yardline:staff:add`. Staff must turn on two-factor
     | authentication before they can open it, unless this is switched off
     | (for local development only).

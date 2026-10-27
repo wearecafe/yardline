@@ -82,7 +82,7 @@ export default function Tenants({ tenants, counts, filters, plans }: Props) {
             <PageBody>
                 <PageHeader
                     title="Tenants"
-                    description="Every business using Yardline."
+                    description="Every business using YardRunner."
                     actions={
                         <Button asChild>
                             <Link href={TenantController.create()}>

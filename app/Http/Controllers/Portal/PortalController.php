@@ -218,7 +218,7 @@ class PortalController extends Controller
         $options->setIsRemoteEnabled(false);
         $options->setDefaultFont('DejaVu Sans');
         $dompdf = new Dompdf($options);
-        $dompdf->loadHtml(view('pdf.statement', ['s' => $statement->for($org), 'tenant' => CurrentTenant::get()->name ?? 'Yardline'])->render());
+        $dompdf->loadHtml(view('pdf.statement', ['s' => $statement->for($org), 'tenant' => CurrentTenant::get()->name ?? 'YardRunner'])->render());
         $dompdf->setPaper('letter');
         $dompdf->render();
 

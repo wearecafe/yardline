@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Yardline;
+namespace Tests\Feature\YardRunner;
 
 use App\Accounting\QuickBooks\PullPayments;
 use App\Accounting\QuickBooks\QuickBooks;
@@ -24,7 +24,7 @@ use Tests\Support\FakeQuickBooks;
 use Tests\TestCase;
 
 /**
- * What Yardline sends to QuickBooks, record by record, per the sync map.
+ * What YardRunner sends to QuickBooks, record by record, per the sync map.
  * Flat 13% tax, an Ontario yard.
  */
 class QuickBooksSyncTest extends TestCase
@@ -129,7 +129,7 @@ class QuickBooksSyncTest extends TestCase
         $this->assertSame('23', $deposit['SalesItemLineDetail']['TaxCodeRef']['value']);
         $this->assertSame('7', $this->qbo->records['Item'][$deposit['SalesItemLineDetail']['ItemRef']['value']]['IncomeAccountRef']['value']);
 
-        // Tax as Yardline charged it, and the total matches to the cent.
+        // Tax as YardRunner charged it, and the total matches to the cent.
         $this->assertSame(round($order->tax_cents / 100, 2), (float) $invoice['TxnTaxDetail']['TotalTax']);
         $this->assertSame('30', $invoice['TxnTaxDetail']['TaxLine'][0]['TaxLineDetail']['TaxRateRef']['value']);
         $this->assertSame($order->amountDueCents(), (int) round($invoice['TotalAmt'] * 100));

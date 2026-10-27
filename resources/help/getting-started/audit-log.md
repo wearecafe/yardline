@@ -5,7 +5,7 @@ order: 6
 related: getting-started/staff-and-roles
 ---
 
-Yardline records changes to orders, prices and credit terms with the person who made them and the values before and after.
+YardRunner records changes to orders, prices and credit terms with the person who made them and the values before and after.
 
 ## Where to find it
 

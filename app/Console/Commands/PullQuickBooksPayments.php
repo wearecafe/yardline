@@ -15,7 +15,7 @@ class PullQuickBooksPayments extends Command
 {
     protected $signature = 'yardline:quickbooks:pull';
 
-    protected $description = 'Bring payments entered in QuickBooks against Yardline invoices into Yardline';
+    protected $description = 'Bring payments entered in QuickBooks against YardRunner invoices into YardRunner';
 
     public function handle(PullPayments $pull): int
     {

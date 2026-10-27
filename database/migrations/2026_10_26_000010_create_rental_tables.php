@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Equipment rental, run entirely in Yardline: serialized units, contracts,
+ * Equipment rental, run entirely in YardRunner: serialized units, contracts,
  * agreements, inspections, extra charges, maintenance and payments.
  * Rental products (kind = rental) are the models and rate cards; rental
  * units are the individual machines.
