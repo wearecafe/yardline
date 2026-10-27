@@ -34,6 +34,14 @@ type Props = {
     pricing: Pricing;
 };
 
+// The header keeps to the essentials; the footer lists every section.
+const topNav = [
+    { href: '#features', label: 'Features' },
+    { href: '#pricing', label: 'Pricing' },
+    { href: '#faq', label: 'FAQ' },
+    { href: '/help', label: 'Help' },
+];
+
 const nav = [
     { href: '#features', label: 'Features' },
     { href: '#rentals', label: 'Rentals' },
@@ -365,12 +373,12 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                                 YardRunner
                             </span>
                         </Link>
-                        <nav className="hidden items-center gap-1 text-sm lg:flex">
-                            {nav.map((item) => (
+                        <nav className="hidden items-center gap-1 text-sm md:flex">
+                            {topNav.map((item) => (
                                 <a
                                     key={item.href}
                                     href={item.href}
-                                    className="rounded-md px-3 py-2 hover:bg-secondary"
+                                    className="rounded-md px-3 py-2 whitespace-nowrap hover:bg-secondary"
                                 >
                                     {item.label}
                                 </a>
@@ -380,7 +388,7 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                             {signedIn ? (
                                 <Link
                                     href={dashboard()}
-                                    className="rounded-md bg-primary px-4 py-2.5 font-medium text-primary-foreground"
+                                    className="rounded-md bg-primary px-4 py-2.5 font-medium whitespace-nowrap text-primary-foreground"
                                 >
                                     Open YardRunner
                                 </Link>
@@ -388,14 +396,14 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                                 <>
                                     <Link
                                         href={login()}
-                                        className="rounded-md px-3 py-2.5 hover:bg-secondary"
+                                        className="rounded-md px-3 py-2.5 whitespace-nowrap hover:bg-secondary"
                                     >
                                         Log in
                                     </Link>
                                     {demo ? (
                                         <Link
                                             href="/demo"
-                                            className="rounded-md bg-primary px-4 py-2.5 font-medium text-primary-foreground"
+                                            className="rounded-md bg-primary px-4 py-2.5 font-medium whitespace-nowrap text-primary-foreground"
                                         >
                                             Try the demo
                                         </Link>
@@ -403,7 +411,7 @@ export default function Welcome({ demo, canRegister, pricing }: Props) {
                                         canRegister && (
                                             <Link
                                                 href={register()}
-                                                className="rounded-md bg-primary px-4 py-2.5 font-medium text-primary-foreground"
+                                                className="rounded-md bg-primary px-4 py-2.5 font-medium whitespace-nowrap text-primary-foreground"
                                             >
                                                 Set up your yard
                                             </Link>
