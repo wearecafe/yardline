@@ -32,13 +32,15 @@ class SendingDomainMessage extends Notification
         $mail = BrandedMail::user($business, "You're getting this because you manage settings for {$business}.");
 
         if ($this->status === SendingDomain::VERIFIED) {
+            $next = $domain->sending_enabled
+                ? "Customer emails now come from your own addresses at {$domain->domain}."
+                : 'Turn on “Send customer emails from this domain” and your customers will get quotes, invoices and delivery updates from your own addresses.';
+
             return $mail
                 ->subject("{$domain->domain} is verified")
                 ->notice('All records found')
                 ->title('Your sending domain is verified')
-                ->line($domain->sending_enabled
-                    ? "Customer emails now come from your own addresses at {$domain->domain}."
-                    : "Turn on “Send customer emails from this domain” and your customers will get quotes, invoices and delivery updates from your own addresses.")
+                ->line($next)
                 ->action($domain->sending_enabled ? 'Open email settings' : 'Turn on sending', route('sending-domain.edit'))
                 ->line('Leave the DNS records in place. If one is removed, we’ll switch back to YardRunner’s address and let you know.');
         }

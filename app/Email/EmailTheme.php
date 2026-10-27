@@ -122,7 +122,7 @@ final readonly class EmailTheme
             contactName: $tenant->name.($yard !== null ? " · {$yard->name}" : ''),
             contactLines: $contact,
             replyLine: "Reply to this email to reach {$tenant->name}.",
-            footerLines: array_values(array_filter([$brand->footerNote !== '' ? $brand->footerNote : null])),
+            footerLines: $brand->footerNote !== '' ? [$brand->footerNote] : [],
             sentWithYardRunner: $brand->sentWithYardRunner,
         );
     }

@@ -143,7 +143,15 @@ class SendingDomainController extends Controller
         $before = ['mailboxes' => $domain->mailboxes, 'sending_enabled' => $domain->sending_enabled];
 
         if (isset($data['mailboxes'])) {
-            $domain->mailboxes = collect($data['mailboxes'])->map(fn ($v) => $v === null ? '' : strtolower((string) $v))->filter()->all();
+            $mailboxes = [];
+
+            foreach ((array) $data['mailboxes'] as $group => $local) {
+                if (is_string($local) && $local !== '') {
+                    $mailboxes[(string) $group] = strtolower($local);
+                }
+            }
+
+            $domain->mailboxes = $mailboxes;
         }
 
         if (array_key_exists('sending_enabled', $data)) {
