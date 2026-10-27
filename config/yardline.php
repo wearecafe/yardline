@@ -74,4 +74,38 @@ return [
         'api_version' => env('SHOPIFY_API_VERSION', '2026-07'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Back office (/admin)
+    |--------------------------------------------------------------------------
+    |
+    | Where Yardline staff look after tenants. Staff accounts are added with
+    | `php artisan yardline:staff:add`. Staff must turn on two-factor
+    | authentication before they can open it, unless this is switched off
+    | (for local development only).
+    |
+    | Plans and modules are labels staff record against each tenant. The
+    | price is set per tenant; there's no subscription billing yet, and the
+    | module switches don't hide anything from tenants yet.
+    |
+    */
+
+    'back_office' => [
+        'require_two_factor' => (bool) env('YARDLINE_ADMIN_REQUIRE_2FA', true),
+
+        'plans' => [
+            'yard' => 'Yard',
+            'yard_rentals' => 'Yard + Rentals',
+            'multi_yard' => 'Multi-yard',
+        ],
+
+        'modules' => [
+            'rentals' => 'Equipment rentals',
+            'dispatch' => 'Dispatch and driver app',
+            'counter' => 'Counter sales screen',
+            'portal' => 'Contractor portal',
+            'purchasing' => 'Purchasing',
+        ],
+    ],
+
 ];

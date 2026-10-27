@@ -185,6 +185,45 @@ Settings → Drivers.
   and rental invoices, and sends back payments entered there. See
   [quickbooks.md](quickbooks.md).
 
+## Back office
+
+`/admin`, for Yardline staff. Staff are users with no tenant and
+`is_platform_staff` set; add or remove them with
+`php artisan yardline:staff:add you@example.com --name="Your Name"`
+(`--remove` takes access away). There's no screen for it on purpose.
+Staff must turn on two-factor authentication before `/admin` opens
+(`YARDLINE_ADMIN_REQUIRE_2FA=false` switches that off locally). Tenant
+users get a 404 there, and staff are sent back to `/admin` from the yard
+screens (`KeepStaffInBackOffice`).
+
+| Screen             | What's on it                                                                 | Code                                    |
+| ------------------ | ---------------------------------------------------------------------------- | --------------------------------------- |
+| Overview           | Tenants, trials, MRR, sales and orders across tenants, busiest tenants, what needs attention, growth, module adoption | `Admin\OverviewController`, `BackOffice\Attention` |
+| Tenants            | Every tenant with status, plan, connections, activity and health; set up a new tenant (emails the owner) | `Admin\TenantController`               |
+| Tenant page        | 30-day activity, integrations, yards, users (send a password link), audit log; plan, status, price, modules and staff notes | `Admin\TenantController`               |
+| Activity reports   | Volume per week, module usage by tenant, engagement and churn risk, retention by signup month | `Admin\ReportController`               |
+| Integration health | Webhooks, Shopify and QuickBooks connections, open issues, failed jobs (retry or clear) | `Admin\IntegrationHealthController`    |
+
+Figures come from `App\BackOffice\TenantMetrics`, which reads tables
+directly and groups by `tenant_id` (staff have no tenant, so scoped models
+would return nothing). Health and churn risk are in `TenantHealth`.
+
+- **Plan, price and status** are recorded by staff (`tenants.plan`,
+  `monthly_price_cents`, `status`, `trial_ends_at`); MRR is the sum of
+  active and past-due prices. Nothing is charged and the status doesn't
+  block sign-in yet. Plans are listed in `config/yardline.php`.
+- **Modules** (`tenants.modules`) are recorded only; nothing is hidden
+  from the tenant yet. Modules are on unless switched off.
+- **Activity**: `TrackActivity` notes each user's last visit, the
+  tenant's, and one `user_activity_days` row per user per day (weekly
+  users, retention), writing at most every five minutes per user.
+- **Webhooks**: every Shopify and Stripe delivery is logged in
+  `webhook_deliveries` (accepted, ignored, rejected or failed), kept 30
+  days.
+- Staff changes to a tenant are written to that tenant's audit log, but
+  the tenant's own audit page leaves them out.
+- New sign-ups start as a trial with no end date; staff set one.
+
 ## Demo yard
 
 `Database\Seeders\DemoYardSeeder` builds Escarpment Stone & Landscape

@@ -3,9 +3,12 @@
 namespace App\Jobs;
 
 use App\Models\Integration;
+use App\Models\WebhookDelivery;
+use App\Tenancy\CurrentTenant;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Brings an order placed in Shopify into Yardline.
@@ -36,5 +39,13 @@ class ImportShopifyOrder implements ShouldQueue
             'shopify_order_id' => $this->payload['admin_graphql_api_id'] ?? $this->payload['id'] ?? null,
             'name' => $this->payload['name'] ?? null,
         ]);
+    }
+
+    /**
+     * Shows up under integration health in the back office.
+     */
+    public function failed(Throwable $e): void
+    {
+        WebhookDelivery::record('shopify', 'order import', WebhookDelivery::FAILED, CurrentTenant::id(), $e->getMessage());
     }
 }

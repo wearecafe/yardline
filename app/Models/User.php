@@ -29,6 +29,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property CarbonImmutable|null $two_factor_confirmed_at
+ * @property bool $is_platform_staff
+ * @property CarbonImmutable|null $last_seen_at
  * @property string|null $remember_token
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -59,6 +61,8 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'password' => 'hashed',
             'role' => UserRole::class,
             'two_factor_confirmed_at' => 'datetime',
+            'is_platform_staff' => 'boolean',
+            'last_seen_at' => 'datetime',
         ];
     }
 
@@ -122,5 +126,15 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function isDriver(): bool
     {
         return $this->role->isDriver();
+    }
+
+    /**
+     * Yardline staff: no tenant of their own, and they use the back office
+     * (/admin) instead of a yard. Never set from a request; see the
+     * yardline:staff:add command.
+     */
+    public function isPlatformStaff(): bool
+    {
+        return $this->is_platform_staff && $this->tenant_id === null;
     }
 }

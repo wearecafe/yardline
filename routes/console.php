@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\DriverPing;
+use App\Models\WebhookDelivery;
 use App\Support\Demo;
 use Illuminate\Support\Facades\Schedule;
 
@@ -25,5 +26,5 @@ Schedule::command('yardline:rentals:remind')->everyFifteenMinutes()->withoutOver
 Schedule::command('yardline:quickbooks:pull')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('yardline:quickbooks:check')->dailyAt('02:30')->timezone('America/Toronto')->withoutOverlapping();
 
-// Drivers' phone positions are kept for 30 days.
-Schedule::command('model:prune', ['--model' => [DriverPing::class]])->dailyAt('02:15')->timezone('America/Toronto')->withoutOverlapping();
+// Drivers' phone positions and the webhook log are kept for 30 days.
+Schedule::command('model:prune', ['--model' => [DriverPing::class, WebhookDelivery::class]])->dailyAt('02:15')->timezone('America/Toronto')->withoutOverlapping();

@@ -37,6 +37,8 @@ class AuditController extends Controller
             ->when(isset(self::KINDS[$kind]), fn ($q) => $q->where('subject_type', $kind))
             ->when($search !== '', fn ($q) => $q->whereLike('subject_label', "%{$search}%"))
             ->where(fn ($q) => $q->where('subject_type', '!=', 'order_line')->orWhere('event', 'updated'))
+            // Yardline staff's notes on the account (plan, status) stay in the back office.
+            ->where('subject_type', '!=', 'tenant')
             ->latest('id')
             ->paginate(50)
             ->withQueryString()

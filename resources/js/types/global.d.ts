@@ -14,6 +14,7 @@ declare module '@inertiajs/core' {
                 can: {
                     manageBusiness: boolean;
                     manageUsers: boolean;
+                    backOffice: boolean;
                     drive: boolean;
                     priceExempt: boolean;
                 };

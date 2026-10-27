@@ -46,6 +46,7 @@ class HandleInertiaRequests extends Middleware
                 'can' => [
                     'manageBusiness' => (bool) $request->user()?->canManageBusiness(),
                     'manageUsers' => (bool) $request->user()?->canManageUsers(),
+                    'backOffice' => (bool) $request->user()?->isPlatformStaff(),
                     'drive' => (bool) $request->user()?->isDriver(),
                     // Set a price by hand on a product exempt from price lists.
                     'priceExempt' => (bool) $request->user()?->canManageBusiness()

@@ -19,6 +19,7 @@ use App\Models\RentalPayment;
 use App\Models\RentalUnit;
 use App\Models\Shipment;
 use App\Models\StockTransfer;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Payments\CheckoutLinks;
 use App\Payments\FakeCheckoutLinks;
@@ -143,6 +144,7 @@ class AppServiceProvider extends ServiceProvider
             'product' => Product::class,
             'purchase_order' => PurchaseOrder::class,
             'stock_transfer' => StockTransfer::class,
+            'tenant' => Tenant::class,
             'cycle_count' => CycleCount::class,
             'rental' => Rental::class,
             'rental_payment' => RentalPayment::class,

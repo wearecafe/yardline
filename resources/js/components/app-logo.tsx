@@ -2,7 +2,8 @@ import { usePage } from '@inertiajs/react';
 import AppLogoIcon from '@/components/app-logo-icon';
 
 export default function AppLogo() {
-    const { tenant } = usePage().props;
+    const { tenant, auth } = usePage().props;
+    const subtitle = auth.can.backOffice ? 'Back office' : tenant?.name;
 
     return (
         <>
@@ -13,9 +14,9 @@ export default function AppLogo() {
                 <span className="truncate text-[17px] font-bold text-[#fafaf9]">
                     Yardline
                 </span>
-                {tenant && (
+                {subtitle && (
                     <span className="truncate text-xs text-[#a8a29e]">
-                        {tenant.name}
+                        {subtitle}
                     </span>
                 )}
             </div>

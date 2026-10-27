@@ -5,16 +5,19 @@ namespace App\Http\Controllers\Webhooks;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\RentalPayment;
+use App\Models\WebhookDelivery;
 use App\Payments\CompleteCheckout;
 use App\Rentals\Payments\RentalPayments;
 use App\Support\StripeGateway;
 use App\Tenancy\CurrentTenant;
 use App\Tenancy\TenantScope;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\PaymentMethod;
 use Stripe\Webhook;
+use Throwable;
 use UnexpectedValueException;
 
 /**
@@ -33,10 +36,16 @@ class StripeWebhookController extends Controller
                 (string) config('services.stripe.webhook_secret'),
             );
         } catch (SignatureVerificationException|UnexpectedValueException) {
+            WebhookDelivery::record('stripe', null, WebhookDelivery::REJECTED, detail: 'Invalid signature');
+
             return response('Invalid signature', 400);
         }
 
-        if (! in_array($event->type, ['checkout.session.completed', 'checkout.session.async_payment_succeeded'], true)) {
+        $type = (string) $event->type;
+
+        if (! in_array($type, ['checkout.session.completed', 'checkout.session.async_payment_succeeded'], true)) {
+            WebhookDelivery::record('stripe', $type, WebhookDelivery::IGNORED);
+
             return response('Ignored', 200);
         }
 
@@ -45,11 +54,15 @@ class StripeWebhookController extends Controller
         $sessionId = is_string($session['id'] ?? null) ? $session['id'] : null;
         $paymentIntent = is_string($session['payment_intent'] ?? null) ? $session['payment_intent'] : null;
 
-        if ($event->type === 'checkout.session.completed' && ($session['payment_status'] ?? null) !== 'paid') {
+        if ($type === 'checkout.session.completed' && ($session['payment_status'] ?? null) !== 'paid') {
+            WebhookDelivery::record('stripe', $type, WebhookDelivery::IGNORED, detail: 'Awaiting payment');
+
             return response('Awaiting payment', 200); // async methods settle later
         }
 
         if ($sessionId === null) {
+            WebhookDelivery::record('stripe', $type, WebhookDelivery::IGNORED, detail: 'Unknown session');
+
             return response('Unknown session', 200);
         }
 
@@ -59,7 +72,7 @@ class StripeWebhookController extends Controller
             ->first();
 
         if ($rentalPayment !== null) {
-            CurrentTenant::run($rentalPayment->tenant_id, function () use ($rentalPayment, $paymentIntent, $rentalPayments) {
+            $this->process($type, $rentalPayment->tenant_id, function () use ($rentalPayment, $paymentIntent, $rentalPayments) {
                 $rentalPayments->completeLink($rentalPayment->fresh() ?? $rentalPayment, $paymentIntent, $this->card($paymentIntent));
             });
 
@@ -72,14 +85,35 @@ class StripeWebhookController extends Controller
             ->first();
 
         if ($payment === null) {
+            WebhookDelivery::record('stripe', $type, WebhookDelivery::IGNORED, detail: 'Unknown session');
+
             return response('Unknown session', 200);
         }
 
-        CurrentTenant::run($payment->tenant_id, function () use ($payment, $paymentIntent, $complete) {
+        $this->process($type, $payment->tenant_id, function () use ($payment, $paymentIntent, $complete) {
             $complete->handle($payment->fresh() ?? $payment, $paymentIntent);
         });
 
         return response('OK', 200);
+    }
+
+    /**
+     * Run the work as the tenant, logging the delivery. A failure is logged
+     * and rethrown so Stripe retries it.
+     *
+     * @param  Closure(): void  $work
+     */
+    private function process(string $type, int $tenantId, Closure $work): void
+    {
+        try {
+            CurrentTenant::run($tenantId, $work);
+        } catch (Throwable $e) {
+            WebhookDelivery::record('stripe', $type, WebhookDelivery::FAILED, $tenantId, $e->getMessage());
+
+            throw $e;
+        }
+
+        WebhookDelivery::record('stripe', $type, WebhookDelivery::ACCEPTED, $tenantId);
     }
 
     /**
@@ -107,7 +141,7 @@ class StripeWebhookController extends Controller
                 'brand' => (string) $method->card->brand,
                 'last4' => (string) $method->card->last4,
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
 
             return [];
