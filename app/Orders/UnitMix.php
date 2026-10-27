@@ -38,7 +38,7 @@ final class UnitMix
     private float $bestTotal = 0.0;
 
     /**
-     * @param  list<array{key: int|string, factor: float|string, increment?: float|string|null, min_quantity?: float|string|null}>  $units  the sellable units
+     * @param  array<int, array{key: int|string, factor: float|string, increment?: float|string|null, min_quantity?: float|string|null}>  $units  the sellable units
      * @return array{total: float, lines: list<array{key: int|string, quantity: float}>}|null null when no mix fits (rounding down below the smallest sale)
      */
     public static function solve(float $target, array $units, bool $up): ?array
@@ -47,14 +47,15 @@ final class UnitMix
     }
 
     /**
-     * @param  list<array{key: int|string, factor: float|string, increment?: float|string|null, min_quantity?: float|string|null}>  $units
+     * @param  array<int, array{key: int|string, factor: float|string, increment?: float|string|null, min_quantity?: float|string|null}>  $units
      * @return array{total: float, lines: list<array{key: int|string, quantity: float}>}|null
      */
     private function run(float $target, array $units, bool $up): ?array
     {
         foreach ($units as $unit) {
             $factor = (float) $unit['factor'];
-            $step = (float) ($unit['increment'] ?? 0) > 0 ? (float) $unit['increment'] : 0.001;
+            $increment = (float) ($unit['increment'] ?? 0);
+            $step = $increment > 0 ? $increment : 0.001;
             $min = (float) ($unit['min_quantity'] ?? 0);
 
             if ($factor <= 0) {

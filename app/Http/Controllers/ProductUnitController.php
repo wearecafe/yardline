@@ -43,7 +43,9 @@ class ProductUnitController extends Controller
             'units.*.tiers.*' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
         ]);
 
-        if (! collect($data['units'])->contains(fn (array $row) => (bool) ($row['sellable'] ?? true))) {
+        $forSale = array_filter((array) $data['units'], fn ($row) => (bool) (((array) $row)['sellable'] ?? true));
+
+        if ($forSale === []) {
             OrderRules::fail('Leave at least one unit for sale.', 'units');
         }
 

@@ -53,7 +53,7 @@ class AddOrderLine
             $fit = $round ? QuantityFit::check($product, $unit, $quantity) : null;
 
             if ($fit === null || ! $fit->canRound()) {
-                OrderRules::fail($fit?->problem ?? $problem, 'quantity');
+                OrderRules::fail($fit === null ? $problem : ($fit->problem ?? $problem), 'quantity');
             }
 
             if ($unitPriceCents !== null) {

@@ -47,12 +47,12 @@ final class QuantityFit
         $sellable = $product->sellableUnits()->keyBy('id');
         $mix = UnitMix::solve(
             $target,
-            $sellable->map(fn (ProductUnit $u) => [
+            $sellable->values()->map(fn (ProductUnit $u) => [
                 'key' => $u->id,
                 'factor' => $u->factor,
                 'increment' => $u->increment,
                 'min_quantity' => $u->min_quantity,
-            ])->values()->all(),
+            ])->all(),
             $product->quantity_rounding === QuantityRounding::Up,
         );
 
