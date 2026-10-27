@@ -138,13 +138,16 @@ class FulfillmentTest extends TestCase
 
     public function test_deliveries_go_from_plan_to_proof_of_delivery(): void
     {
-        $truck = Truck::query()->create(['name' => 'Truck 2 · boom', 'capacity_kg' => 12000, 'has_boom' => true]);
+        $truck = Truck::query()->create(['name' => 'Truck 2 · boom', 'capacities' => [['unit' => 't', 'amount' => 12]], 'has_boom' => true]);
+        // The yard's today, not UTC's: dispatch works on the yard's calendar,
+        // and after 8 pm in Toronto UTC is already tomorrow.
+        $today = now(CurrentTenant::get()?->timezone ?? 'America/Toronto')->toDateString();
         $customer = Customer::factory()->create(['organization_id' => $this->org->id, 'phone' => '905-555-0100']);
         $order = $this->confirmedOrder([
             'customer_id' => $customer->id,
             'fulfillment' => 'delivery',
             'delivery_address' => ['line1' => '18 Ridgeview Dr', 'city' => 'Waterdown', 'postal_code' => 'L8B 1J2'],
-            'requested_on' => now()->toDateString(),
+            'requested_on' => $today,
         ]);
 
         // Zone fee, taxed with the goods.
@@ -156,7 +159,7 @@ class FulfillmentTest extends TestCase
         // Planned on the board before it's loaded.
         $stop = Stop::query()->firstOrFail();
         $this->assertSame('order', $stop->stoppable_type);
-        $this->patch(route('stops.schedule', $stop), ['truck_id' => $truck->id, 'date' => now()->toDateString(), 'starts_at' => '09:00'])->assertSessionHasNoErrors();
+        $this->patch(route('stops.schedule', $stop), ['truck_id' => $truck->id, 'date' => $today, 'starts_at' => '09:00'])->assertSessionHasNoErrors();
         $this->post(route('stops.en-route', $stop))->assertSessionHasErrors();
 
         $this->post(route('orders.fulfill', $order))->assertSessionHasNoErrors();

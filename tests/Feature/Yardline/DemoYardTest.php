@@ -181,7 +181,7 @@ class DemoYardTest extends TestCase
         config(['yardline.demo' => true]);
         $this->post('/demo', ['email' => self::OWNER]);
 
-        foreach (['dashboard', 'orders.index', 'orders.queue', 'dispatch.board', 'counter.show', 'inventory.index', 'purchasing.index', 'returns.index', 'receivables.index', 'products.index', 'organizations.index', 'customers.index', 'price-lists.index', 'fleet.index', 'rentals.calendar', 'rentals.index', 'maintenance.index', 'rental-payments.index', 'audit.index', 'delivery-settings.edit', 'rental-settings.edit'] as $name) {
+        foreach (['dashboard', 'orders.index', 'orders.queue', 'dispatch.board', 'counter.show', 'inventory.index', 'purchasing.index', 'returns.index', 'receivables.index', 'products.index', 'organizations.index', 'customers.index', 'price-lists.index', 'fleet.index', 'rentals.calendar', 'rentals.index', 'maintenance.index', 'rental-payments.index', 'audit.index', 'delivery-settings.edit', 'rental-settings.edit', 'time.board', 'time.timesheets.index', 'time.employees.index', 'time.kiosk', 'time.self.show', 'time-settings.edit'] as $name) {
             $this->get(route($name))->assertOk();
         }
     }
@@ -212,9 +212,10 @@ class DemoYardTest extends TestCase
         $this->assertSame($before, CurrentTenant::run($tenant, fn () => DriverPing::query()->count()));
 
         // The scheduler moves the demo truck instead.
-        CurrentTenant::run($tenant, fn () => Truck::query()->whereNotNull('driver_id')->update(['last_located_at' => now()->subHour()]));
+        $truck = CurrentTenant::run($tenant, fn () => Truck::query()->where('name', 'Truck 2 · boom')->firstOrFail());
+        CurrentTenant::run($tenant, fn () => $truck->forceFill(['last_located_at' => now()->subHour()])->save());
         $this->artisan('yardline:demo:drive')->assertSuccessful();
-        $truck = CurrentTenant::run($tenant, fn () => Truck::query()->whereNotNull('driver_id')->firstOrFail());
+        CurrentTenant::run($tenant, fn () => $truck->refresh());
         $this->assertTrue($truck->last_located_at?->greaterThan(now()->subMinute()));
     }
 

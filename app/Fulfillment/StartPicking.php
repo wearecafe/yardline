@@ -26,7 +26,7 @@ class StartPicking
             OrderRules::fail('Only confirmed orders can be picked.');
         }
 
-        if ($order->shipments()->where('status', ShipmentStatus::Picking->value)->exists()) {
+        if ($order->shipments()->inYard()->exists()) {
             OrderRules::fail('This order is already being picked. Finish that pick list first.');
         }
 

@@ -35,13 +35,13 @@ The units available are each, pallet, cube, bag, bundle, tonne, cu yd, sq ft and
 
 **How it's measured** tells the yard kiosk how staff confirm the quantity of a selling unit when they load it. Pick the option that matches what actually happens in the yard.
 
-| Option                      | What staff do                                                          | Use it for                                                        |
-| --------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| — (none)                    | Nothing special. The unit is a conversion only                         | A base unit that isn't for sale, such as sq ft on interlock       |
-| **Truck scale weight**      | Load with the loader, weigh the truck and enter the net scale reading | Bulk sold by the tonne: gravel, screenings, stone                 |
-| **Loader bucket count**     | Load the number of buckets shown on the pick line                      | Bulk sold by the cu yd with no scale: mulch, soil, sand           |
-| **Count**                   | Count the items and enter the quantity loaded                          | Packaged units: bags, pallets, cubes, bundles, layers, each       |
-| **Measured length or area** | Measure with a tape and enter the quantity loaded                      | Product cut or rolled out to size: sod, edging, cut flagstone     |
+| Option                      | What staff do                                                         | Use it for                                                    |
+| --------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------- |
+| — (none)                    | Nothing special. The unit is a conversion only                        | A base unit that isn't for sale, such as sq ft on interlock   |
+| **Truck scale weight**      | Load with the loader, weigh the truck and enter the net scale reading | Bulk sold by the tonne: gravel, screenings, stone             |
+| **Loader bucket count**     | Load the number of buckets shown on the pick line                     | Bulk sold by the cu yd with no scale: mulch, soil, sand       |
+| **Count**                   | Count the items and enter the quantity loaded                         | Packaged units: bags, pallets, cubes, bundles, layers, each   |
+| **Measured length or area** | Measure with a tape and enter the quantity loaded                     | Product cut or rolled out to size: sod, edging, cut flagstone |
 
 A few things to watch for:
 
@@ -54,5 +54,3 @@ See [Picking and loading on the yard kiosk](/help/yard-delivery/picking-on-the-k
 ## How units show up on orders
 
 Every order line keeps the unit sold (say, 3 tonnes) and converts it to base units. Stock, pick lists and reports always use the base quantity, so they stay right whichever unit was sold.
-
-> **Note** If you use Shopify, each selling unit becomes its own variant there. See [Connecting Shopify](/help/integrations/shopify).

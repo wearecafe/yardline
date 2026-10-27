@@ -24,6 +24,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property UserRole $role
  * @property string $name
  * @property string $email
+ * @property string|null $phone
  * @property CarbonImmutable|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
@@ -35,7 +36,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
-#[Fillable(['tenant_id', 'name', 'email', 'role', 'password'])]
+#[Fillable(['tenant_id', 'name', 'email', 'phone', 'role', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
@@ -75,13 +76,23 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * Trucks whose run this user signs in to (usually one).
+     * The days this driver drives a truck, picked on the dispatch board.
      *
-     * @return HasMany<Truck, $this>
+     * @return HasMany<TruckAssignment, $this>
      */
-    public function trucks(): HasMany
+    public function truckAssignments(): HasMany
     {
-        return $this->hasMany(Truck::class, 'driver_id');
+        return $this->hasMany(TruckAssignment::class);
+    }
+
+    /**
+     * Where this driver's phone has been.
+     *
+     * @return HasMany<DriverPing, $this>
+     */
+    public function driverPings(): HasMany
+    {
+        return $this->hasMany(DriverPing::class);
     }
 
     /**
@@ -97,9 +108,8 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * Set the trucks this driver can drive. They stop signing in to a truck
-     * they're no longer cleared for, and start signing in to a cleared
-     * truck nobody signs in to yet.
+     * Set the trucks this driver can drive. Days ahead on a truck they're
+     * no longer cleared for go back to dispatch to fill.
      *
      * @param  list<int>  $truckIds
      */
@@ -109,8 +119,12 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             collect($truckIds)->mapWithKeys(fn (int $id) => [$id => ['tenant_id' => $this->tenant_id]])->all(),
         );
 
-        Truck::query()->where('driver_id', $this->id)->whereNotIn('id', $truckIds)->update(['driver_id' => null]);
-        Truck::query()->whereIn('id', $truckIds)->whereNull('driver_id')->update(['driver_id' => $this->id]);
+        $today = CarbonImmutable::today($this->tenant->timezone ?? 'America/Toronto')->toDateString();
+
+        $this->truckAssignments()
+            ->whereNotIn('truck_id', $truckIds)
+            ->where('date', '>=', $today)
+            ->delete();
     }
 
     public function canManageUsers(): bool
@@ -136,5 +150,53 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function isPlatformStaff(): bool
     {
         return $this->is_platform_staff && $this->tenant_id === null;
+    }
+
+    public function isPicker(): bool
+    {
+        return $this->role->isPicker();
+    }
+
+    /**
+     * The yards an order picker works. Everyone else works every yard.
+     *
+     * @return BelongsToMany<Location, $this>
+     */
+    public function yards(): BelongsToMany
+    {
+        return $this->belongsToMany(Location::class, 'location_user')
+            ->withPivot('tenant_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * @param  array<int, int>  $locationIds
+     */
+    public function setYards(array $locationIds): void
+    {
+        $this->yards()->sync(
+            collect($locationIds)->mapWithKeys(fn (int $id) => [$id => ['tenant_id' => $this->tenant_id]])->all(),
+        );
+    }
+
+    /**
+     * Yards this user may pick at, or null for every yard.
+     *
+     * @return list<int>|null
+     */
+    public function pickingYardIds(): ?array
+    {
+        if (! $this->isPicker()) {
+            return null;
+        }
+
+        return array_values($this->yards()->pluck('locations.id')->map(fn ($id) => (int) $id)->all());
+    }
+
+    public function canPickAt(?int $locationId): bool
+    {
+        $yards = $this->pickingYardIds();
+
+        return $yards === null || ($locationId !== null && in_array($locationId, $yards, true));
     }
 }

@@ -145,9 +145,4 @@ class QuickBooksConnectionTest extends TestCase
         $this->get(route('quickbooks.edit'))->assertForbidden();
         $this->post(route('quickbooks.connect'))->assertForbidden();
     }
-
-    public function test_quickbooks_is_not_treated_as_a_storefront(): void
-    {
-        $this->assertSame([IntegrationProvider::Shopify], IntegrationProvider::commerce());
-    }
 }

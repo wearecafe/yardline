@@ -240,12 +240,12 @@ class BackOfficeTest extends TestCase
     {
         $tenant = $this->tenantWithOrders('Halton Stone', 2);
         CurrentTenant::run($tenant, fn () => Integration::query()->create([
-            'provider' => IntegrationProvider::Shopify,
+            'provider' => IntegrationProvider::QuickBooks,
             'status' => IntegrationStatus::Error,
-            'external_account' => 'halton.myshopify.com',
+            'external_account' => 'Halton Stone Ltd.',
             'last_error' => 'Access token revoked',
         ]));
-        WebhookDelivery::record('shopify', 'orders/create', WebhookDelivery::REJECTED, detail: 'Invalid signature');
+        WebhookDelivery::record('stripe', null, WebhookDelivery::REJECTED, detail: 'Invalid signature');
         $this->signInAsStaff();
 
         $this->get('/admin/reports')
@@ -261,8 +261,8 @@ class BackOfficeTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('admin/integrations')
                 ->has('hours', 24)
-                ->where('issues', fn ($issues) => collect($issues)->contains('integration', 'Shopify')
-                    && collect($issues)->contains('key', 'rejected-shopify')));
+                ->where('issues', fn ($issues) => collect($issues)->contains('integration', 'QuickBooks Online')
+                    && collect($issues)->contains('key', 'rejected-stripe')));
     }
 
     public function test_staff_can_send_failed_quickbooks_records_again(): void
@@ -286,16 +286,14 @@ class BackOfficeTest extends TestCase
 
     public function test_webhooks_with_a_bad_signature_are_logged(): void
     {
-        config(['services.shopify.webhook_secret' => 'secret']);
+        config(['services.stripe.webhook_secret' => 'whsec_test']);
 
-        $this->postJson('/webhooks/shopify', ['id' => 1], [
-            'X-Shopify-Hmac-Sha256' => 'nope',
-            'X-Shopify-Topic' => 'orders/create',
-        ])->assertStatus(401);
+        $this->postJson('/webhooks/stripe', ['id' => 'evt_1'], [
+            'Stripe-Signature' => 't=1,v1=nope',
+        ])->assertStatus(400);
 
         $this->assertDatabaseHas('webhook_deliveries', [
-            'provider' => 'shopify',
-            'topic' => 'orders/create',
+            'provider' => 'stripe',
             'outcome' => WebhookDelivery::REJECTED,
         ]);
     }

@@ -57,7 +57,10 @@ class Dispatch
             'eta_at' => $eta ?? $this->plannedStart($stop),
         ])->save();
 
-        if ($stop->stoppable instanceof Shipment && $stop->stoppable->status === ShipmentStatus::Loaded) {
+        // Out for delivery is a stage the business can switch off.
+        if ($stop->stoppable instanceof Shipment
+            && in_array($stop->stoppable->status, [ShipmentStatus::Loaded, ShipmentStatus::Ready], true)
+            && PickingSettings::current()->stageOn('out')) {
             $stop->stoppable->forceFill(['status' => ShipmentStatus::Out])->save();
         }
 

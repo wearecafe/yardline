@@ -130,7 +130,7 @@ export default function Tenants({ tenants, counts, filters, plans }: Props) {
                 <div className="flex flex-wrap items-center gap-3">
                     <SearchBox
                         value={filters.search ?? undefined}
-                        placeholder="Name, owner email or Shopify store"
+                        placeholder="Name or owner email"
                         extra={query(filters, { search: null })}
                     />
                     <NativeSelect
@@ -157,8 +157,6 @@ export default function Tenants({ tenants, counts, filters, plans }: Props) {
                         }
                     >
                         <option value="">Any connections</option>
-                        <option value="shopify">Shopify connected</option>
-                        <option value="standalone">No Shopify</option>
                         <option value="quickbooks">QuickBooks connected</option>
                         <option value="errors">Has sync errors</option>
                     </NativeSelect>

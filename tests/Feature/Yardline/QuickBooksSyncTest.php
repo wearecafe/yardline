@@ -18,6 +18,7 @@ use App\Models\Order;
 use App\Models\Organization;
 use App\Models\Product;
 use App\Models\QuickBooksSync;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\FakeQuickBooks;
 use Tests\TestCase;
@@ -189,6 +190,21 @@ class QuickBooksSyncTest extends TestCase
         $this->assertSame([], $this->qbo->created('Invoice'));
         $this->assertSame([], $this->qbo->created('Payment'));
         $this->assertSame('skipped', QuickBooksSync::for($order->invoice)?->status);
+    }
+
+    public function test_an_invoice_issued_on_the_start_date_is_sent_in_the_evening(): void
+    {
+        // 10:30 pm in Toronto is already tomorrow in UTC. The invoice's
+        // issue date is the yard's day and must not slip to the day before.
+        $this->travelTo(CarbonImmutable::parse('2026-10-26 22:30', 'America/Toronto'));
+        $this->integration->forceFill(['settings' => [...$this->integration->settings ?? [], 'start_date' => '2026-10-26']])->save();
+        QuickBooks::forget();
+
+        $order = $this->order(['mortar' => 1]);
+
+        $this->assertSame('2026-10-26', $order->invoice?->issued_on->toDateString());
+        $this->assertCount(1, $this->qbo->created('Invoice'));
+        $this->assertSame('2026-10-26', $this->qbo->last('Invoice')['TxnDate'] ?? null);
     }
 
     public function test_records_wait_until_accounts_and_tax_codes_are_chosen(): void

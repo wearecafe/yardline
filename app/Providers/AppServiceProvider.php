@@ -2,17 +2,23 @@
 
 namespace App\Providers;
 
+use App\Models\ContractPrice;
 use App\Models\CreditNote;
 use App\Models\Customer;
 use App\Models\CycleCount;
+use App\Models\Employee;
 use App\Models\Invoice;
 use App\Models\Location;
 use App\Models\Order;
+use App\Models\OrderLine;
 use App\Models\Organization;
 use App\Models\Payment;
+use App\Models\PayPeriod;
 use App\Models\PriceList;
 use App\Models\PriceListCategoryRule;
+use App\Models\PriceListItem;
 use App\Models\Product;
+use App\Models\ProductUnit;
 use App\Models\PurchaseOrder;
 use App\Models\Rental;
 use App\Models\RentalPayment;
@@ -20,6 +26,8 @@ use App\Models\RentalUnit;
 use App\Models\Shipment;
 use App\Models\StockTransfer;
 use App\Models\Tenant;
+use App\Models\TimeAdjustment;
+use App\Models\Timesheet;
 use App\Models\User;
 use App\Payments\CheckoutLinks;
 use App\Payments\FakeCheckoutLinks;
@@ -33,6 +41,7 @@ use App\Support\StripeGateway;
 use App\Tax\FlatRateTaxCalculator;
 use App\Tax\StripeTaxCalculator;
 use App\Tax\TaxCalculator;
+use App\Time\TimeSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -75,6 +84,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(RentalSettings::class, fn () => RentalSettings::current());
+        $this->app->bind(TimeSettings::class, fn () => TimeSettings::current());
 
         $this->app->bind(CheckoutLinks::class, function (Application $app) {
             if (Demo::isCurrentTenant()) {
@@ -132,16 +142,22 @@ class AppServiceProvider extends ServiceProvider
         // Stable names in polymorphic columns (stock movement references,
         // external references) instead of PHP class names.
         Relation::enforceMorphMap([
+            'contract_price' => ContractPrice::class,
             'credit_note' => CreditNote::class,
             'customer' => Customer::class,
+            'employee' => Employee::class,
             'invoice' => Invoice::class,
             'location' => Location::class,
             'order' => Order::class,
+            'order_line' => OrderLine::class,
             'organization' => Organization::class,
             'payment' => Payment::class,
+            'pay_period' => PayPeriod::class,
             'price_list' => PriceList::class,
             'price_list_category_rule' => PriceListCategoryRule::class,
+            'price_list_item' => PriceListItem::class,
             'product' => Product::class,
+            'product_unit' => ProductUnit::class,
             'purchase_order' => PurchaseOrder::class,
             'stock_transfer' => StockTransfer::class,
             'tenant' => Tenant::class,
@@ -150,6 +166,8 @@ class AppServiceProvider extends ServiceProvider
             'rental_payment' => RentalPayment::class,
             'rental_unit' => RentalUnit::class,
             'shipment' => Shipment::class,
+            'time_adjustment' => TimeAdjustment::class,
+            'timesheet' => Timesheet::class,
             'user' => User::class,
         ]);
     }
@@ -159,5 +177,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-business', fn (User $user) => $user->canManageBusiness());
         Gate::define('manage-users', fn (User $user) => $user->canManageUsers());
         Gate::define('override-credit', fn (User $user) => $user->canManageBusiness());
+        // Who's in, timesheet review and approval, corrections, payroll export.
+        Gate::define('manage-time', fn (User $user) => $user->canManageBusiness());
     }
 }

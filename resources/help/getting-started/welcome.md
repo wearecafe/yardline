@@ -29,6 +29,6 @@ Yardline runs a masonry, landscape or building supply yard: what you sell and re
 
 Rentals follow their own path, from quote to reservation, signed agreement, check-out and check-in. See [How rentals work](/help/rentals/how-rentals-work).
 
-## Works with or without Shopify
+## One system for the whole yard
 
-Yardline is the system of record for your products, prices, accounts and orders. If you also sell through Shopify, Yardline copies your products and customers to your store. See [Connecting Shopify](/help/integrations/shopify).
+Yardline is the system of record for your products, prices, accounts and orders, and it's your point of sale too. Counter sales, orders your staff enter and orders from the contractor portal all land in the same place. Your books stay in QuickBooks Online. See [QuickBooks Online and your accounting](/help/integrations/quickbooks).

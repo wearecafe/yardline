@@ -68,9 +68,14 @@ class HelpCenter
             'summary' => 'Your fleet, rates, bookings, agreements, inspections, deposits and maintenance.',
             'icon' => 'wrench',
         ],
+        'time' => [
+            'title' => 'Time and attendance',
+            'summary' => 'Clocking in at the counter tablet or on a phone, timesheets, overtime and sending hours to payroll.',
+            'icon' => 'clock',
+        ],
         'integrations' => [
-            'title' => 'Shopify and integrations',
-            'summary' => 'Connecting Shopify, what syncs, and how card payments, tax and text messages are set up.',
+            'title' => 'Integrations',
+            'summary' => 'QuickBooks Online, and how card payments, tax and text messages are set up.',
             'icon' => 'plug',
         ],
         'for-customers' => [

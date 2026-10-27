@@ -70,10 +70,6 @@ return [
     */
     'support_email' => env('YARDLINE_SUPPORT_EMAIL'),
 
-    'shopify' => [
-        'api_version' => env('SHOPIFY_API_VERSION', '2026-07'),
-    ],
-
     /*
     |--------------------------------------------------------------------------
     | Back office (/admin)

@@ -238,6 +238,5 @@ class OrderLifecycleTest extends TestCase
         $this->get(route('price-lists.index'))->assertOk();
         $this->get(route('locations.index'))->assertOk();
         $this->get(route('business.edit'))->assertOk();
-        $this->get(route('shopify.edit'))->assertOk();
     }
 }

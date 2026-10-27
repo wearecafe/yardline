@@ -3,9 +3,10 @@ import BusinessController from '@/actions/App/Http/Controllers/Settings/Business
 import AuditController from '@/actions/App/Http/Controllers/Settings/AuditController';
 import DeliverySettingsController from '@/actions/App/Http/Controllers/Settings/DeliverySettingsController';
 import DriverAccountsController from '@/actions/App/Http/Controllers/Settings/DriverAccountsController';
+import OrderPickingController from '@/actions/App/Http/Controllers/Settings/OrderPickingController';
 import QuickBooksController from '@/actions/App/Http/Controllers/Settings/QuickBooksController';
 import RentalSettingsController from '@/actions/App/Http/Controllers/Settings/RentalSettingsController';
-import ShopifyController from '@/actions/App/Http/Controllers/Settings/ShopifyController';
+import TimeSettingsController from '@/actions/App/Http/Controllers/Settings/TimeSettingsController';
 import UserAccountsController from '@/actions/App/Http/Controllers/Settings/UserAccountsController';
 import type { PropsWithChildren } from 'react';
 import Heading from '@/components/heading';
@@ -54,6 +55,11 @@ const businessNavItems: NavItem[] = [
         icon: null,
     },
     {
+        title: 'Order picking',
+        href: OrderPickingController.edit(),
+        icon: null,
+    },
+    {
         title: 'Drivers',
         href: DriverAccountsController.index(),
         icon: null,
@@ -64,13 +70,13 @@ const businessNavItems: NavItem[] = [
         icon: null,
     },
     {
-        title: 'Audit log',
-        href: AuditController.index(),
+        title: 'Time',
+        href: TimeSettingsController.edit(),
         icon: null,
     },
     {
-        title: 'Shopify',
-        href: ShopifyController.edit(),
+        title: 'Audit log',
+        href: AuditController.index(),
         icon: null,
     },
     {

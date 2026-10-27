@@ -21,6 +21,7 @@ use App\Http\Controllers\OrderLineController;
 use App\Http\Controllers\OrganizationContactController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationLocationController;
+use App\Http\Controllers\PickerSwitchController;
 use App\Http\Controllers\Portal\PortalAuthController;
 use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\PriceListCategoryRuleController;
@@ -35,7 +36,6 @@ use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockLevelController;
 use App\Http\Controllers\StockTransferController;
-use App\Http\Controllers\Webhooks\ShopifyWebhookController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use App\Support\Demo;
 use Illuminate\Support\Facades\Route;
@@ -138,7 +138,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('shipments/{shipment}', [FulfillmentController::class, 'assign'])->name('shipments.assign');
     Route::get('pick/{shipment}', [FulfillmentController::class, 'pick'])->name('shipments.pick');
     Route::post('shipments/{shipment}/lines/{line}', [FulfillmentController::class, 'record'])->scopeBindings()->name('shipments.lines.record');
+    Route::post('shipments/{shipment}/picked', [FulfillmentController::class, 'picked'])->name('shipments.picked');
     Route::post('shipments/{shipment}/load', [FulfillmentController::class, 'load'])->name('shipments.load');
+    Route::post('shipments/{shipment}/sign-off', [FulfillmentController::class, 'signOff'])->name('shipments.sign-off');
+    Route::post('shipments/{shipment}/reject', [FulfillmentController::class, 'reject'])->name('shipments.reject');
+    // A shared yard tablet: an order picker switches in with their PIN.
+    Route::post('picker/switch', PickerSwitchController::class)->middleware('throttle:10,1')->name('picker.switch');
     Route::post('shipments/{shipment}/cancel', [FulfillmentController::class, 'cancel'])->name('shipments.cancel');
     Route::get('shipments/{shipment}/ticket', [FulfillmentController::class, 'ticket'])->name('shipments.ticket');
     Route::get('deliver/{shipment}', [DeliveryController::class, 'show'])->name('shipments.deliver');
@@ -165,6 +170,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('dispatch', [DispatchController::class, 'board'])->name('dispatch.board');
     Route::post('dispatch/etas', [DispatchController::class, 'etas'])->name('dispatch.etas');
+    Route::put('dispatch/trucks/{truck}/driver', [DispatchController::class, 'assignDriver'])->name('dispatch.driver');
     Route::patch('stops/{stop}', [DispatchController::class, 'schedule'])->name('stops.schedule');
     Route::post('stops/{stop}/en-route', [DispatchController::class, 'enRoute'])->name('stops.en-route');
     Route::post('stops/{stop}/done', [DispatchController::class, 'done'])->name('stops.done');
@@ -208,8 +214,8 @@ Route::get('q/{token}', [QuoteController::class, 'show'])->name('quotes.public')
 Route::post('q/{token}/accept', [QuoteController::class, 'accept'])->middleware('throttle:10,1')->name('quotes.accept');
 
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
-Route::post('webhooks/shopify', ShopifyWebhookController::class)->name('webhooks.shopify');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/admin.php';
 require __DIR__.'/rentals.php';
+require __DIR__.'/time.php';

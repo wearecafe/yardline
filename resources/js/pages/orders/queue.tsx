@@ -1,13 +1,16 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { Printer } from 'lucide-react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Printer, UserRound } from 'lucide-react';
+import { useState } from 'react';
 import DeliveryController from '@/actions/App/Http/Controllers/DeliveryController';
 import FulfillmentController from '@/actions/App/Http/Controllers/FulfillmentController';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
+import PickerSwitchController from '@/actions/App/Http/Controllers/PickerSwitchController';
 import { Chip } from '@/components/yard/chip';
-import { NativeSelect } from '@/components/yard/field';
+import { Field, NativeSelect } from '@/components/yard/field';
 import { PageBody, PageHeader } from '@/components/yard/page-header';
 import { Button } from '@/components/ui/button';
-import { formatMoney, formatQuantity } from '@/lib/format';
+import { Input } from '@/components/ui/input';
+import { formatDateTime, formatMoney, formatQuantity } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 type Card = {
@@ -24,6 +27,36 @@ type Card = {
     status: string;
     partial: boolean;
     picker: string | null;
+    awaiting_check: string | null;
+    sent_back: boolean;
+};
+
+type NextStep = { action: 'picked' | 'load' | 'check'; label: string } | null;
+
+type CheckPanel = {
+    stage: 'picked' | 'loaded';
+    label: string;
+    completed_by: string | null;
+    can_check: boolean;
+    reason: string | null;
+} | null;
+
+type SentBack = {
+    stage: string;
+    reason: string | null;
+    by: string | null;
+    at: string;
+} | null;
+
+type SignOff = {
+    id: number;
+    stage: string;
+    outcome: 'signed_off' | 'rejected';
+    by: string | null;
+    at: string;
+    notes: string | null;
+    reason: string | null;
+    photo_url: string | null;
 };
 
 type PickItem = {
@@ -37,22 +70,30 @@ type PickItem = {
     weighed: boolean;
     picked: boolean;
     short: boolean;
+    picked_quantity?: string | null;
 };
 
 type Detail = Card & {
     items: PickItem[];
     weight_kg: number;
-    deposits: { count: number; cents: number; label: string } | null;
+    deposits: { count: number; cents: number | null; label: string } | null;
     yard: string;
     price_tier: string | null;
     delivery_address: { line1?: string | null; city?: string | null } | null;
     site_notes: string | null;
     zone: string | null;
-    delivery_fee_cents: number;
-    payment_status: string;
+    // Left out for order pickers, who don't see money.
+    delivery_fee_cents: number | null;
+    payment_status: string | null;
     settlement: string | null;
-    balance_cents: number;
+    balance_cents: number | null;
     picker_id: number | null;
+    next_step: NextStep;
+    check: CheckPanel;
+    sent_back: SentBack;
+    sign_offs: SignOff[];
+    released: boolean;
+    can_cancel: boolean;
 };
 
 type Props = {
@@ -60,6 +101,10 @@ type Props = {
     detail: Detail | null;
     selected: string | null;
     pickers: { id: number; name: string }[];
+    switchable: { id: number; name: string }[];
+    checksOnly: boolean;
+    awaitingChecks: number;
+    stages: Record<'picking' | 'picked' | 'loaded' | 'out', boolean>;
     today: string;
 };
 
@@ -68,10 +113,10 @@ const time = (iso: string) =>
         .toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' })
         .replace(/\s?[ap]\.?m\.?/i, '');
 
-function select(key: string) {
+function select(key: string, checksOnly: boolean) {
     router.get(
         FulfillmentController.queue.url(),
-        { card: key },
+        { card: key, ...(checksOnly ? { checks: 1 } : {}) },
         {
             preserveScroll: true,
             preserveState: true,
@@ -83,15 +128,21 @@ function select(key: string) {
 
 /**
  * Orders and picking (yard mockup 3): every confirmed order lands here as
- * a pick list, and moves across as it's picked and loaded.
+ * a pick list, and moves across the yard's stages as it's picked and
+ * loaded. Loads waiting for a quality check can be filtered out.
  */
 export default function Queue({
     columns,
     detail,
     selected,
     pickers,
+    switchable,
+    checksOnly,
+    awaitingChecks,
+    stages,
     today,
 }: Props) {
+    const { auth } = usePage().props;
     const total = columns.reduce((n, c) => n + c.cards.length, 0);
 
     return (
@@ -102,13 +153,45 @@ export default function Queue({
                     title="Orders and picking"
                     description={`Every confirmed order lands here as a pick list. Today, ${today}.`}
                     actions={
-                        <Button variant="outline" asChild>
-                            <Link href={OrderController.index()}>
-                                All orders
-                            </Link>
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                            {switchable.length > 0 && (
+                                <SwitchPicker pickers={switchable} />
+                            )}
+                            {!auth.can.pick && (
+                                <Button variant="outline" asChild>
+                                    <Link href={OrderController.index()}>
+                                        All orders
+                                    </Link>
+                                </Button>
+                            )}
+                        </div>
                     }
                 />
+
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                        variant={checksOnly ? 'default' : 'outline'}
+                        size="sm"
+                        aria-pressed={checksOnly}
+                        onClick={() =>
+                            router.get(
+                                FulfillmentController.queue.url(),
+                                checksOnly ? {} : { checks: 1 },
+                                { preserveScroll: true, replace: true },
+                            )
+                        }
+                    >
+                        Awaiting check
+                        <span className="figure ml-1 rounded-full bg-card px-1.5 text-xs text-foreground">
+                            {awaitingChecks}
+                        </span>
+                    </Button>
+                    {checksOnly && (
+                        <span className="text-sm text-muted-foreground">
+                            Showing only loads waiting for a sign-off.
+                        </span>
+                    )}
+                </div>
 
                 <div className="flex flex-wrap items-start gap-5">
                     <div className="grid min-w-0 flex-[999_1_640px] grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3.5">
@@ -132,7 +215,9 @@ export default function Queue({
                                     <button
                                         key={card.key}
                                         type="button"
-                                        onClick={() => select(card.key)}
+                                        onClick={() =>
+                                            select(card.key, checksOnly)
+                                        }
                                         aria-pressed={selected === card.key}
                                         className={cn(
                                             'grid gap-1 rounded-lg border bg-card p-3 text-left transition-colors',
@@ -162,8 +247,15 @@ export default function Queue({
                                                     Part shipped
                                                 </Chip>
                                             )}
-                                            {card.source === 'shopify' && (
-                                                <Chip tone="info">Shopify</Chip>
+                                            {card.awaiting_check && (
+                                                <Chip tone="warning">
+                                                    Awaiting check
+                                                </Chip>
+                                            )}
+                                            {card.sent_back && (
+                                                <Chip tone="danger">
+                                                    Sent back
+                                                </Chip>
                                             )}
                                             {card.picker && (
                                                 <span>· {card.picker}</span>
@@ -175,15 +267,21 @@ export default function Queue({
                         ))}
                         {total === 0 && (
                             <p className="col-span-full text-sm text-muted-foreground">
-                                No confirmed orders waiting. Confirmed orders
-                                show up here to pick.
+                                {checksOnly
+                                    ? 'Nothing is waiting for a check.'
+                                    : 'No confirmed orders waiting. Confirmed orders show up here to pick.'}
                             </p>
                         )}
                     </div>
 
                     <aside className="flex min-w-0 flex-[1_1_320px] flex-col gap-4 rounded-[10px] border border-border bg-card p-5 lg:sticky lg:top-4">
                         {detail ? (
-                            <PickPanel detail={detail} pickers={pickers} />
+                            <PickPanel
+                                detail={detail}
+                                pickers={pickers}
+                                stages={stages}
+                                isPicker={auth.can.pick}
+                            />
                         ) : (
                             <p className="text-sm text-muted-foreground">
                                 Pick an order to see its pick list.
@@ -199,22 +297,34 @@ export default function Queue({
 function PickPanel({
     detail,
     pickers,
+    stages,
+    isPicker,
 }: {
     detail: Detail;
     pickers: Props['pickers'];
+    stages: Props['stages'];
+    isPicker: boolean;
 }) {
     const isNew = detail.shipment_id === null;
+    const atYard =
+        detail.shipment_id !== null &&
+        !detail.released &&
+        ['picking', 'picked', 'loaded'].includes(detail.status);
 
     return (
         <>
             <div>
                 <div className="text-xs text-muted-foreground">
-                    <Link
-                        href={OrderController.show(detail.order_id)}
-                        className="figure hover:underline"
-                    >
-                        {detail.number}
-                    </Link>
+                    {isPicker ? (
+                        <span className="figure">{detail.number}</span>
+                    ) : (
+                        <Link
+                            href={OrderController.show(detail.order_id)}
+                            className="figure hover:underline"
+                        >
+                            {detail.number}
+                        </Link>
+                    )}
                     {detail.shipment_number && ` · ${detail.shipment_number}`} ·{' '}
                     {detail.yard}
                 </div>
@@ -235,6 +345,16 @@ function PickPanel({
                     </p>
                 )}
             </div>
+
+            {detail.sent_back && (
+                <div className="rounded-lg bg-danger-soft p-3 text-sm text-danger">
+                    <div className="font-semibold">
+                        Sent back at {detail.sent_back.stage}
+                        {detail.sent_back.by && ` by ${detail.sent_back.by}`}
+                    </div>
+                    {detail.sent_back.reason}
+                </div>
+            )}
 
             <div>
                 <h3 className="mb-2 text-sm font-semibold">Pick list</h3>
@@ -262,6 +382,17 @@ function PickPanel({
                             </div>
                             <div className="figure text-right font-semibold whitespace-nowrap">
                                 {formatQuantity(item.quantity)} {item.unit}
+                                {item.picked_quantity !== null &&
+                                    item.picked_quantity !== undefined &&
+                                    Number(item.picked_quantity) !==
+                                        Number(item.quantity) && (
+                                        <div className="text-xs font-normal text-muted-foreground">
+                                            picked{' '}
+                                            {formatQuantity(
+                                                item.picked_quantity,
+                                            )}
+                                        </div>
+                                    )}
                                 {item.short && (
                                     <div>
                                         <Chip tone="warning">Short</Chip>
@@ -288,7 +419,8 @@ function PickPanel({
                         <dd className="figure">{detail.deposits.label}</dd>
                     </div>
                 )}
-                {detail.zone !== null || detail.delivery_fee_cents > 0 ? (
+                {detail.zone !== null ||
+                (detail.delivery_fee_cents ?? 0) > 0 ? (
                     <div className="flex justify-between">
                         <dt className="text-muted-foreground">Delivery</dt>
                         <dd>
@@ -303,17 +435,21 @@ function PickPanel({
                         </dd>
                     </div>
                 ) : null}
-                <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Payment</dt>
-                    <dd>
-                        {detail.balance_cents > 0
-                            ? detail.settlement === 'account'
-                                ? 'On account'
-                                : `${formatMoney(detail.balance_cents)} to take`
-                            : 'Paid'}
-                    </dd>
-                </div>
+                {detail.balance_cents !== null && (
+                    <div className="flex justify-between">
+                        <dt className="text-muted-foreground">Payment</dt>
+                        <dd>
+                            {detail.balance_cents > 0
+                                ? detail.settlement === 'account'
+                                    ? 'On account'
+                                    : `${formatMoney(detail.balance_cents)} to take`
+                                : 'Paid'}
+                        </dd>
+                    </div>
+                )}
             </dl>
+
+            {detail.check && <CheckForm detail={detail} check={detail.check} />}
 
             {isNew ? (
                 <form
@@ -329,24 +465,50 @@ function PickPanel({
                         );
                     }}
                 >
-                    <NativeSelect
-                        name="picker_id"
-                        aria-label="Picker"
-                        defaultValue=""
-                    >
-                        <option value="">Assign picker later</option>
-                        {pickers.map((p) => (
-                            <option key={p.id} value={p.id}>
-                                {p.name}
-                            </option>
-                        ))}
-                    </NativeSelect>
-                    <Button type="submit">Start picking</Button>
+                    {stages.picking && !isPicker && (
+                        <NativeSelect
+                            name="picker_id"
+                            aria-label="Picker"
+                            defaultValue=""
+                        >
+                            <option value="">Assign picker later</option>
+                            {pickers.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.name}
+                                </option>
+                            ))}
+                        </NativeSelect>
+                    )}
+                    <Button type="submit">
+                        {!stages.picking
+                            ? 'Open pick list'
+                            : isPicker
+                              ? 'Claim and start picking'
+                              : 'Start picking'}
+                    </Button>
                 </form>
             ) : (
                 <div className="grid gap-2">
-                    {detail.status === 'picking' && (
-                        <>
+                    {detail.status === 'picking' &&
+                        stages.picking &&
+                        (isPicker ? (
+                            detail.picker_id === null && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() =>
+                                        router.patch(
+                                            FulfillmentController.assign.url(
+                                                detail.shipment_id!,
+                                            ),
+                                            { picker_id: pickers[0]?.id },
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                >
+                                    Claim this order
+                                </Button>
+                            )
+                        ) : (
                             <NativeSelect
                                 aria-label="Picker"
                                 value={
@@ -371,32 +533,49 @@ function PickPanel({
                                     </option>
                                 ))}
                             </NativeSelect>
-                            <Button asChild>
-                                <Link
-                                    href={FulfillmentController.pick.url(
-                                        detail.shipment_id!,
-                                    )}
-                                >
-                                    Open on picker
-                                </Link>
-                            </Button>
-                        </>
-                    )}
-                    {(detail.status === 'loaded' ||
-                        detail.status === 'out' ||
-                        detail.status === 'ready') && (
+                        ))}
+                    {detail.status === 'picking' && (
                         <Button asChild>
                             <Link
-                                href={DeliveryController.show.url(
+                                href={FulfillmentController.pick.url(
                                     detail.shipment_id!,
                                 )}
                             >
-                                {detail.status === 'ready'
-                                    ? 'Hand over'
-                                    : 'Proof of delivery'}
+                                Open on picker
                             </Link>
                         </Button>
                     )}
+                    {detail.status === 'picked' &&
+                        detail.next_step?.action === 'load' && (
+                            <Button
+                                onClick={() =>
+                                    router.post(
+                                        FulfillmentController.load.url(
+                                            detail.shipment_id!,
+                                        ),
+                                        {},
+                                        { preserveScroll: true },
+                                    )
+                                }
+                            >
+                                {detail.next_step.label}
+                            </Button>
+                        )}
+                    {detail.released &&
+                        ['loaded', 'out', 'ready'].includes(detail.status) &&
+                        !isPicker && (
+                            <Button asChild>
+                                <Link
+                                    href={DeliveryController.show.url(
+                                        detail.shipment_id!,
+                                    )}
+                                >
+                                    {detail.mode === 'Pickup'
+                                        ? 'Hand over'
+                                        : 'Proof of delivery'}
+                                </Link>
+                            </Button>
+                        )}
                     <Button variant="outline" asChild>
                         <a
                             href={FulfillmentController.ticket.url(
@@ -408,9 +587,289 @@ function PickPanel({
                             <Printer /> Print pick ticket
                         </a>
                     </Button>
+                    {atYard && detail.can_cancel && (
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                if (
+                                    confirm(
+                                        'Cancel this pick list? The order goes back to New.',
+                                    )
+                                ) {
+                                    router.post(
+                                        FulfillmentController.cancel.url(
+                                            detail.shipment_id!,
+                                        ),
+                                    );
+                                }
+                            }}
+                        >
+                            Cancel pick list
+                        </Button>
+                    )}
                 </div>
             )}
+
+            {detail.sign_offs.length > 0 && (
+                <SignOffs list={detail.sign_offs} />
+            )}
         </>
+    );
+}
+
+/**
+ * A load waiting at Picked or Loaded: someone allowed to check it signs
+ * off, or sends it back a stage with the reason.
+ */
+function CheckForm({
+    detail,
+    check,
+}: {
+    detail: Detail;
+    check: NonNullable<CheckPanel>;
+}) {
+    const [rejecting, setRejecting] = useState(false);
+    const signOff = useForm<{ notes: string; photo: File | null }>({
+        notes: '',
+        photo: null,
+    });
+    const reject = useForm({ reason: '' });
+
+    return (
+        <section className="grid gap-3 rounded-lg border-2 border-warning bg-warning-soft/40 p-3">
+            <div>
+                <h3 className="text-sm font-semibold">
+                    Awaiting check at {check.label}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                    {check.completed_by
+                        ? `Marked ${check.label.toLowerCase()} by ${check.completed_by}. `
+                        : ''}
+                    Check it against the pick list before it moves on.
+                </p>
+            </div>
+
+            {!check.can_check ? (
+                <p className="text-sm text-muted-foreground">{check.reason}</p>
+            ) : rejecting ? (
+                <form
+                    className="grid gap-2"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        reject.post(
+                            FulfillmentController.reject.url(
+                                detail.shipment_id!,
+                            ),
+                            { preserveScroll: true },
+                        );
+                    }}
+                >
+                    <Field
+                        label="What's wrong?"
+                        htmlFor="reject-reason"
+                        error={reject.errors.reason}
+                    >
+                        <Input
+                            id="reject-reason"
+                            required
+                            value={reject.data.reason}
+                            onChange={(e) =>
+                                reject.setData('reason', e.target.value)
+                            }
+                            placeholder="2 pallets of the wrong colour run"
+                        />
+                    </Field>
+                    <div className="flex gap-2">
+                        <Button
+                            type="submit"
+                            variant="destructive"
+                            disabled={reject.processing}
+                        >
+                            Send back to{' '}
+                            {check.stage === 'loaded' ? 'Picked' : 'Picking'}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => setRejecting(false)}
+                        >
+                            Back
+                        </Button>
+                    </div>
+                </form>
+            ) : (
+                <form
+                    className="grid gap-2"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        signOff.post(
+                            FulfillmentController.signOff.url(
+                                detail.shipment_id!,
+                            ),
+                            { preserveScroll: true, forceFormData: true },
+                        );
+                    }}
+                >
+                    <Field
+                        label="Notes (optional)"
+                        htmlFor="check-notes"
+                        error={signOff.errors.notes}
+                    >
+                        <Input
+                            id="check-notes"
+                            value={signOff.data.notes}
+                            onChange={(e) =>
+                                signOff.setData('notes', e.target.value)
+                            }
+                        />
+                    </Field>
+                    <Field
+                        label="Photo (optional)"
+                        htmlFor="check-photo"
+                        error={signOff.errors.photo}
+                    >
+                        <Input
+                            id="check-photo"
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            onChange={(e) =>
+                                signOff.setData(
+                                    'photo',
+                                    e.target.files?.[0] ?? null,
+                                )
+                            }
+                        />
+                    </Field>
+                    <div className="flex flex-wrap gap-2">
+                        <Button type="submit" disabled={signOff.processing}>
+                            Sign off
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setRejecting(true)}
+                        >
+                            Reject
+                        </Button>
+                    </div>
+                </form>
+            )}
+        </section>
+    );
+}
+
+function SignOffs({ list }: { list: SignOff[] }) {
+    return (
+        <section className="border-t border-border pt-3">
+            <h3 className="mb-2 text-sm font-semibold">Checks</h3>
+            <ul className="grid gap-1.5 text-sm">
+                {list.map((c) => (
+                    <li key={c.id}>
+                        <span
+                            className={cn(
+                                'font-medium',
+                                c.outcome === 'rejected' && 'text-danger',
+                            )}
+                        >
+                            {c.stage}{' '}
+                            {c.outcome === 'signed_off'
+                                ? 'checked'
+                                : 'sent back'}
+                        </span>{' '}
+                        <span className="text-muted-foreground">
+                            by {c.by ?? 'someone'} · {formatDateTime(c.at)}
+                        </span>
+                        {(c.reason || c.notes) && (
+                            <div className="text-muted-foreground">
+                                {c.reason ?? c.notes}
+                            </div>
+                        )}
+                        {c.photo_url && (
+                            <a
+                                href={c.photo_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs underline underline-offset-4"
+                            >
+                                Photo
+                            </a>
+                        )}
+                    </li>
+                ))}
+            </ul>
+        </section>
+    );
+}
+
+/**
+ * Yard tablets are shared: an order picker switches in with their PIN.
+ */
+function SwitchPicker({ pickers }: { pickers: Props['switchable'] }) {
+    const [open, setOpen] = useState(false);
+    const form = useForm({ user_id: String(pickers[0]?.id ?? ''), pin: '' });
+
+    if (!open) {
+        return (
+            <Button variant="outline" onClick={() => setOpen(true)}>
+                <UserRound /> Switch picker
+            </Button>
+        );
+    }
+
+    return (
+        <form
+            className="flex flex-wrap items-end gap-2"
+            onSubmit={(e) => {
+                e.preventDefault();
+                form.post(PickerSwitchController.url(), {
+                    onFinish: () => form.reset('pin'),
+                });
+            }}
+        >
+            <NativeSelect
+                aria-label="Picker"
+                value={form.data.user_id}
+                onChange={(e) => form.setData('user_id', e.target.value)}
+                className="w-auto"
+            >
+                {pickers.map((p) => (
+                    <option key={p.id} value={p.id}>
+                        {p.name}
+                    </option>
+                ))}
+            </NativeSelect>
+            <div className="grid gap-1">
+                <Input
+                    aria-label="PIN"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    type="password"
+                    maxLength={6}
+                    placeholder="PIN"
+                    className="w-24"
+                    value={form.data.pin}
+                    onChange={(e) =>
+                        form.setData('pin', e.target.value.replace(/\D/g, ''))
+                    }
+                />
+                {form.errors.pin && (
+                    <span className="text-xs text-danger">
+                        {form.errors.pin}
+                    </span>
+                )}
+            </div>
+            <Button type="submit" disabled={form.processing}>
+                Switch
+            </Button>
+            <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setOpen(false)}
+            >
+                Cancel
+            </Button>
+        </form>
     );
 }
 

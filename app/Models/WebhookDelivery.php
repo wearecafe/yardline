@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Throwable;
 
 /**
- * One webhook Yardline received from Shopify or Stripe, and what became of
+ * One webhook Yardline received from Stripe, and what became of
  * it. Feeds integration health in the back office. Not tenant-scoped: a
  * delivery may not match any tenant (bad signature, unknown shop).
  *

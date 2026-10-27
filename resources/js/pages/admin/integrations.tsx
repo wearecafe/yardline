@@ -199,7 +199,7 @@ export default function IntegrationHealth({
                 <div className="flex flex-wrap items-start gap-5">
                     <Section
                         title="Webhooks per hour"
-                        description="Shopify and Stripe, all tenants"
+                        description="Stripe, all tenants"
                         className="min-w-0 flex-[1_1_480px]"
                     >
                         <BarChart

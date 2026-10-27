@@ -21,8 +21,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * A rental contract. Rentals live entirely in Yardline (never Shopify), are
- * always prepaid with a deposit, and are invoiced separately from goods.
+ * A rental contract. Rentals are always prepaid with a deposit and are
+ * invoiced separately from goods.
  *
  * @property int $id
  * @property int $tenant_id

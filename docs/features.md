@@ -39,7 +39,7 @@ hand. They give a reason, logged on the order with the price it replaced.
 Each selling unit has a **For sale** switch. A unit switched off still
 converts and can carry prices, but nothing sells in it on its own: order
 entry, the counter and the portal refuse it ("Square foot isn’t sold on its
-own"), and it isn't sent to Shopify. Use it for a base unit that only
+own"). Use it for a base unit that only
 counts stock, like square feet of interlock sold by the layer or the
 pallet. At least one unit has to stay for sale. **Sold in steps of** and
 **Minimum** still apply to the units that are.
@@ -74,27 +74,48 @@ layer (9 sq ft) or the pallet (90 sq ft) and round up.
 
 ## Yard and delivery
 
-| Feature                                                             | Screens                       | Code                                               |
-| ------------------------------------------------------------------- | ----------------------------- | -------------------------------------------------- |
-| Pick queue, picking with 5% tolerance, bins                         | Orders → Queue, yard kiosk    | `StartPicking`, `RecordPick`                       |
-| Loading shipments onto trucks, partial shipments                    | Kiosk                         | `LoadShipment`                                     |
-| Dispatch board: trucks × hours, rental drops and pallet pickups too | Dispatch                      | `Dispatch`, `DispatchController`                   |
-| Delivery pricing by zone, distance or truckload                     | Settings → Delivery           | `DeliveryPricer`, `DeliverySettings`               |
-| ETA texts                                                           | Dispatch                      | `Dispatch::sendEtas`, `EtaMessage`                 |
-| Proof of delivery (signature, photo)                                | Driver app, deliver screen    | `CompleteShipment`                                 |
-| Driver role: own truck's run on their phone, nothing else           | `/driver`, Settings → Drivers | `DriverRun`, `DriverController`, `RestrictDrivers` |
-| Truck locations from drivers' phones (kept 30 days)                 | Driver app, Dispatch          | `DriverRun::locate`, `DriverPing`                  |
-| Contractor tracking: stops before yours, truck map when next        | Portal order page             | `DeliveryTracking`                                 |
+| Feature                                                                  | Screens                         | Code                                               |
+| ------------------------------------------------------------------------ | ------------------------------- | -------------------------------------------------- |
+| Pick queue, picking with 5% tolerance, bins                              | Orders → Queue, yard kiosk      | `StartPicking`, `RecordPick`                       |
+| Loading shipments onto trucks, partial shipments                         | Kiosk                           | `LoadShipment`                                     |
+| Stages on/off (Picking, Picked, Loaded, Out), sign-offs at Picked/Loaded | Settings → Order picking, Queue | `PickingSettings`, `PickingFlow`                   |
+| Order picker role: their yards' queue only, no money, PIN switching      | Queue, Settings → Users         | `RestrictPickers`, `PickerSwitchController`        |
+| Dispatch board: trucks × hours, rental drops and pallet pickups too      | Dispatch                        | `Dispatch`, `DispatchController`                   |
+| Delivery pricing by zone, distance or truckload                          | Settings → Delivery             | `DeliveryPricer`, `DeliverySettings`               |
+| ETA texts                                                                | Dispatch                        | `Dispatch::sendEtas`, `EtaMessage`                 |
+| Proof of delivery (signature, photo)                                     | Driver app, deliver screen      | `CompleteShipment`                                 |
+| Driver role: the day's truck run on their phone, nothing else            | `/driver`, Settings → Drivers   | `DriverRun`, `DriverController`, `RestrictDrivers` |
+| Truck locations from drivers' phones (kept 30 days)                      | Driver app, Dispatch            | `DriverRun::locate`, `DriverPing`                  |
+| Contractor tracking: stops before yours, truck map when next             | Portal order page               | `DeliveryTracking`                                 |
+
+### Order picking stages and checks
+
+`tenants.settings['picking']` (`PickingSettings`) says which of Picking,
+Picked, Loaded and Out for delivery a yard uses (New and Delivered /
+Picked up are always on) and whether a sign-off is required at Picked,
+Loaded or both, by which roles, and whether it must be someone other
+than whoever completed the stage. `PickingFlow` moves a shipment through
+the stages that are on and records each check in `shipment_checks`; a
+shipment waiting for one has `check_stage` set. `LoadShipment::release`
+is where stock leaves and a delivery reaches the dispatch board
+(`shipments.released_at`), so it only runs once every required check is
+signed off. A rejection sends the shipment back a stage with the reason.
+With Loaded off, a released delivery waits as `ready` ("Ready for
+dispatch"); with Out off, `Dispatch::enRoute` leaves the shipment as it
+is.
 
 ### Drivers
 
 Users with the `driver` role are added under Settings → Drivers (an
-emailed link to choose a password), where the owner ticks every truck
-they can drive (`driver_truck`, edited any time with "Edit trucks").
-The one driver who signs in to a truck's run is `trucks.driver_id`: a
-driver takes a ticked truck's run if nobody signs in to it yet, loses it
-when the truck is unticked, and picking a sign-in under Delivery →
-Trucks ticks that truck for them. `RestrictDrivers` keeps them to `driver.*`, the
+emailed link to choose a password) with their phone number, and the
+owner ticks every truck they can drive (`driver_truck`, changed any
+time with "Edit"). Who drives a truck on a day is picked on the dispatch
+board from the drivers ticked for it (`truck_assignments`,
+`DriverRun::assign`); that driver sees the truck's run for that day, and
+unticking a truck drops their days ahead on it. Trucks hold no driver
+details: they carry material, rental equipment or both, with a list of
+capacities in tonnes, cubic yards, cubic metres or pallets
+(`trucks.capacities`). `RestrictDrivers` keeps them to `driver.*`, the
 deliver screen and their own account settings. While `/driver` is open
 on their phone, `useLocationSharing` posts the position about once a
 minute (`driver.locate`); the latest is kept on the truck for the board
@@ -156,6 +177,42 @@ Account contacts sign in at `/portal/{yard}` with an emailed, signed link
 Orders from the portal are drafts with `source = portal`; the counter
 confirms them.
 
+## Time and attendance
+
+An add-on, turned on under Settings → Time (`TimeSettings`, kept in
+`tenants.settings['time']`). Turning it on sets up an `Employee` for
+everyone who signs in; yard hands who only use the counter tablet are
+employees with no user. Rules live in `app/Time`.
+
+| Feature                                                                   | Screens                    | Code                                 |
+| ------------------------------------------------------------------------- | -------------------------- | ------------------------------------ |
+| Punches from the counter tablet (PIN, optional photo), phones, driver app | Team → Time clock, My time | `TimeClock`, `KioskController`       |
+| Phone punches checked against each yard; take-home trucks excused         | Settings → Time            | `Geofence`                           |
+| Punches queued on the phone with no signal, sent with their time          | My time                    | `time-clock-card.tsx`, `device_at`   |
+| Shifts, unpaid breaks, rounding, weekly overtime (ON 44 h, QC 40 h)       | Timesheets                 | `TimesheetCalculator`                |
+| Exceptions: missed clock-out, long shift, no meal, short rest, away…      | Who's in, Timesheets       | `TimesheetCalculator::EXCEPTIONS`    |
+| Corrections with a reason; originals kept; employee emailed, can dispute  | Timesheet, My time         | `PunchCorrections`, `TimeAdjustment` |
+| Pay periods (weekly, biweekly, semi-monthly), approval, lock              | Timesheets                 | `PayPeriods`, `Timesheets`           |
+| Payroll: hours summary CSV, ADP import, QuickBooks time activities        | Timesheets                 | `PayrollExporter`                    |
+
+Punches (`time_punches`) are never edited. A correction writes a
+`time_adjustments` row, marks the punch `superseded_at`, and for an add
+or change writes a new punch with `source = manager`. Hours are worked
+out from the effective punches every time; approving a timesheet
+freezes its totals, and any later punch or correction in an open period
+sends it back. A locked or exported period refuses changes; late fixes
+are hours adjustments in the current period.
+
+A shift belongs to the day it starts. A shift left open for 16 hours
+(`TimeClock::STALE_HOURS`) is a missed clock-out: the next clock-in
+starts a new shift and the old one counts nothing until a manager fixes
+it. Overtime counts over the workweek, so a period that starts mid-week
+counts the days before it.
+
+Drivers reach their own time (`time.self.*`) inside the driver app;
+`manage-time` (owners and admins) covers Who's in, Timesheets,
+Employees and exports. Pay rates aren't stored.
+
 ## Audit log
 
 Models using `App\Audit\Audited` log creates, deletes and changes to the
@@ -166,7 +223,8 @@ order and organization pages show their own history.
 ## Users and roles
 
 Every user belongs to one tenant with one role (`UserRole`): `owner`
-(one per business, created at sign-up), `admin`, `staff` or `driver`.
+(one per business, created at sign-up), `admin`, `staff`, `picker`
+(order picker) or `driver`.
 Owners and admins pass `manage-business` (business settings, credit
 terms and overrides, line prices); only the owner passes `manage-users`.
 The owner adds admins and staff under Settings → Users
@@ -175,10 +233,16 @@ changes and removal, each written to the audit log. The owner, the
 signed-in user and drivers can't be changed there; drivers stay under
 Settings → Drivers.
 
+Order pickers work only the yards ticked for them (`location_user`).
+`RestrictPickers` keeps them to the queue, the picker kiosk, sign-offs
+and their own account; the queue scopes to their yards and leaves out
+prices, payments and balances. On a shared tablet a picker switches in
+with their time-clock PIN (`Employee::checkPin`, via `picker.switch`,
+throttled); only picker accounts can be switched to that way. They keep
+their own time clock (`time.self.*`) and the counter time clock.
+
 ## Integrations
 
-- **Shopify** pushes products (one variant per selling unit for sale) and stock.
-  Order import is not built yet. See [shopify.md](shopify.md).
 - **Stripe** for payments and **Stripe Tax** for tax. See
   [laravel-cloud.md](laravel-cloud.md).
 - **QuickBooks Online** receives invoices, payments, credit memos, refunds
@@ -202,7 +266,7 @@ screens (`KeepStaffInBackOffice`).
 | Tenants            | Every tenant with status, plan, connections, activity and health; set up a new tenant (emails the owner)                    | `Admin\TenantController`                           |
 | Tenant page        | 30-day activity, integrations, yards, users (send a password link), audit log; plan, status, price, modules and staff notes | `Admin\TenantController`                           |
 | Activity reports   | Volume per week, module usage by tenant, engagement and churn risk, retention by signup month                               | `Admin\ReportController`                           |
-| Integration health | Webhooks, Shopify and QuickBooks connections, open issues, failed jobs (retry or clear)                                     | `Admin\IntegrationHealthController`                |
+| Integration health | Webhooks, QuickBooks connections, open issues, failed jobs (retry or clear)                                                 | `Admin\IntegrationHealthController`                |
 
 Figures come from `App\BackOffice\TenantMetrics`, which reads tables
 directly and groups by `tenant_id` (staff have no tenant, so scoped models
@@ -217,7 +281,7 @@ would return nothing). Health and churn risk are in `TenantHealth`.
 - **Activity**: `TrackActivity` notes each user's last visit, the
   tenant's, and one `user_activity_days` row per user per day (weekly
   users, retention), writing at most every five minutes per user.
-- **Webhooks**: every Shopify and Stripe delivery is logged in
+- **Webhooks**: every Stripe delivery is logged in
   `webhook_deliveries` (accepted, ignored, rejected or failed), kept 30
   days.
 - Staff changes to a tenant are written to that tenant's audit log, but

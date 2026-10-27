@@ -54,7 +54,8 @@ class PortalController extends Controller
 
         $coming = Shipment::query()
             ->with(['order:id,number,organization_id,customer_id,delivery_address', 'stop.truck:id,name,has_boom', 'lines'])
-            ->whereIn('status', [ShipmentStatus::Loaded->value, ShipmentStatus::Out->value])
+            ->where(fn ($q) => $q->whereIn('status', [ShipmentStatus::Loaded->value, ShipmentStatus::Out->value])
+                ->orWhere(fn ($q) => $q->where('status', ShipmentStatus::Ready->value)->where('method', 'delivery')))
             ->whereHas('order', fn ($q) => $this->scope($q, $customer))
             ->latest('id')
             ->get()
@@ -69,7 +70,11 @@ class PortalController extends Controller
                     'truck' => $s->stop?->truck ? $s->stop->truck->name : null,
                     'to' => implode(', ', array_filter([$s->order->delivery_address['line1'] ?? null, $s->order->delivery_address['city'] ?? null])),
                     'eta' => $eta?->setTimezone($tz)->format('g:i'),
-                    'status' => $s->status === ShipmentStatus::Out ? 'On its way' : 'Loaded',
+                    'status' => match ($s->status) {
+                        ShipmentStatus::Out => 'On its way',
+                        ShipmentStatus::Ready => 'Ready for its truck',
+                        default => 'Loaded',
+                    },
                     'date' => $s->stop?->date?->toDateString(),
                 ];
             })->values();

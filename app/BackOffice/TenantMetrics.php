@@ -29,7 +29,7 @@ final class TenantMetrics
      * Sales orders confirmed in a window, per tenant.
      *
      * @param  array<int, mixed>|null  $tenantIds
-     * @return array<int, array{orders: int, sales_cents: int, shopify: int}>
+     * @return array<int, array{orders: int, sales_cents: int}>
      */
     public function orders(CarbonImmutable $from, CarbonImmutable $to, ?array $tenantIds = null): array
     {
@@ -41,7 +41,6 @@ final class TenantMetrics
             ->select('tenant_id')
             ->selectRaw('count(*) as orders')
             ->selectRaw('coalesce(sum(subtotal_cents), 0) as sales_cents')
-            ->selectRaw("sum(case when source = 'shopify' then 1 else 0 end) as shopify")
             ->get();
 
         $out = [];
@@ -50,7 +49,6 @@ final class TenantMetrics
             $out[(int) $row->tenant_id] = [
                 'orders' => (int) $row->orders,
                 'sales_cents' => (int) $row->sales_cents,
-                'shopify' => (int) $row->shopify,
             ];
         }
 
@@ -58,10 +56,10 @@ final class TenantMetrics
     }
 
     /**
-     * Orders confirmed per day, split by where they came from.
+     * Orders confirmed per day.
      *
      * @param  array<int, mixed>|null  $tenantIds
-     * @return array<int, array<string, array{shopify: int, other: int}>> tenant => Y-m-d => counts
+     * @return array<int, array<string, int>> tenant => Y-m-d => orders
      */
     public function dailyOrders(CarbonImmutable $from, CarbonImmutable $to, ?array $tenantIds = null): array
     {
@@ -70,8 +68,7 @@ final class TenantMetrics
             ->whereIn('status', self::SOLD)
             ->whereBetween('confirmed_at', [$from, $to])
             ->selectRaw('tenant_id, date(confirmed_at) as day')
-            ->selectRaw("sum(case when source = 'shopify' then 1 else 0 end) as shopify")
-            ->selectRaw("sum(case when source = 'shopify' then 0 else 1 end) as other")
+            ->selectRaw('count(*) as orders')
             ->groupByRaw('tenant_id, date(confirmed_at)')
             ->get();
 
@@ -79,7 +76,7 @@ final class TenantMetrics
 
         foreach ($rows as $row) {
             $day = substr((string) $row->day, 0, 10);
-            $out[(int) $row->tenant_id][$day] = ['shopify' => (int) $row->shopify, 'other' => (int) $row->other];
+            $out[(int) $row->tenant_id][$day] = (int) $row->orders;
         }
 
         return $out;
@@ -199,7 +196,7 @@ final class TenantMetrics
     }
 
     /**
-     * Each tenant's Shopify and QuickBooks connections.
+     * Each tenant's QuickBooks connection.
      *
      * @param  array<int, mixed>|null  $tenantIds
      * @return array<int, array<string, array{status: string, account: string|null, last_synced_at: string|null, last_error: string|null, updated_at: string|null}>>
@@ -283,7 +280,7 @@ final class TenantMetrics
 
     /**
      * How much each tenant used each part of Yardline in a window. A module
-     * a tenant hasn't connected (Shopify, QuickBooks) is left out, so it can
+     * a tenant hasn't connected (QuickBooks) is left out, so it can
      * be shown as off rather than unused.
      *
      * @param  array<int, mixed>|null  $tenantIds
@@ -293,7 +290,6 @@ final class TenantMetrics
     {
         $counts = [
             'inventory' => $this->countBy($this->limit(DB::table('stock_movements'), $tenantIds)->whereBetween('created_at', [$from, $to])),
-            'shopify' => $this->countBy($this->limit(DB::table('orders'), $tenantIds)->where('source', 'shopify')->whereBetween('created_at', [$from, $to])),
             'quickbooks' => $this->countBy($this->limit(DB::table('quickbooks_syncs'), $tenantIds)->where('status', 'synced')->whereBetween('synced_at', [$from, $to])),
             'dispatch' => $this->countBy($this->limit(DB::table('stops'), $tenantIds)->whereBetween('created_at', [$from, $to])),
             'rentals' => $this->countBy($this->limit(DB::table('rentals'), $tenantIds)->whereBetween('created_at', [$from, $to])),
@@ -328,7 +324,7 @@ final class TenantMetrics
 
         // Integrations that aren't connected show as off.
         foreach ($out as $tenantId => $modules) {
-            foreach (['shopify', 'quickbooks'] as $provider) {
+            foreach (['quickbooks'] as $provider) {
                 if (! isset($connected[$tenantId][$provider])) {
                     unset($out[$tenantId][$provider]);
                 }

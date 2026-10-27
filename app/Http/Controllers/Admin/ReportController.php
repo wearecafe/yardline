@@ -112,7 +112,7 @@ class ReportController extends Controller
 
             foreach (array_keys(OverviewController::MODULES) as $module) {
                 $off = in_array($module, $switchable, true) && ! $t->hasModule($module);
-                $connectedOrUsed = ! in_array($module, ['shopify', 'quickbooks'], true) || array_key_exists($module, $usage[$t->id] ?? []);
+                $connectedOrUsed = ! in_array($module, ['quickbooks'], true) || array_key_exists($module, $usage[$t->id] ?? []);
 
                 $cells[] = $off || ! $connectedOrUsed ? null : (int) round(($usage[$t->id][$module] ?? 0) / 4);
             }

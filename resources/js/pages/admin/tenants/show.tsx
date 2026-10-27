@@ -55,7 +55,7 @@ type Props = {
         weekly_users: number;
         users: number;
     };
-    days: { date: string; shopify: number; yardline: number }[];
+    days: { date: string; orders: number }[];
     integrations: {
         name: string;
         state: string;
@@ -389,9 +389,9 @@ export default function ShowTenant({
 
                 <div className="flex flex-wrap items-start gap-5">
                     <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-5">
-                        <Section title="Orders per day, by source">
+                        <Section title="Orders per day">
                             <BarChart
-                                label="Orders per day for the last 30 days, from Shopify and entered in Yardline"
+                                label="Orders per day for the last 30 days"
                                 data={days}
                                 everyNthLabel={7}
                                 xLabel={(d) =>
@@ -405,13 +405,8 @@ export default function ShowTenant({
                                 height={160}
                                 series={[
                                     {
-                                        key: 'shopify',
-                                        label: 'Shopify (POS and online)',
-                                        className: 'bg-foreground',
-                                    },
-                                    {
-                                        key: 'yardline',
-                                        label: 'Entered in Yardline',
+                                        key: 'orders',
+                                        label: 'Orders',
                                         className: 'bg-primary',
                                     },
                                 ]}

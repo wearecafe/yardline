@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
  */
 final class Attention
 {
-    private const PROVIDERS = ['shopify' => 'Shopify', 'quickbooks' => 'QuickBooks', 'stripe' => 'Stripe'];
+    private const PROVIDERS = ['quickbooks' => 'QuickBooks', 'stripe' => 'Stripe'];
 
     public function __construct(private TenantMetrics $metrics) {}
 

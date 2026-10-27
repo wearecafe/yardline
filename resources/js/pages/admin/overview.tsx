@@ -27,7 +27,6 @@ type Props = {
         prior_sales_cents: number;
         orders: number;
         prior_orders: number;
-        shopify_share: number | null;
         rentals_out: number;
     };
     busiest: {
@@ -126,16 +125,8 @@ export default function AdminOverview({
                     <Figure
                         label="Orders, 30 days"
                         value={kpis.orders.toLocaleString('en-CA')}
-                        note={
-                            kpis.shopify_share === null
-                                ? `${formatChange(ordersChange)} vs prior 30 days`
-                                : `${Math.round(kpis.shopify_share * 100)}% from Shopify`
-                        }
-                        noteTone={
-                            kpis.shopify_share === null
-                                ? tone(ordersChange)
-                                : 'muted'
-                        }
+                        note={`${formatChange(ordersChange)} vs prior 30 days`}
+                        noteTone={tone(ordersChange)}
                     />
                     <Figure
                         label="Rentals out now"

@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers\Settings;
 
-use App\Enums\UserRole;
 use App\Fulfillment\DeliverySettings;
 use App\Http\Controllers\Controller;
 use App\Models\DeliveryZone;
 use App\Models\Location;
 use App\Models\Truck;
-use App\Models\User;
 use App\Receivables\ReturnsSettings;
 use App\Support\Money;
 use App\Tenancy\CurrentTenant;
@@ -36,8 +34,8 @@ class DeliverySettingsController extends Controller
                 'postal_prefixes' => implode(', ', $zone->postal_prefixes ?? []),
                 'fee' => number_format($zone->fee_cents / 100, 2, '.', ''),
             ]),
-            'trucks' => Truck::query()->orderBy('position')->orderBy('name')->get(),
-            'drivers' => User::query()->where('tenant_id', CurrentTenant::id())->where('role', UserRole::Driver->value)->orderBy('name')->get(['id', 'name']),
+            'trucks' => Truck::query()->orderBy('position')->orderBy('name')->get(['id', 'name', 'kind', 'capacities', 'has_boom', 'is_active', 'location_id']),
+            'capacityUnits' => collect(Truck::CAPACITY_UNITS)->map(fn ($label, $value) => ['value' => $value, 'label' => $label])->values(),
             'yards' => Location::query()->orderBy('name')->get(['id', 'name', 'pallet_deposits']),
             'returns' => ReturnsSettings::current()->toArray(),
         ]);
@@ -81,8 +79,7 @@ class DeliverySettingsController extends Controller
 
     public function storeTruck(Request $request): RedirectResponse
     {
-        $truck = Truck::query()->create($this->truck($request) + ['position' => (int) Truck::query()->max('position') + 1]);
-        $this->clearSignedInDriver($truck);
+        Truck::query()->create($this->truck($request) + ['position' => (int) Truck::query()->max('position') + 1]);
 
         return back();
     }
@@ -90,7 +87,6 @@ class DeliverySettingsController extends Controller
     public function updateTruck(Request $request, Truck $truck): RedirectResponse
     {
         $truck->update($this->truck($request));
-        $this->clearSignedInDriver($truck);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "{$truck->name} saved."]);
 
@@ -105,35 +101,27 @@ class DeliverySettingsController extends Controller
     }
 
     /**
-     * Whoever signs in to a truck's run is able to drive it, so they're
-     * ticked for it under Settings → Drivers too.
-     */
-    private function clearSignedInDriver(Truck $truck): void
-    {
-        if ($truck->driver_id !== null) {
-            $truck->drivers()->syncWithoutDetaching([$truck->driver_id => ['tenant_id' => $truck->tenant_id]]);
-        }
-    }
-
-    /**
      * @return array<string, mixed>
      */
     private function truck(Request $request): array
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'kind' => ['required', Rule::in(['material', 'equipment'])],
-            'driver_id' => ['nullable', Rule::exists('users', 'id')->where('tenant_id', CurrentTenant::id())->where('role', UserRole::Driver->value)],
-            'driver_name' => ['nullable', 'string', 'max:100'],
-            'driver_phone' => ['nullable', 'string', 'max:30'],
-            'capacity_t' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'kind' => ['required', Rule::in(Truck::KINDS)],
+            'capacities' => ['present', 'array', 'max:'.count(Truck::CAPACITY_UNITS)],
+            'capacities.*.unit' => ['required', 'distinct', Rule::in(array_keys(Truck::CAPACITY_UNITS))],
+            'capacities.*.amount' => ['required', 'numeric', 'gt:0', 'max:9999'],
             'has_boom' => ['boolean'],
             'is_active' => ['boolean'],
             'location_id' => ['nullable', TenantRule::exists('locations')],
+        ], [
+            'capacities.*.unit.distinct' => 'Give each unit once.',
         ]);
 
-        $data['capacity_kg'] = isset($data['capacity_t']) ? (int) round((float) $data['capacity_t'] * 1000) : null;
-        unset($data['capacity_t']);
+        $data['capacities'] = array_values(array_map(
+            fn (array $c) => ['unit' => $c['unit'], 'amount' => (float) $c['amount']],
+            $data['capacities'],
+        ));
 
         return $data;
     }

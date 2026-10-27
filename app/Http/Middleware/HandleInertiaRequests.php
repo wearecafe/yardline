@@ -2,9 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Fulfillment\DriverRun;
 use App\Pricing\PricingSettings;
 use App\Support\Demo;
 use App\Tenancy\CurrentTenant;
+use App\Time\TimeStatus;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -48,18 +50,24 @@ class HandleInertiaRequests extends Middleware
                     'manageUsers' => (bool) $request->user()?->canManageUsers(),
                     'backOffice' => (bool) $request->user()?->isPlatformStaff(),
                     'drive' => (bool) $request->user()?->isDriver(),
+                    // Order pickers only work the order queue.
+                    'pick' => (bool) $request->user()?->isPicker(),
                     // Set a price by hand on a product exempt from price lists.
                     'priceExempt' => (bool) $request->user()?->canManageBusiness()
                         && PricingSettings::current()->canPriceExempt($request->user()),
+                    'manageTime' => (bool) $request->user()?->canManageBusiness(),
                 ],
             ],
+            // Time and attendance: whether it's on, and the signed-in person's clock.
+            'time' => fn () => TimeStatus::forUser($request->user()),
             // Drivers' phones share their position while their run is open.
             'shareLocation' => function () use ($request): bool {
                 $user = $request->user();
 
                 // The demo driver's position is simulated (yardline:demo:drive),
                 // so visitors' real locations are never asked for or kept.
-                return $user !== null && $user->isDriver() && ! Demo::isDemoUser($user) && $user->trucks()->exists();
+                return $user !== null && $user->isDriver() && ! Demo::isDemoUser($user)
+                    && $user->truckAssignments()->where('date', app(DriverRun::class)->today()->toDateString())->exists();
             },
             'tenant' => fn () => CurrentTenant::get()?->only('id', 'name', 'currency'),
             'isDemo' => fn () => Demo::isDemoUser($request->user()),

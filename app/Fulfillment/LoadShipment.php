@@ -2,6 +2,7 @@
 
 namespace App\Fulfillment;
 
+use App\Audit\Audit;
 use App\Enums\OrderStatus;
 use App\Enums\Settlement;
 use App\Enums\ShipmentStatus;
@@ -17,8 +18,12 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * The load is on the truck (delivery) or set out at the yard (pickup).
- * Stock leaves now, by what was actually picked; anything short stays
- * open on the order for another shipment.
+ *
+ * Marking it loaded goes through the yard's stages: from Picking it passes
+ * through Picked, and if the business checks loads it waits at Loaded for
+ * a sign-off. Once nothing is left to check it's released: stock leaves
+ * by what was actually picked, anything short stays open on the order
+ * for another shipment, and a delivery goes to the dispatch board.
  */
 class LoadShipment
 {
@@ -26,17 +31,64 @@ class LoadShipment
 
     public function handle(Shipment $shipment, User $user): Shipment
     {
-        $order = $shipment->order;
+        $settings = PickingSettings::current();
 
-        if ($shipment->status !== ShipmentStatus::Picking) {
+        if ($shipment->isReleased() || $shipment->status->isDone() || $shipment->status === ShipmentStatus::Loaded) {
             OrderRules::fail('This load has already gone.');
         }
 
-        if ($order->settlement === Settlement::Prepaid && $order->balanceCents() > 0) {
-            OrderRules::fail('Take payment before releasing this order.');
+        if ($shipment->awaitingCheck()) {
+            OrderRules::fail('This load is waiting for a quality check.');
         }
 
-        return DB::transaction(function () use ($shipment, $order, $user) {
+        // Straight from Picking means Picked is done too, unless it has to be checked.
+        if ($shipment->status === ShipmentStatus::Picking && $settings->requiresCheck('picked')) {
+            OrderRules::fail('Mark it picked first so it can be checked.');
+        }
+
+        $this->ensurePaid($shipment);
+
+        return DB::transaction(function () use ($shipment, $user, $settings) {
+            if ($shipment->status === ShipmentStatus::Picking) {
+                $shipment->forceFill(['picked_at' => now(), 'picked_by' => $user->id]);
+            }
+
+            $shipment->forceFill([
+                'loaded_at' => now(),
+                'loaded_by' => $user->id,
+                'picker_id' => $shipment->picker_id ?? $user->id,
+            ]);
+
+            if ($settings->requiresCheck('loaded')) {
+                $shipment->forceFill(['status' => ShipmentStatus::Loaded, 'check_stage' => 'loaded'])->save();
+                Audit::record($shipment, 'loaded', note: 'Waiting for a quality check.');
+
+                return $shipment;
+            }
+
+            Audit::record($shipment, 'loaded');
+
+            return $this->release($shipment, $user);
+        });
+    }
+
+    /**
+     * Stock leaves the yard's books and the load goes to dispatch (or waits
+     * for the customer). Called once every stage the business checks has
+     * been signed off.
+     */
+    public function release(Shipment $shipment, User $user): Shipment
+    {
+        $order = $shipment->order;
+
+        if ($shipment->isReleased()) {
+            OrderRules::fail('This load has already gone.');
+        }
+
+        $this->ensurePaid($shipment);
+        $loadedStage = PickingSettings::current()->stageOn('loaded');
+
+        return DB::transaction(function () use ($shipment, $order, $user, $loadedStage) {
             $shipment->load('lines.orderLine.product', 'lines.orderLine.productUnit', 'lines.lot');
             $weight = 0.0;
 
@@ -66,10 +118,14 @@ class LoadShipment
 
             app(PalletLedger::class)->shipped($shipment, $user);
 
+            // With the Loaded stage off, a delivery waits for its truck as
+            // "ready for dispatch" rather than "loaded".
             $shipment->forceFill([
-                'status' => $shipment->isDelivery() ? ShipmentStatus::Loaded : ShipmentStatus::Ready,
+                'status' => $shipment->isDelivery() && $loadedStage ? ShipmentStatus::Loaded : ShipmentStatus::Ready,
+                'check_stage' => null,
                 'picked_at' => $shipment->picked_at ?? now(),
-                'loaded_at' => now(),
+                'loaded_at' => $shipment->loaded_at ?? now(),
+                'released_at' => now(),
                 'weight_kg' => round($weight, 1),
                 'picker_id' => $shipment->picker_id ?? $user->id,
             ])->save();
@@ -102,5 +158,14 @@ class LoadShipment
 
             return $shipment;
         });
+    }
+
+    private function ensurePaid(Shipment $shipment): void
+    {
+        $order = $shipment->order;
+
+        if ($order->settlement === Settlement::Prepaid && $order->balanceCents() > 0) {
+            OrderRules::fail('Take payment before releasing this order.');
+        }
     }
 }

@@ -20,11 +20,11 @@ use Inertia\Response;
 
 /**
  * Whether Yardline's connections are working, across every tenant:
- * webhooks from Shopify and Stripe, QuickBooks syncs and background jobs.
+ * webhooks from Stripe, QuickBooks syncs and background jobs.
  */
 class IntegrationHealthController extends Controller
 {
-    private const PROVIDERS = ['shopify' => 'Shopify', 'quickbooks' => 'QuickBooks Online', 'stripe' => 'Stripe'];
+    private const PROVIDERS = ['quickbooks' => 'QuickBooks Online', 'stripe' => 'Stripe'];
 
     public function index(TenantMetrics $metrics): Response
     {
@@ -47,7 +47,7 @@ class IntegrationHealthController extends Controller
         $backlog = $metrics->quickBooksBacklog();
         $failedJobs = DB::table('failed_jobs')->count();
 
-        $connections = ['shopify' => [0, 0], 'quickbooks' => [0, 0]];
+        $connections = ['quickbooks' => [0, 0]];
 
         foreach ($integrations as $providers) {
             foreach ($providers as $provider => $integration) {
@@ -63,14 +63,7 @@ class IntegrationHealthController extends Controller
 
         return Inertia::render('admin/integrations', [
             'services' => [
-                $this->webhookService('Shopify webhooks', $webhooks['shopify'] ?? []),
                 $this->webhookService('Stripe webhooks', $webhooks['stripe'] ?? []),
-                [
-                    'name' => 'Shopify stores',
-                    'value' => (string) $connections['shopify'][0],
-                    'detail' => $connections['shopify'][1] > 0 ? "{$connections['shopify'][1]} with an error" : 'All connected',
-                    'tone' => $connections['shopify'][1] > 0 ? 'danger' : 'success',
-                ],
                 [
                     'name' => 'QuickBooks sync',
                     'value' => (string) $qbWaiting,

@@ -13,8 +13,7 @@ use Inertia\Response;
 
 /**
  * Rental money: what's been taken, deposits on hold, and what's owing.
- * Rental revenue is invoiced separately from goods and never goes through
- * Shopify.
+ * Rental revenue is invoiced separately from goods.
  */
 class RentalPaymentController extends Controller
 {

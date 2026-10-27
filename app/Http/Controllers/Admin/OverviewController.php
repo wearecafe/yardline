@@ -22,7 +22,6 @@ class OverviewController extends Controller
     public const MODULES = [
         'inventory' => 'Inventory and stock',
         'quickbooks' => 'QuickBooks Online sync',
-        'shopify' => 'Shopify sync',
         'dispatch' => 'Dispatch and delivery',
         'rentals' => 'Equipment rentals',
         'counter' => 'Counter sales screen',
@@ -56,7 +55,6 @@ class OverviewController extends Controller
                 'prior_sales_cents' => $sum($prior, 'sales_cents'),
                 'orders' => $ordersNow,
                 'prior_orders' => $sum($prior, 'orders'),
-                'shopify_share' => $ordersNow > 0 ? $sum($orders, 'shopify') / $ordersNow : null,
                 'rentals_out' => array_sum($metrics->rentalsOut()),
             ],
             'busiest' => $this->busiest($metrics, $live->all(), $orders, $prior, $now),
@@ -70,8 +68,8 @@ class OverviewController extends Controller
      * The ten live tenants with the most orders in the last 30 days.
      *
      * @param  array<int, Tenant>  $live
-     * @param  array<int, array{orders: int, sales_cents: int, shopify: int}>  $orders
-     * @param  array<int, array{orders: int, sales_cents: int, shopify: int}>  $prior
+     * @param  array<int, array{orders: int, sales_cents: int}>  $orders
+     * @param  array<int, array{orders: int, sales_cents: int}>  $prior
      * @return list<array<string, mixed>>
      */
     private function busiest(TenantMetrics $metrics, array $live, array $orders, array $prior, CarbonImmutable $now): array
@@ -96,7 +94,7 @@ class OverviewController extends Controller
 
             for ($i = 13; $i >= 0; $i--) {
                 $day = $now->subDays($i)->toDateString();
-                $spark[] = ($daily[$t->id][$day]['shopify'] ?? 0) + ($daily[$t->id][$day]['other'] ?? 0);
+                $spark[] = $daily[$t->id][$day] ?? 0;
             }
 
             return [

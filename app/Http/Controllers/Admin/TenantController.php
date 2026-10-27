@@ -41,7 +41,7 @@ class TenantController extends Controller
             'status' => ['nullable', Rule::enum(TenantStatus::class)],
             'search' => ['nullable', 'string', 'max:100'],
             'plan' => ['nullable', 'string', 'max:40'],
-            'connection' => ['nullable', Rule::in(['shopify', 'standalone', 'quickbooks', 'errors'])],
+            'connection' => ['nullable', Rule::in(['quickbooks', 'errors'])],
         ]);
 
         $query = Tenant::query()
@@ -51,16 +51,13 @@ class TenantController extends Controller
                 $q->where(fn (Builder $q) => $q
                     ->whereRaw('lower(name) like ?', [$like])
                     ->orWhereRaw('lower(slug) like ?', [$like])
-                    ->orWhereIn('id', User::query()->whereRaw('lower(email) like ?', [$like])->whereNotNull('tenant_id')->select('tenant_id'))
-                    ->orWhereIn('id', DB::table('integrations')->whereRaw('lower(external_account) like ?', [$like])->select('tenant_id')));
+                    ->orWhereIn('id', User::query()->whereRaw('lower(email) like ?', [$like])->whereNotNull('tenant_id')->select('tenant_id')));
             })
             ->when($filters['plan'] ?? null, fn (Builder $q, $plan) => $q->where('plan', $plan))
             ->when($filters['connection'] ?? null, function (Builder $q, $connection) {
                 $integrations = DB::table('integrations')->select('tenant_id');
 
                 match ($connection) {
-                    'shopify' => $q->whereIn('id', $integrations->where('provider', IntegrationProvider::Shopify->value)),
-                    'standalone' => $q->whereNotIn('id', $integrations->where('provider', IntegrationProvider::Shopify->value)),
                     'quickbooks' => $q->whereIn('id', $integrations->where('provider', IntegrationProvider::QuickBooks->value)),
                     'errors' => $q->where(fn (Builder $q) => $q
                         ->whereIn('id', DB::table('integrations')->where('status', IntegrationStatus::Error->value)->select('tenant_id'))
@@ -197,8 +194,8 @@ class TenantController extends Controller
         $now = CarbonImmutable::now();
         $ids = [$tenant->id];
 
-        $orders = $metrics->orders($now->subDays(30), $now, $ids)[$tenant->id] ?? ['orders' => 0, 'sales_cents' => 0, 'shopify' => 0];
-        $prior = $metrics->orders($now->subDays(60), $now->subDays(30), $ids)[$tenant->id] ?? ['orders' => 0, 'sales_cents' => 0, 'shopify' => 0];
+        $orders = $metrics->orders($now->subDays(30), $now, $ids)[$tenant->id] ?? ['orders' => 0, 'sales_cents' => 0];
+        $prior = $metrics->orders($now->subDays(60), $now->subDays(30), $ids)[$tenant->id] ?? ['orders' => 0, 'sales_cents' => 0];
         $daily = $metrics->dailyOrders($now->subDays(29)->startOfDay(), $now, $ids)[$tenant->id] ?? [];
         $integrations = $metrics->integrations($ids)[$tenant->id] ?? [];
         $quickBooks = $metrics->quickBooksBacklog($ids)[$tenant->id] ?? null;
@@ -211,8 +208,7 @@ class TenantController extends Controller
             $day = $now->subDays($i);
             $days[] = [
                 'date' => $day->toDateString(),
-                'shopify' => $daily[$day->toDateString()]['shopify'] ?? 0,
-                'yardline' => $daily[$day->toDateString()]['other'] ?? 0,
+                'orders' => $daily[$day->toDateString()] ?? 0,
             ];
         }
 
@@ -399,10 +395,6 @@ class TenantController extends Controller
     {
         $out = [];
 
-        if (isset($integrations['shopify'])) {
-            $out[] = ['code' => 'SH', 'label' => 'Shopify', 'ok' => $integrations['shopify']['status'] !== IntegrationStatus::Error->value];
-        }
-
         if ($stripeAccount !== null) {
             $out[] = ['code' => 'ST', 'label' => 'Stripe', 'ok' => true];
         }
@@ -430,25 +422,15 @@ class TenantController extends Controller
         };
         $synced = fn (?string $at): string => $at === null ? 'Not synced yet' : 'Last synced '.CarbonImmutable::parse($at)->diffForHumans();
 
-        $shopify = $integrations['shopify'] ?? null;
         $received = (int) ($webhooks[WebhookDelivery::ACCEPTED] ?? 0) + (int) ($webhooks[WebhookDelivery::IGNORED] ?? 0);
         $failed = (int) ($webhooks[WebhookDelivery::FAILED] ?? 0);
 
-        if ($shopify === null) {
-            $cards[] = ['name' => 'Shopify', 'state' => 'Not connected', 'tone' => 'neutral', 'lines' => ['Running on Yardline’s own orders and checkout.']];
-        } else {
-            [$label, $tone] = $state($shopify['status']);
-            $cards[] = ['name' => 'Shopify', 'state' => $label, 'tone' => $tone, 'lines' => array_values(array_filter([
-                $shopify['account'],
-                $synced($shopify['last_synced_at']),
-                "{$received} webhooks received, {$failed} failed (7 days)",
-                $shopify['last_error'],
-            ]))];
-        }
-
         $cards[] = $tenant->stripe_account_id === null
             ? ['name' => 'Stripe', 'state' => 'Not connected', 'tone' => 'neutral', 'lines' => ['No Stripe account linked for card payments.']]
-            : ['name' => 'Stripe', 'state' => 'Connected', 'tone' => 'success', 'lines' => [$tenant->stripe_account_id]];
+            : ['name' => 'Stripe', 'state' => $failed > 0 ? 'Webhooks failing' : 'Connected', 'tone' => $failed > 0 ? 'warning' : 'success', 'lines' => [
+                $tenant->stripe_account_id,
+                "{$received} webhooks received, {$failed} failed (7 days)",
+            ]];
 
         $qbo = $integrations['quickbooks'] ?? null;
 
