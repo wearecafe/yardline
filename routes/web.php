@@ -165,6 +165,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('dispatch', [DispatchController::class, 'board'])->name('dispatch.board');
     Route::post('dispatch/etas', [DispatchController::class, 'etas'])->name('dispatch.etas');
+    Route::put('dispatch/trucks/{truck}/driver', [DispatchController::class, 'assignDriver'])->name('dispatch.driver');
     Route::patch('stops/{stop}', [DispatchController::class, 'schedule'])->name('stops.schedule');
     Route::post('stops/{stop}/en-route', [DispatchController::class, 'enRoute'])->name('stops.en-route');
     Route::post('stops/{stop}/done', [DispatchController::class, 'done'])->name('stops.done');

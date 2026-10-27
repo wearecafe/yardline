@@ -7,20 +7,19 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
+ * A truck on the dispatch board. Who drives it is picked per day
+ * (TruckAssignment), from the drivers able to drive it.
+ *
  * @property int $id
  * @property int $tenant_id
  * @property int|null $location_id
  * @property string $name
- * @property string $kind material | equipment
- * @property int|null $driver_id the driver who signs in to this truck's run
- * @property string|null $driver_name
- * @property string|null $driver_phone
- * @property int|null $capacity_kg
+ * @property string $kind material | equipment | both
+ * @property list<array{unit: string, amount: float|int|string}>|null $capacities
  * @property bool $has_boom
  * @property bool $is_active
  * @property int $position
@@ -28,13 +27,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $last_longitude
  * @property int|null $last_accuracy_m
  * @property CarbonImmutable|null $last_located_at
- * @property-read User|null $driver
  * @property-read Collection<int, User> $drivers
+ * @property-read Collection<int, TruckAssignment> $assignments
  */
-#[Fillable(['location_id', 'name', 'kind', 'driver_id', 'driver_name', 'driver_phone', 'capacity_kg', 'has_boom', 'is_active', 'position'])]
+#[Fillable(['location_id', 'name', 'kind', 'capacities', 'has_boom', 'is_active', 'position'])]
 class Truck extends Model
 {
     use BelongsToTenant;
+
+    /** What a truck carries. */
+    public const KINDS = ['material', 'equipment', 'both'];
+
+    /** Units a truck's capacity can be given in, with their short label. */
+    public const CAPACITY_UNITS = [
+        't' => 't',
+        'yd3' => 'cu yd',
+        'm3' => 'm³',
+        'pallet' => 'pallets',
+    ];
 
     /**
      * @var array<string, mixed>
@@ -49,24 +59,15 @@ class Truck extends Model
     protected function casts(): array
     {
         return [
-            'capacity_kg' => 'integer',
+            'capacities' => 'array',
             'has_boom' => 'boolean',
             'is_active' => 'boolean',
             'position' => 'integer',
-            'driver_id' => 'integer',
             'last_latitude' => 'decimal:7',
             'last_longitude' => 'decimal:7',
             'last_accuracy_m' => 'integer',
             'last_located_at' => 'immutable_datetime',
         ];
-    }
-
-    /**
-     * @return BelongsTo<User, $this>
-     */
-    public function driver(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'driver_id');
     }
 
     /**
@@ -82,11 +83,13 @@ class Truck extends Model
     }
 
     /**
-     * The signed-in driver's name, or the name typed on the truck.
+     * Who drives this truck, day by day.
+     *
+     * @return HasMany<TruckAssignment, $this>
      */
-    public function driverLabel(): ?string
+    public function assignments(): HasMany
     {
-        return $this->driver->name ?? $this->driver_name;
+        return $this->hasMany(TruckAssignment::class);
     }
 
     /**
@@ -116,12 +119,24 @@ class Truck extends Model
         return $this->hasMany(Stop::class);
     }
 
+    /**
+     * "14 t · 12 cu yd · boom", for the board.
+     */
     public function capacityLabel(): string
     {
+        $capacities = array_map(
+            fn (array $c) => rtrim(rtrim(number_format((float) $c['amount'], 2), '0'), '.').' '.(self::CAPACITY_UNITS[$c['unit']] ?? $c['unit']),
+            $this->capacities ?? [],
+        );
+
         $parts = array_filter([
-            $this->capacity_kg ? rtrim(rtrim(number_format($this->capacity_kg / 1000, 1), '0'), '.').' t' : null,
+            ...$capacities,
             $this->has_boom ? 'boom' : null,
-            $this->kind === 'equipment' ? 'Rental moves' : null,
+            match ($this->kind) {
+                'equipment' => 'Rental moves',
+                'both' => 'Material and rentals',
+                default => null,
+            },
         ]);
 
         return implode(' · ', $parts);

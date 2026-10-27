@@ -38,6 +38,8 @@ class ResetDemoYard extends Command
         'invoices',
         'stops',
         'driver_pings',
+        'truck_assignments',
+        'driver_truck',
         'shipment_lines',
         'shipments',
         'trucks',

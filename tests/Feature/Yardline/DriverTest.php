@@ -78,8 +78,11 @@ class DriverTest extends TestCase
         app(InventoryLedger::class)->record($this->sand, $this->yard, 500, StockMovementType::Receipt);
 
         $this->driver = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Driver, 'name' => 'Sam Rinaldi']);
-        $this->truck2 = Truck::query()->create(['name' => 'Truck 2 · boom', 'driver_id' => $this->driver->id, 'position' => 1]);
-        $this->truck3 = Truck::query()->create(['name' => 'Truck 3', 'driver_name' => 'Luis Moreno', 'position' => 2]);
+        $this->truck2 = Truck::query()->create(['name' => 'Truck 2 · boom', 'position' => 1]);
+        $this->truck3 = Truck::query()->create(['name' => 'Truck 3', 'position' => 2]);
+        // Sam can drive Truck 2, and dispatch has him on it today.
+        $this->truck2->drivers()->attach($this->driver->id, ['tenant_id' => $this->tenant->id]);
+        app(DriverRun::class)->assign($this->truck2, now()->toDateString(), $this->driver);
     }
 
     /**
@@ -245,21 +248,21 @@ class DriverTest extends TestCase
     {
         Notification::fake();
 
-        $this->post(route('drivers.store'), ['name' => 'Dave Kowalchuk', 'email' => 'dave@example.com', 'truck_ids' => [$this->truck3->id]])->assertSessionHasNoErrors();
+        $this->post(route('drivers.store'), ['name' => 'Dave Kowalchuk', 'email' => 'dave@example.com', 'phone' => '905-555-0170', 'truck_ids' => [$this->truck3->id]])->assertSessionHasNoErrors();
 
         $dave = User::query()->where('email', 'dave@example.com')->firstOrFail();
         $this->assertSame(UserRole::Driver, $dave->role);
         $this->assertSame($this->tenant->id, $dave->tenant_id);
+        $this->assertSame('905-555-0170', $dave->phone);
         $this->assertNull($dave->email_verified_at);
-        $this->assertSame($dave->id, $this->truck3->refresh()->driver_id);
         Notification::assertSentTo($dave, DriverInviteMessage::class);
 
         $this->get(route('drivers.index'))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('settings/drivers')
             ->has('drivers', 2)
             ->where('drivers.0.name', 'Dave Kowalchuk')
+            ->where('drivers.0.phone', '905-555-0170')
             ->where('drivers.0.truck_ids', [$this->truck3->id])
-            ->where('drivers.0.signs_in_to', [$this->truck3->id])
             ->has('trucks', 2));
 
         // Choosing a password from the link verifies their email.
@@ -268,15 +271,12 @@ class DriverTest extends TestCase
         $this->post(route('password.update'), ['token' => $token, 'email' => 'dave@example.com', 'password' => 'a-Strong-pass-42!', 'password_confirmation' => 'a-Strong-pass-42!'])->assertSessionHasNoErrors();
         $this->assertNotNull($dave->refresh()->email_verified_at);
 
-        // Trucks can point at a driver's sign-in, but only a driver's.
+        // Removing a driver takes them off the board too.
         $this->actingAs($this->owner);
-        $this->put(route('trucks.update', $this->truck2), ['name' => 'Truck 2 · boom', 'kind' => 'material', 'driver_id' => $this->owner->id])->assertSessionHasErrors('driver_id');
-        $this->put(route('trucks.update', $this->truck2), ['name' => 'Truck 2 · boom', 'kind' => 'material', 'driver_id' => $dave->id])->assertSessionHasNoErrors();
-        $this->assertSame($dave->id, $this->truck2->refresh()->driver_id);
-
+        $this->put(route('dispatch.driver', $this->truck3), ['date' => now()->toDateString(), 'user_id' => $dave->id])->assertSessionHasNoErrors();
         $this->delete(route('drivers.destroy', $dave))->assertRedirect();
         $this->assertDatabaseMissing('users', ['id' => $dave->id]);
-        $this->assertNull($this->truck2->refresh()->driver_id);
+        $this->assertDatabaseMissing('truck_assignments', ['user_id' => $dave->id]);
 
         // Not someone who isn't a driver.
         $this->delete(route('drivers.destroy', $this->owner))->assertNotFound();
@@ -287,30 +287,30 @@ class DriverTest extends TestCase
         $this->get(route('drivers.index'))->assertForbidden();
     }
 
-    public function test_owners_pick_every_truck_a_driver_can_drive(): void
+    public function test_owners_edit_a_drivers_phone_and_trucks(): void
     {
         Notification::fake();
         $this->actingAs($this->owner);
 
-        // Cleared for both trucks: Sam keeps signing in to Truck 2, and
-        // Dave takes Truck 3, which nobody signed in to.
         $this->post(route('drivers.store'), ['name' => 'Dave Kowalchuk', 'email' => 'dave@example.com', 'truck_ids' => [$this->truck2->id, $this->truck3->id]])
             ->assertSessionHasNoErrors();
         $dave = User::query()->where('email', 'dave@example.com')->firstOrFail();
+        $this->assertNull($dave->phone);
         $this->assertEqualsCanonicalizing([$this->truck2->id, $this->truck3->id], $dave->drivableTrucks()->pluck('trucks.id')->all());
-        $this->assertSame($this->driver->id, $this->truck2->refresh()->driver_id);
-        $this->assertSame($dave->id, $this->truck3->refresh()->driver_id);
         $this->assertDatabaseHas('driver_truck', ['user_id' => $dave->id, 'truck_id' => $this->truck3->id, 'tenant_id' => $this->tenant->id]);
 
-        // No longer cleared for Truck 3: he stops signing in to its run.
-        $this->put(route('drivers.update', $dave), ['truck_ids' => [$this->truck2->id]])->assertSessionHasNoErrors();
+        // On Truck 3 tomorrow; no longer able to drive it, so that day goes back to dispatch.
+        $tomorrow = now()->addDay()->toDateString();
+        $this->put(route('dispatch.driver', $this->truck3), ['date' => $tomorrow, 'user_id' => $dave->id])->assertSessionHasNoErrors();
+        $this->put(route('drivers.update', $dave), ['phone' => '905-555-0170', 'truck_ids' => [$this->truck2->id]])->assertSessionHasNoErrors();
+        $this->assertSame('905-555-0170', $dave->refresh()->phone);
         $this->assertSame([$this->truck2->id], $dave->drivableTrucks()->pluck('trucks.id')->all());
-        $this->assertNull($this->truck3->refresh()->driver_id);
-        $this->assertSame($this->driver->id, $this->truck2->refresh()->driver_id);
+        $this->assertDatabaseMissing('truck_assignments', ['user_id' => $dave->id]);
 
         // Nothing ticked is fine; the list itself is required.
         $this->put(route('drivers.update', $dave), ['truck_ids' => []])->assertSessionHasNoErrors();
         $this->assertSame(0, $dave->drivableTrucks()->count());
+        $this->assertNull($dave->refresh()->phone);
         $this->put(route('drivers.update', $dave), [])->assertSessionHasErrors('truck_ids');
 
         // Only this business's trucks, and only drivers.
@@ -319,15 +319,74 @@ class DriverTest extends TestCase
         $theirs->save();
         $this->put(route('drivers.update', $dave), ['truck_ids' => [$theirs->id]])->assertSessionHasErrors('truck_ids.0');
         $this->put(route('drivers.update', $this->owner), ['truck_ids' => []])->assertNotFound();
+    }
 
-        // Picking who signs in to a truck clears them to drive it.
-        $this->put(route('trucks.update', $this->truck3), ['name' => 'Truck 3', 'kind' => 'material', 'driver_id' => $dave->id])->assertSessionHasNoErrors();
-        $this->assertSame([$this->truck3->id], $dave->drivableTrucks()->pluck('trucks.id')->all());
+    public function test_dispatch_picks_who_drives_each_truck_each_day(): void
+    {
+        $dave = User::factory()->create(['tenant_id' => $this->tenant->id, 'role' => UserRole::Driver, 'name' => 'Dave Kowalchuk', 'phone' => '905-555-0170']);
+        $dave->setDrivableTrucks([$this->truck3->id]);
+        $today = now()->toDateString();
+        $tomorrow = now()->addDay()->toDateString();
+        $theirs = $this->loadedStop($this->truck3, '10:00', '18 Ridgeview Dr');
 
-        $this->get(route('drivers.index'))->assertInertia(fn (Assert $page) => $page
-            ->where('drivers.0.name', 'Dave Kowalchuk')
-            ->where('drivers.0.truck_ids', [$this->truck3->id])
-            ->where('drivers.0.signs_in_to', [$this->truck3->id]));
+        $this->actingAs($this->owner);
+
+        // Only drivers ticked for the truck.
+        $this->put(route('dispatch.driver', $this->truck3), ['date' => $today, 'user_id' => $this->driver->id])->assertSessionHasErrors('user_id');
+        $this->put(route('dispatch.driver', $this->truck3), ['date' => $today, 'user_id' => $dave->id])->assertSessionHasNoErrors();
+
+        $this->get(route('dispatch.board'))->assertInertia(fn (Assert $page) => $page
+            ->where('trucks.0.name', 'Truck 2 · boom')
+            ->where('trucks.0.driver.name', 'Sam Rinaldi')
+            ->where('trucks.1.driver.name', 'Dave Kowalchuk')
+            ->where('trucks.1.driver.phone', '905-555-0170')
+            ->where('trucks.1.drivers.0.name', 'Dave Kowalchuk'));
+        $this->get(route('dispatch.board', ['date' => $tomorrow]))->assertInertia(fn (Assert $page) => $page
+            ->where('trucks.0.driver', null)
+            ->where('trucks.1.driver', null));
+
+        // Dave sees Truck 3's run today, and nothing tomorrow.
+        $this->actingAs($dave);
+        $this->get(route('driver.today'))->assertInertia(fn (Assert $page) => $page->has('trucks', 1)->where('stops.0.id', $theirs->id));
+        $this->get(route('driver.today', ['date' => $tomorrow]))->assertInertia(fn (Assert $page) => $page->has('trucks', 0));
+        $this->get(route('driver.stops.show', $theirs))->assertOk();
+
+        // Taken off the truck: the run goes with it.
+        $this->actingAs($this->owner);
+        $this->put(route('dispatch.driver', $this->truck3), ['date' => $today, 'user_id' => null])->assertSessionHasNoErrors();
+        $this->actingAs($dave);
+        $this->get(route('driver.today'))->assertInertia(fn (Assert $page) => $page->has('trucks', 0)->has('stops', 0)->where('shareLocation', false));
+        $this->get(route('driver.stops.show', $theirs))->assertNotFound();
+    }
+
+    public function test_trucks_carry_material_rentals_or_both_with_several_capacities(): void
+    {
+        $this->actingAs($this->owner);
+
+        $this->post(route('trucks.store'), [
+            'name' => 'Truck 4 · tandem',
+            'kind' => 'both',
+            'capacities' => [['unit' => 't', 'amount' => '14'], ['unit' => 'yd3', 'amount' => '12.5'], ['unit' => 'pallet', 'amount' => '8']],
+            'has_boom' => true,
+        ])->assertSessionHasNoErrors();
+
+        $truck = Truck::query()->where('name', 'Truck 4 · tandem')->firstOrFail();
+        $this->assertSame('both', $truck->kind);
+        $this->assertEquals([['unit' => 't', 'amount' => 14.0], ['unit' => 'yd3', 'amount' => 12.5], ['unit' => 'pallet', 'amount' => 8.0]], $truck->capacities);
+        $this->assertSame('14 t · 12.5 cu yd · 8 pallets · boom · Material and rentals', $truck->capacityLabel());
+
+        // A unit once each, real amounts, known units and kinds.
+        $base = ['name' => 'Truck 4 · tandem', 'kind' => 'material'];
+        $this->put(route('trucks.update', $truck), $base + ['capacities' => [['unit' => 't', 'amount' => 14], ['unit' => 't', 'amount' => 10]]])->assertSessionHasErrors('capacities.1.unit');
+        $this->put(route('trucks.update', $truck), $base + ['capacities' => [['unit' => 'm3', 'amount' => 0]]])->assertSessionHasErrors('capacities.0.amount');
+        $this->put(route('trucks.update', $truck), $base + ['capacities' => [['unit' => 'kg', 'amount' => 1]]])->assertSessionHasErrors('capacities.0.unit');
+        $this->put(route('trucks.update', $truck), ['name' => 'Truck 4', 'kind' => 'boats', 'capacities' => []])->assertSessionHasErrors('kind');
+
+        // Volume in cubic metres; no capacity at all is fine too.
+        $this->put(route('trucks.update', $truck), $base + ['capacities' => [['unit' => 'm3', 'amount' => '9']]])->assertSessionHasNoErrors();
+        $this->assertSame('9 m³ · boom', $truck->refresh()->capacityLabel());
+        $this->put(route('trucks.update', $truck), $base + ['capacities' => [], 'has_boom' => false])->assertSessionHasNoErrors();
+        $this->assertSame('', $truck->refresh()->capacityLabel());
     }
 
     public function test_contractors_see_stops_before_theirs_and_the_truck_when_next(): void

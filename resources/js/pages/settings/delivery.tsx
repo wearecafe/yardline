@@ -1,4 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
+import { Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import ReturnController from '@/actions/App/Http/Controllers/ReturnController';
 import DeliverySettingsController from '@/actions/App/Http/Controllers/Settings/DeliverySettingsController';
@@ -9,6 +10,7 @@ import { ZoneRow } from '@/components/yard/zone-row';
 import type { Zone } from '@/components/yard/zone-row';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import InputError from '@/components/input-error';
 import { centsToInput } from '@/lib/format';
 
 type Settings = {
@@ -26,24 +28,21 @@ type Settings = {
 type Truck = {
     id: number;
     name: string;
-    kind: 'material' | 'equipment';
-    driver_id: number | null;
-    driver_name: string | null;
-    driver_phone: string | null;
-    capacity_kg: number | null;
+    kind: 'material' | 'equipment' | 'both';
+    capacities: { unit: string; amount: number }[] | null;
     has_boom: boolean;
     is_active: boolean;
     location_id: number | null;
 };
 
-type Driver = { id: number; name: string };
+type CapacityUnit = { value: string; label: string };
 
 type Props = {
     settings: Settings;
     methods: { value: Settings['method']; label: string }[];
     zones: Zone[];
     trucks: Truck[];
-    drivers: Driver[];
+    capacityUnits: CapacityUnit[];
     yards: { id: number; name: string; pallet_deposits: boolean }[];
     returns: {
         restocking_percent: number;
@@ -154,21 +153,150 @@ function ReturnsForm({ returns, yards }: Pick<Props, 'returns' | 'yards'>) {
     );
 }
 
+const UNIT_NAMES: Record<string, string> = {
+    t: 'tonnes (weight)',
+    yd3: 'cubic yards',
+    m3: 'cubic metres',
+    pallet: 'pallets',
+};
+
+/**
+ * One row per thing the truck can take: weight, volume or pallets. Each
+ * unit at most once.
+ */
+function CapacityRows({
+    id,
+    units,
+    rows,
+    onChange,
+    errors,
+}: {
+    id: string | number;
+    units: CapacityUnit[];
+    rows: { unit: string; amount: string }[];
+    onChange: (rows: { unit: string; amount: string }[]) => void;
+    errors: Record<string, string>;
+}) {
+    const unused = units.filter((u) => !rows.some((r) => r.unit === u.value));
+
+    return (
+        <fieldset className="grid min-w-0 gap-2 sm:col-span-6">
+            <legend className="mb-1.5 text-sm leading-none font-medium">
+                Capacity
+            </legend>
+            {rows.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                    No capacity set.
+                </p>
+            )}
+            {rows.map((row, i) => (
+                <div key={i} className="grid gap-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Input
+                            id={`truck-cap-${id}-${i}`}
+                            aria-label="Amount"
+                            inputMode="decimal"
+                            className="w-28"
+                            value={row.amount}
+                            onChange={(e) =>
+                                onChange(
+                                    rows.map((r, j) =>
+                                        j === i
+                                            ? { ...r, amount: e.target.value }
+                                            : r,
+                                    ),
+                                )
+                            }
+                        />
+                        <NativeSelect
+                            aria-label="Unit"
+                            className="w-40"
+                            value={row.unit}
+                            onChange={(e) =>
+                                onChange(
+                                    rows.map((r, j) =>
+                                        j === i
+                                            ? { ...r, unit: e.target.value }
+                                            : r,
+                                    ),
+                                )
+                            }
+                        >
+                            {units
+                                .filter(
+                                    (u) =>
+                                        u.value === row.unit ||
+                                        !rows.some((r) => r.unit === u.value),
+                                )
+                                .map((u) => (
+                                    <option key={u.value} value={u.value}>
+                                        {UNIT_NAMES[u.value] ?? u.label}
+                                    </option>
+                                ))}
+                        </NativeSelect>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Remove this capacity"
+                            onClick={() =>
+                                onChange(rows.filter((_, j) => j !== i))
+                            }
+                        >
+                            <X className="size-4" />
+                        </Button>
+                    </div>
+                    <InputError
+                        message={
+                            errors[`capacities.${i}.amount`] ??
+                            errors[`capacities.${i}.unit`]
+                        }
+                    />
+                </div>
+            ))}
+            {unused.length > 0 && (
+                <div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                            onChange([
+                                ...rows,
+                                { unit: unused[0].value, amount: '' },
+                            ])
+                        }
+                    >
+                        <Plus className="size-4" />
+                        Add capacity
+                    </Button>
+                </div>
+            )}
+        </fieldset>
+    );
+}
+
 function TruckRow({
     truck,
-    drivers,
+    units,
 }: {
     truck: Truck | null;
-    drivers: Driver[];
+    units: CapacityUnit[];
 }) {
     const id = truck?.id ?? 'new';
-    const form = useForm({
+    const form = useForm<{
+        name: string;
+        kind: Truck['kind'];
+        capacities: { unit: string; amount: string }[];
+        has_boom: boolean;
+        is_active: boolean;
+    }>({
         name: truck?.name ?? '',
         kind: truck?.kind ?? 'material',
-        driver_id: truck?.driver_id ? String(truck.driver_id) : '',
-        driver_name: truck?.driver_name ?? '',
-        driver_phone: truck?.driver_phone ?? '',
-        capacity_t: truck?.capacity_kg ? String(truck.capacity_kg / 1000) : '',
+        capacities: (truck?.capacities ?? []).map((c) => ({
+            unit: c.unit,
+            amount: String(c.amount),
+        })),
         has_boom: truck?.has_boom ?? false,
         is_active: truck?.is_active ?? true,
     });
@@ -197,7 +325,7 @@ function TruckRow({
                 label="Truck"
                 htmlFor={`truck-name-${id}`}
                 error={form.errors.name}
-                className="sm:col-span-2"
+                className="sm:col-span-3"
             >
                 <Input
                     id={`truck-name-${id}`}
@@ -207,7 +335,12 @@ function TruckRow({
                     placeholder="Truck 1 · tandem"
                 />
             </Field>
-            <Field label="Carries" htmlFor={`truck-kind-${id}`}>
+            <Field
+                label="Carries"
+                htmlFor={`truck-kind-${id}`}
+                error={form.errors.kind}
+                className="sm:col-span-3"
+            >
                 <NativeSelect
                     id={`truck-kind-${id}`}
                     value={form.data.kind}
@@ -217,63 +350,17 @@ function TruckRow({
                 >
                     <option value="material">Material</option>
                     <option value="equipment">Rental equipment</option>
+                    <option value="both">Both</option>
                 </NativeSelect>
             </Field>
-            <Field
-                label="Capacity (t)"
-                htmlFor={`truck-cap-${id}`}
-                error={form.errors.capacity_t}
-            >
-                <Input
-                    id={`truck-cap-${id}`}
-                    inputMode="decimal"
-                    value={form.data.capacity_t}
-                    onChange={(e) => form.setData('capacity_t', e.target.value)}
-                />
-            </Field>
-            <Field label="Driver" htmlFor={`truck-driver-${id}`}>
-                <Input
-                    id={`truck-driver-${id}`}
-                    value={form.data.driver_name}
-                    onChange={(e) =>
-                        form.setData('driver_name', e.target.value)
-                    }
-                />
-            </Field>
-            <Field label="Driver's phone" htmlFor={`truck-phone-${id}`}>
-                <Input
-                    id={`truck-phone-${id}`}
-                    type="tel"
-                    value={form.data.driver_phone}
-                    onChange={(e) =>
-                        form.setData('driver_phone', e.target.value)
-                    }
-                />
-            </Field>
-            <Field
-                label="Driver's sign-in"
-                htmlFor={`truck-signin-${id}`}
-                error={form.errors.driver_id}
-                className="sm:col-span-2"
-            >
-                <NativeSelect
-                    id={`truck-signin-${id}`}
-                    value={form.data.driver_id}
-                    onChange={(e) => form.setData('driver_id', e.target.value)}
-                >
-                    <option value="">
-                        {drivers.length === 0
-                            ? 'Add drivers under Settings → Drivers'
-                            : 'Nobody signs in'}
-                    </option>
-                    {drivers.map((d) => (
-                        <option key={d.id} value={String(d.id)}>
-                            {d.name}
-                        </option>
-                    ))}
-                </NativeSelect>
-            </Field>
-            <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
+            <CapacityRows
+                id={id}
+                units={units}
+                rows={form.data.capacities}
+                onChange={(rows) => form.setData('capacities', rows)}
+                errors={form.errors as Record<string, string>}
+            />
+            <div className="flex flex-wrap items-center gap-4 sm:col-span-3">
                 <Checkbox
                     id={`truck-boom-${id}`}
                     label="Boom"
@@ -289,7 +376,7 @@ function TruckRow({
                     />
                 )}
             </div>
-            <div className="flex gap-2 sm:col-span-2 sm:justify-end">
+            <div className="flex gap-2 sm:col-span-3 sm:justify-end">
                 <Button
                     type="submit"
                     variant={truck ? 'outline' : 'default'}
@@ -328,7 +415,7 @@ export default function DeliverySettingsPage({
     methods,
     zones,
     trucks,
-    drivers,
+    capacityUnits,
     yards,
     returns,
 }: Props) {
@@ -516,16 +603,16 @@ export default function DeliverySettingsPage({
                     <Heading
                         variant="small"
                         title="Trucks"
-                        description="Each truck is a row on the dispatch board."
+                        description="Each truck is a row on the dispatch board. Who drives it is picked there, day by day, from the drivers ticked for it under Settings → Drivers."
                     />
                     {trucks.map((truck) => (
                         <TruckRow
                             key={truck.id}
                             truck={truck}
-                            drivers={drivers}
+                            units={capacityUnits}
                         />
                     ))}
-                    <TruckRow truck={null} drivers={drivers} />
+                    <TruckRow truck={null} units={capacityUnits} />
                 </section>
             </div>
         </>

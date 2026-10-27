@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\DriverInviteMessage;
 use App\Tenancy\CurrentTenant;
 use App\Tenancy\TenantRule;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,8 +20,9 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Driver sign-ins: who drives, which trucks they're able to drive, and
- * when their phone last checked in. Drivers only ever see their own run.
+ * Driver sign-ins: who drives, their phone number, which trucks they're
+ * able to drive, and when their phone last checked in. Who drives which
+ * truck each day is picked on the dispatch board.
  */
 class DriverAccountsController extends Controller
 {
@@ -33,16 +35,17 @@ class DriverAccountsController extends Controller
                 ->where('tenant_id', CurrentTenant::id())
                 ->where('role', UserRole::Driver->value)
                 ->with('drivableTrucks:id')
+                ->withMax('driverPings as last_seen', 'recorded_at')
                 ->orderBy('name')
                 ->get()
                 ->map(fn (User $driver) => [
                     'id' => $driver->id,
                     'name' => $driver->name,
                     'email' => $driver->email,
+                    'phone' => $driver->phone,
                     'joined' => $driver->email_verified_at !== null,
                     'truck_ids' => $trucks->whereIn('id', $driver->drivableTrucks->modelKeys())->pluck('id')->values(),
-                    'signs_in_to' => $trucks->where('driver_id', $driver->id)->pluck('id')->values(),
-                    'last_seen' => $trucks->where('driver_id', $driver->id)->whereNotNull('last_located_at')->sortByDesc('last_located_at')->first()?->last_located_at?->toIso8601String(),
+                    'last_seen' => $driver->getAttribute('last_seen') ? CarbonImmutable::parse($driver->getAttribute('last_seen'))->toIso8601String() : null,
                 ]),
             'trucks' => $trucks->map(fn (Truck $t) => ['id' => $t->id, 'name' => $t->name, 'is_active' => $t->is_active])->values(),
         ]);
@@ -53,6 +56,7 @@ class DriverAccountsController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['nullable', 'string', 'max:30'],
             ...$this->truckRules(),
         ]);
 
@@ -61,6 +65,7 @@ class DriverAccountsController extends Controller
                 'tenant_id' => CurrentTenant::id(),
                 'name' => $data['name'],
                 'email' => $data['email'],
+                'phone' => $data['phone'] ?? null,
                 'role' => UserRole::Driver,
                 // Replaced when they choose their own from the emailed link.
                 'password' => Hash::make(Str::random(40)),
@@ -82,11 +87,17 @@ class DriverAccountsController extends Controller
     {
         $this->ensureDriver($driver);
 
-        $data = $request->validate($this->truckRules());
+        $data = $request->validate([
+            'phone' => ['nullable', 'string', 'max:30'],
+            ...$this->truckRules(),
+        ]);
 
-        DB::transaction(fn () => $driver->setDrivableTrucks($this->truckIds($data)));
+        DB::transaction(function () use ($driver, $data) {
+            $driver->update(['phone' => $data['phone'] ?? null]);
+            $driver->setDrivableTrucks($this->truckIds($data));
+        });
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => "Saved the trucks {$driver->name} can drive."]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "{$driver->name} saved."]);
 
         return back();
     }

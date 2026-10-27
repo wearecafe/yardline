@@ -5,17 +5,17 @@ Mockups for each screen are in [scope/mockups](scope/mockups).
 
 ## Counter and orders
 
-| Feature                                                                    | Screens                          | Code                                         |
-| -------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------- |
-| Orders: draft → confirmed → fulfilled, settled on account or prepaid       | Orders, order page               | `app/Orders`                                 |
-| Credit checks, holds and owner overrides                                   | Order confirm, organization page | `app/Credit`                                 |
-| Selling units (bag, pallet, tonne…) converting to a base unit              | Product editor                   | `ProductUnit`, `ProductUnitController`       |
-| Units switched off for sale; rounding to the nearest mix of units for sale | Product editor, order lines      | `QuantityFit`, `UnitMix`                     |
-| Price resolution: contract → price list (per unit, dated, breaks) → retail | Order lines                      | `app/Pricing/PriceResolver`                  |
-| Category discounts ($ or %) on price lists; products exempt from price lists | Price lists, product editor    | `PriceListCategoryRule`, `PricingSettings`   |
-| Quotes with expiry, accepted from a public link                            | Order page, `/q/{token}`         | `SendQuote`, `QuoteController`               |
-| Job sites (with PO required), contacts with roles and charge rights        | Organization page                | `OrganizationLocation`, `CustomerMembership` |
-| Counter screen for walk-ins                                                | Counter                          | `CounterController`                          |
+| Feature                                                                      | Screens                          | Code                                         |
+| ---------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------- |
+| Orders: draft → confirmed → fulfilled, settled on account or prepaid         | Orders, order page               | `app/Orders`                                 |
+| Credit checks, holds and owner overrides                                     | Order confirm, organization page | `app/Credit`                                 |
+| Selling units (bag, pallet, tonne…) converting to a base unit                | Product editor                   | `ProductUnit`, `ProductUnitController`       |
+| Units switched off for sale; rounding to the nearest mix of units for sale   | Product editor, order lines      | `QuantityFit`, `UnitMix`                     |
+| Price resolution: contract → price list (per unit, dated, breaks) → retail   | Order lines                      | `app/Pricing/PriceResolver`                  |
+| Category discounts ($ or %) on price lists; products exempt from price lists | Price lists, product editor      | `PriceListCategoryRule`, `PricingSettings`   |
+| Quotes with expiry, accepted from a public link                              | Order page, `/q/{token}`         | `SendQuote`, `QuoteController`               |
+| Job sites (with PO required), contacts with roles and charge rights          | Organization page                | `OrganizationLocation`, `CustomerMembership` |
+| Counter screen for walk-ins                                                  | Counter                          | `CounterController`                          |
 
 ### Category discounts and exempt products
 
@@ -82,19 +82,22 @@ layer (9 sq ft) or the pallet (90 sq ft) and round up.
 | Delivery pricing by zone, distance or truckload                     | Settings → Delivery           | `DeliveryPricer`, `DeliverySettings`               |
 | ETA texts                                                           | Dispatch                      | `Dispatch::sendEtas`, `EtaMessage`                 |
 | Proof of delivery (signature, photo)                                | Driver app, deliver screen    | `CompleteShipment`                                 |
-| Driver role: own truck's run on their phone, nothing else           | `/driver`, Settings → Drivers | `DriverRun`, `DriverController`, `RestrictDrivers` |
+| Driver role: the day's truck run on their phone, nothing else       | `/driver`, Settings → Drivers | `DriverRun`, `DriverController`, `RestrictDrivers` |
 | Truck locations from drivers' phones (kept 30 days)                 | Driver app, Dispatch          | `DriverRun::locate`, `DriverPing`                  |
 | Contractor tracking: stops before yours, truck map when next        | Portal order page             | `DeliveryTracking`                                 |
 
 ### Drivers
 
 Users with the `driver` role are added under Settings → Drivers (an
-emailed link to choose a password), where the owner ticks every truck
-they can drive (`driver_truck`, edited any time with "Edit trucks").
-The one driver who signs in to a truck's run is `trucks.driver_id`: a
-driver takes a ticked truck's run if nobody signs in to it yet, loses it
-when the truck is unticked, and picking a sign-in under Delivery →
-Trucks ticks that truck for them. `RestrictDrivers` keeps them to `driver.*`, the
+emailed link to choose a password) with their phone number, and the
+owner ticks every truck they can drive (`driver_truck`, changed any
+time with "Edit"). Who drives a truck on a day is picked on the dispatch
+board from the drivers ticked for it (`truck_assignments`,
+`DriverRun::assign`); that driver sees the truck's run for that day, and
+unticking a truck drops their days ahead on it. Trucks hold no driver
+details: they carry material, rental equipment or both, with a list of
+capacities in tonnes, cubic yards, cubic metres or pallets
+(`trucks.capacities`). `RestrictDrivers` keeps them to `driver.*`, the
 deliver screen and their own account settings. While `/driver` is open
 on their phone, `useLocationSharing` posts the position about once a
 minute (`driver.locate`); the latest is kept on the truck for the board
