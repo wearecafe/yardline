@@ -5,8 +5,8 @@ use App\Http\Controllers\Settings\DriverAccountsController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\QuickBooksController;
 use App\Http\Controllers\Settings\SecurityController;
-use App\Http\Controllers\Settings\UserAccountsController;
 use App\Http\Controllers\Settings\ShopifyController;
+use App\Http\Controllers\Settings\UserAccountsController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
