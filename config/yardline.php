@@ -120,7 +120,7 @@ return [
         'items' => [
             'base' => ['name' => 'YardRunner', 'lookup_key' => 'yardrunner_base_monthly', 'amount_cents' => 74_900],
             'rentals' => ['name' => 'YardRunner Rentals', 'lookup_key' => 'yardrunner_rentals_monthly', 'amount_cents' => 19_900],
-            'time' => ['name' => 'YardRunner Time & Attendance', 'lookup_key' => 'yardrunner_time_user_monthly', 'amount_cents' => 2_000, 'per_user' => true],
+            'time' => ['name' => 'YardRunner Time & Attendance', 'lookup_key' => 'yardrunner_time_user_monthly', 'amount_cents' => 500, 'per_user' => true],
         ],
 
         // Stripe Tax on the subscription (HST/GST/QST). Needs Stripe Tax on.

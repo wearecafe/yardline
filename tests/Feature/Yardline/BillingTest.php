@@ -140,7 +140,7 @@ class BillingTest extends TestCase
 
         $tenant->refresh();
         $this->assertSame(2, Plan::for($tenant)->seats);
-        $this->assertSame(74_900 + 19_900 + 2 * 2_000, $tenant->monthly_price_cents);
+        $this->assertSame(74_900 + 19_900 + 2 * 500, $tenant->monthly_price_cents);
     }
 
     public function test_a_trial_that_ended_locks_everyone_out_except_billing(): void
@@ -292,7 +292,7 @@ class BillingTest extends TestCase
                 ->where('pricing.trial_days', 14)
                 ->where('pricing.items.0.amount_cents', 74_900)
                 ->where('pricing.items.1.amount_cents', 19_900)
-                ->where('pricing.items.2.amount_cents', 2_000)
+                ->where('pricing.items.2.amount_cents', 500)
                 ->where('pricing.items.2.per_user', true));
     }
 
