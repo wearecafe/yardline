@@ -213,7 +213,7 @@ class UserAccountsController extends Controller
 
         if (array_key_exists('location_ids', $data)) {
             $before = $user->yards()->pluck('locations.id')->map(fn ($id) => (int) $id)->sort()->values()->all();
-            $after = collect($data['location_ids'])->map(fn ($id) => (int) $id)->unique()->sort()->values()->all();
+            $after = collect(array_map(fn ($id) => (int) $id, (array) $data['location_ids']))->unique()->sort()->values()->all();
 
             if ($before !== $after) {
                 $user->setYards($after);

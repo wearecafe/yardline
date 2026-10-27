@@ -104,7 +104,7 @@ final readonly class PickingSettings
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{stages: array<string, bool>, checks: array<string, array{required: bool, roles: list<string>, different_user: bool}>}
      */
     public function toArray(): array
     {

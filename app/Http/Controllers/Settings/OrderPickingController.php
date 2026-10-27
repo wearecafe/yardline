@@ -98,13 +98,13 @@ class OrderPickingController extends Controller
     /**
      * "Stages: Picking, Picked, Loaded · Check at Picked (owner, admin)"
      *
-     * @param  array<string, mixed>  $settings
+     * @param  array{stages: array<string, bool>, checks: array<string, array{required: bool, roles: list<string>, different_user: bool}>}  $settings
      */
     private static function summary(array $settings): string
     {
-        $stages = collect($settings['stages'])->filter()->keys()->map(fn ($s) => PickingSettings::STAGES[$s])->implode(', ');
-        $checks = collect($settings['checks'])->filter(fn ($c) => $c['required'])
-            ->map(fn ($c, $stage) => 'check at '.PickingSettings::STAGES[$stage].' ('.implode(', ', $c['roles']).($c['different_user'] ? ', not their own work' : '').')')
+        $stages = collect($settings['stages'])->filter()->keys()->map(fn (string $s) => PickingSettings::STAGES[$s] ?? $s)->implode(', ');
+        $checks = collect($settings['checks'])->filter(fn (array $c) => $c['required'])
+            ->map(fn (array $c, string $stage) => 'check at '.(PickingSettings::STAGES[$stage] ?? $stage).' ('.implode(', ', $c['roles']).($c['different_user'] ? ', not their own work' : '').')')
             ->implode('; ');
 
         return trim('Stages: '.($stages ?: 'none').($checks ? " · {$checks}" : ''));
