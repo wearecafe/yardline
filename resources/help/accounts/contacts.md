@@ -12,7 +12,7 @@ Customers are people. A contact can buy for one or more organizations, or for no
 On the organization's page, under **Contacts**:
 
 - **New contact** creates a person and adds them to this account.
-- **Link existing** adds someone already in Yardline, for example a foreman who works for two contractors.
+- **Link existing** adds someone already in YardRunner, for example a foreman who works for two contractors.
 
 For each contact, choose a **Role** and whether they **Can charge to the account**.
 

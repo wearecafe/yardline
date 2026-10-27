@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
- * Where one Yardline record stands with QuickBooks.
+ * Where one YardRunner record stands with QuickBooks.
  *
  * @property int $id
  * @property int $tenant_id

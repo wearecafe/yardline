@@ -5,14 +5,14 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * The back office, where Yardline staff look after tenants.
+ * The back office, where YardRunner staff look after tenants.
  *
  * - Staff are users with no tenant and is_platform_staff set.
  * - Each tenant has a status, plan and monthly price that staff record by
  *   hand (no subscription billing yet), module switches (stored, not yet
  *   enforced) and private staff notes.
  * - Activity: when each user was last seen, one row per user per day they
- *   used Yardline (for weekly users and retention), and a log of incoming
+ *   used YardRunner (for weekly users and retention), and a log of incoming
  *   webhooks for integration health.
  */
 return new class extends Migration

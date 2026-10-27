@@ -26,7 +26,7 @@ use Throwable;
 
 /**
  * Connect a QuickBooks Online company, choose the date sync starts from,
- * and map Yardline's lines and payments to the company's accounts.
+ * and map YardRunner's lines and payments to the company's accounts.
  */
 class QuickBooksController extends Controller
 {

@@ -6,7 +6,7 @@ import TenantController from '@/actions/App/Http/Controllers/Admin/TenantControl
 import type { NavSection } from '@/lib/navigation';
 
 /**
- * The back office sidebar, for Yardline staff.
+ * The back office sidebar, for YardRunner staff.
  */
 export const adminNavSections: NavSection[] = [
     {

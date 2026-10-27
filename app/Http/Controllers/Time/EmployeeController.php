@@ -17,7 +17,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Who clocks in: people who sign in to Yardline and yard hands who only
+ * Who clocks in: people who sign in to YardRunner and yard hands who only
  * punch at the counter tablet, with their PIN, pay type and payroll
  * number.
  */

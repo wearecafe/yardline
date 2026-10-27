@@ -1,11 +1,11 @@
 ---
 title: Texts and emails to your customers
-summary: Every message Yardline sends, and where replies go.
+summary: Every message YardRunner sends, and where replies go.
 order: 4
 related: yard-delivery/dispatch-board, rentals/rental-settings
 ---
 
-Yardline sends messages under your business name. Set a **Reply-to email** under **Settings → Business** so replies come to you.
+YardRunner sends messages under your business name. Set a **Reply-to email** under **Settings → Business** so replies come to you.
 
 ## Emails
 

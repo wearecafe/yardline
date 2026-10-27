@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Shopify is no longer supported: Yardline is the only sales channel.
+ * Shopify is no longer supported: YardRunner is the only sales channel.
  * Removes Shopify connections, the ID map used to sync with it, and the
  * per-unit Shopify variant title.
  */

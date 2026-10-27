@@ -7,7 +7,7 @@ import AuthLayout from '@/layouts/auth-layout';
 import DriverLayout from '@/layouts/driver-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Yardline';
+const appName = import.meta.env.VITE_APP_NAME || 'YardRunner';
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),

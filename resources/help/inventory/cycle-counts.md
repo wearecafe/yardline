@@ -11,7 +11,7 @@ A cycle count checks one part of the yard at a time, so stock stays accurate wit
 
 1. On **Stock**, select **Start cycle count**.
 2. Choose the **Yard**, and narrow it with **Bins starting with** (for example "Row C") or a **Category**.
-3. Select **Start count**. Yardline lists every product and bin in that section with its **Expected** quantity.
+3. Select **Start count**. YardRunner lists every product and bin in that section with its **Expected** quantity.
 4. Enter what you find in **Counted**. Select **Save progress** if you need to come back to it.
 5. Check the **Difference** column, then select **Post count**.
 

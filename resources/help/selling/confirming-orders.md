@@ -6,7 +6,7 @@ popular: true
 related: accounts/credit-limits, money/sales-tax, money/invoices
 ---
 
-Confirming locks in a draft. Yardline calculates the sales tax, decides how the order will be paid, and issues the invoice.
+Confirming locks in a draft. YardRunner calculates the sales tax, decides how the order will be paid, and issues the invoice.
 
 ## On account or payment up front
 

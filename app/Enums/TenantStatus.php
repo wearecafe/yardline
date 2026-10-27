@@ -3,7 +3,7 @@
 namespace App\Enums;
 
 /**
- * Where a tenant stands with Yardline. Set by staff in the back office;
+ * Where a tenant stands with YardRunner. Set by staff in the back office;
  * it doesn't change what the tenant can do yet.
  */
 enum TenantStatus: string

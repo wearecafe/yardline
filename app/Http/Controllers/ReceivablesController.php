@@ -69,7 +69,7 @@ class ReceivablesController extends Controller
     {
         return Inertia::render('print/statement', [
             'statement' => $statement->for($organization),
-            'business' => CurrentTenant::get()->name ?? 'Yardline',
+            'business' => CurrentTenant::get()->name ?? 'YardRunner',
             'canEmail' => filled($organization->email),
         ]);
     }
@@ -92,7 +92,7 @@ class ReceivablesController extends Controller
 
         if (! Demo::isCurrentTenant()) {
             Notification::route('mail', (string) $organization->email)
-                ->notify(new StatementMessage($data, CurrentTenant::get()->name ?? 'Yardline', $this->render($data)));
+                ->notify(new StatementMessage($data, CurrentTenant::get()->name ?? 'YardRunner', $this->render($data)));
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Statement sent to {$organization->email}."]);
@@ -109,7 +109,7 @@ class ReceivablesController extends Controller
         $options->setIsRemoteEnabled(false);
         $options->setDefaultFont('DejaVu Sans');
         $dompdf = new Dompdf($options);
-        $dompdf->loadHtml(view('pdf.statement', ['s' => $data, 'tenant' => CurrentTenant::get()->name ?? 'Yardline'])->render());
+        $dompdf->loadHtml(view('pdf.statement', ['s' => $data, 'tenant' => CurrentTenant::get()->name ?? 'YardRunner'])->render());
         $dompdf->setPaper('letter');
         $dompdf->render();
 

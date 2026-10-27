@@ -24,7 +24,7 @@ return new class extends Migration
             $table->index(['provider', 'external_account']);
         });
 
-        // Maps Yardline records to their IDs in a connected system.
+        // Maps YardRunner records to their IDs in a connected system.
         Schema::create('external_references', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();

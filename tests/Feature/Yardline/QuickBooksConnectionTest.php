@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Yardline;
+namespace Tests\Feature\YardRunner;
 
 use App\Accounting\QuickBooks\QuickBooksClient;
 use App\Accounting\QuickBooks\QuickBooksOAuth;

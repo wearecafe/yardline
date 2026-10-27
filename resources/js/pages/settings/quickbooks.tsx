@@ -109,7 +109,7 @@ export default function QuickBooks({
                     <div className="rounded-md border border-border bg-card p-4 text-sm">
                         <p className="text-muted-foreground">
                             You’ll sign in to Intuit and pick the company.
-                            Yardline only writes customers, items, invoices,
+                            YardRunner only writes customers, items, invoices,
                             payments, credit memos and refunds; it never deletes
                             anything in QuickBooks.
                         </p>
@@ -268,7 +268,7 @@ export default function QuickBooks({
                                 <div>
                                     <div className="font-medium">Tax codes</div>
                                     <p className="text-sm text-muted-foreground">
-                                        Yardline sends the tax Stripe Tax
+                                        YardRunner sends the tax Stripe Tax
                                         charged; the code decides where it lands
                                         on your HST and QST returns.
                                     </p>

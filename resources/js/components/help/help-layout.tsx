@@ -204,7 +204,7 @@ export default function HelpLayout({
                         >
                             <AppLogoIcon className="size-7 fill-current" />
                             <span className="text-lg font-bold tracking-tight">
-                                Yardline
+                                YardRunner
                             </span>
                             <span className="text-lg font-normal text-muted-foreground">
                                 Help
@@ -231,14 +231,14 @@ export default function HelpLayout({
                                 href="/"
                                 className="hidden rounded-md px-3 py-2 hover:bg-secondary sm:block"
                             >
-                                Yardline home
+                                YardRunner home
                             </Link>
                             {signedIn ? (
                                 <Link
                                     href={dashboard()}
                                     className="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground"
                                 >
-                                    Open Yardline
+                                    Open YardRunner
                                 </Link>
                             ) : (
                                 <Link
@@ -259,7 +259,7 @@ export default function HelpLayout({
                         <div>
                             <div className="flex items-center gap-2">
                                 <AppLogoIcon className="size-5 fill-current" />
-                                <span className="font-bold">Yardline Help</span>
+                                <span className="font-bold">YardRunner Help</span>
                             </div>
                             <p className="mt-2 text-muted-foreground">
                                 Guides for running your yard, counter,

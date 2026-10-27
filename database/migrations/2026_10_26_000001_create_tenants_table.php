@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * A tenant is one supply-yard business using Yardline.
+     * A tenant is one supply-yard business using YardRunner.
      */
     public function up(): void
     {

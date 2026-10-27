@@ -9,7 +9,7 @@ use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * The back office (/admin) is for Yardline staff only, and they must have
+ * The back office (/admin) is for YardRunner staff only, and they must have
  * two-factor authentication on (see yardline.back_office.require_two_factor).
  */
 class EnsurePlatformStaff

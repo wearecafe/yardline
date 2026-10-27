@@ -96,7 +96,7 @@ function EmployeeForm({
             <div className="grid gap-4 sm:grid-cols-2">
                 {!employee && users.length > 0 && (
                     <Field
-                        label="Signs in to Yardline as"
+                        label="Signs in to YardRunner as"
                         htmlFor={`user-${id}`}
                         error={form.errors.user_id}
                         hint="Leave as “Time clock only” for someone who just punches at the counter tablet."

@@ -341,7 +341,7 @@ export default function Reports({
 
                     <Section
                         title="Retention by signup month"
-                        description="Share of tenants still using Yardline N months after signing up"
+                        description="Share of tenants still using YardRunner N months after signing up"
                         className="min-w-0 flex-[1_1_380px]"
                     >
                         <div className="overflow-x-auto">

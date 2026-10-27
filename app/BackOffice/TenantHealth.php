@@ -11,7 +11,7 @@ use App\Models\Tenant;
  * and how likely they are to leave.
  *
  * Worst thing first: a cancelled or suspended account, then broken syncs,
- * then billing, then whether anyone is using Yardline.
+ * then billing, then whether anyone is using YardRunner.
  */
 final class TenantHealth
 {
@@ -69,7 +69,7 @@ final class TenantHealth
     }
 
     /**
-     * How likely a tenant is to leave: high when nobody uses Yardline or
+     * How likely a tenant is to leave: high when nobody uses YardRunner or
      * orders have halved, medium when orders are down a fifth or most
      * people with logins don't use it.
      *

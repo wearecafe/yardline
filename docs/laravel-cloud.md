@@ -35,7 +35,7 @@
 Laravel Cloud sets `APP_KEY`, `APP_URL` and database variables. Add:
 
 ```
-APP_NAME=Yardline
+APP_NAME=YardRunner
 APP_ENV=production
 APP_DEBUG=false
 YARDLINE_DEMO=true
@@ -50,7 +50,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 MAIL_MAILER=resend
 RESEND_API_KEY=re_...
 MAIL_FROM_ADDRESS=...        # on a domain verified in Resend
-MAIL_FROM_NAME=Yardline
+MAIL_FROM_NAME=YardRunner
 
 YARDLINE_SMS_DRIVER=twilio  # or log
 TWILIO_SID=...

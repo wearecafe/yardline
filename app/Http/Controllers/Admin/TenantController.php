@@ -169,7 +169,7 @@ class TenantController extends Controller
                     'password' => Hash::make(Str::random(40)),
                 ]);
 
-                Audit::record($tenant, 'created', null, 'Set up by Yardline staff');
+                Audit::record($tenant, 'created', null, 'Set up by YardRunner staff');
 
                 return $owner;
             });
@@ -307,7 +307,7 @@ class TenantController extends Controller
                     'event' => $e->event,
                     'subject' => Str::headline($e->subject_type).($e->subject_label !== null ? " {$e->subject_label}" : ''),
                     'note' => $e->note,
-                    'who' => $e->user === null ? 'System' : $e->user->name.($e->user->isPlatformStaff() ? ' (Yardline staff)' : ''),
+                    'who' => $e->user === null ? 'System' : $e->user->name.($e->user->isPlatformStaff() ? ' (YardRunner staff)' : ''),
                 ]),
             'options' => [
                 'statuses' => TenantStatus::options(),
@@ -363,7 +363,7 @@ class TenantController extends Controller
 
         $tenant->save();
 
-        CurrentTenant::run($tenant, fn () => Audit::record($tenant, 'updated', $changes, 'Changed by Yardline staff'));
+        CurrentTenant::run($tenant, fn () => Audit::record($tenant, 'updated', $changes, 'Changed by YardRunner staff'));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => "Saved {$tenant->name}."]);
 

@@ -320,7 +320,7 @@ class TimesheetCalculator
             }
 
             if ($punch->sentLate()) {
-                $day->flag('sent_late', "{$what} reached Yardline at ".$this->time($punch->created_at ?? $punch->punched_at).' (phone was offline)');
+                $day->flag('sent_late', "{$what} reached YardRunner at ".$this->time($punch->created_at ?? $punch->punched_at).' (phone was offline)');
             }
         }
     }

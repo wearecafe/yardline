@@ -161,7 +161,7 @@ final class TenantMetrics
     }
 
     /**
-     * People who used Yardline on any day in the window, per tenant.
+     * People who used YardRunner on any day in the window, per tenant.
      *
      * @param  array<int, mixed>|null  $tenantIds
      * @return array<int, int>
@@ -279,7 +279,7 @@ final class TenantMetrics
     }
 
     /**
-     * How much each tenant used each part of Yardline in a window. A module
+     * How much each tenant used each part of YardRunner in a window. A module
      * a tenant hasn't connected (QuickBooks) is left out, so it can
      * be shown as off rather than unused.
      *

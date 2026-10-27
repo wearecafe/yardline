@@ -21,7 +21,7 @@ Everyone signs in with their own account, so sales, overrides and changes are re
 
 Owners and admins add drivers themselves under **Settings → Drivers**. See [Setting up drivers](/help/yard-delivery/setting-up-drivers).
 
-Inviting other staff from inside Yardline is coming soon. Until then, contact us and we'll add staff accounts to your business.
+Inviting other staff from inside YardRunner is coming soon. Until then, contact us and we'll add staff accounts to your business.
 
 ## Signing in on shared devices
 

@@ -28,7 +28,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Turns Yardline records into QuickBooks records, following the sync map:
+ * Turns YardRunner records into QuickBooks records, following the sync map:
  * customers and items on demand, invoices, payments, credit memos,
  * refunds and rental invoices. Every send is idempotent: a record with a
  * QuickBooks id is updated (or left alone), never created twice.
@@ -156,7 +156,7 @@ class QuickBooksPusher
             'GlobalTaxCalculation' => 'TaxExcluded',
             'Line' => $lines,
             'TxnTaxDetail' => $this->taxDetail($groups),
-            'PrivateNote' => $this->note("Yardline order {$order->number}", $order->organization === null ? $order->customer : null),
+            'PrivateNote' => $this->note("YardRunner order {$order->number}", $order->organization === null ? $order->customer : null),
             ...$this->department($order->location),
             ...($order->po_number ? ['CustomerMemo' => ['value' => "PO {$order->po_number}"]] : []),
             ...($order->organization?->email ? ['BillEmail' => ['Address' => $order->organization->email]] : []),
@@ -214,7 +214,7 @@ class QuickBooksPusher
                 'CustomerRef' => ['value' => $customer],
                 'TotalAmt' => 0,
                 'TxnDate' => $this->localDate($payment->succeeded_at),
-                'PrivateNote' => "Yardline: {$payment->reference} applied to {$order->number}",
+                'PrivateNote' => "YardRunner: {$payment->reference} applied to {$order->number}",
                 'Line' => [
                     ['Amount' => $this->dollars($payment->amount_cents), 'LinkedTxn' => [['TxnId' => $invoiceId, 'TxnType' => 'Invoice']]],
                     ['Amount' => $this->dollars($payment->amount_cents), 'LinkedTxn' => [['TxnId' => $memoId, 'TxnType' => 'CreditMemo']]],
@@ -231,7 +231,7 @@ class QuickBooksPusher
             'TotalAmt' => $this->dollars($payment->amount_cents),
             'TxnDate' => $this->localDate($payment->succeeded_at),
             'DepositToAccountRef' => ['value' => $this->depositAccount($payment->tender->value)],
-            'PrivateNote' => "Yardline {$payment->tender->label()} on {$order->number}",
+            'PrivateNote' => "YardRunner {$payment->tender->label()} on {$order->number}",
             ...($payment->reference ? ['PaymentRefNum' => mb_substr($payment->reference, 0, 21)] : []),
             'Line' => [['Amount' => $this->dollars($payment->amount_cents), 'LinkedTxn' => [['TxnId' => $invoiceId, 'TxnType' => 'Invoice']]]],
         ])['Payment'] ?? [];
@@ -263,7 +263,7 @@ class QuickBooksPusher
         $this->qbo->post('payment', [
             'CustomerRef' => ['value' => $customer],
             'TotalAmt' => 0,
-            'PrivateNote' => "Yardline: refund of {$credit->number}",
+            'PrivateNote' => "YardRunner: refund of {$credit->number}",
             'Line' => [
                 ['Amount' => $this->dollars($owed), 'LinkedTxn' => [['TxnId' => $entry, 'TxnType' => 'JournalEntry']]],
                 ['Amount' => $this->dollars($owed), 'LinkedTxn' => [['TxnId' => $memoId, 'TxnType' => 'CreditMemo']]],
@@ -335,7 +335,7 @@ class QuickBooksPusher
             'GlobalTaxCalculation' => 'TaxExcluded',
             'Line' => $lines,
             'TxnTaxDetail' => $this->taxDetail($groups),
-            'PrivateNote' => $this->note(trim("Yardline {$credit->number}".($order ? " for {$order->number}" : '').($credit->reason ? ": {$credit->reason}" : '')), $credit->organization === null ? $credit->customer : null),
+            'PrivateNote' => $this->note(trim("YardRunner {$credit->number}".($order ? " for {$order->number}" : '').($credit->reason ? ": {$credit->reason}" : '')), $credit->organization === null ? $credit->customer : null),
             ...$this->department($location),
         ])['CreditMemo'] ?? [];
 
@@ -407,7 +407,7 @@ class QuickBooksPusher
             'GlobalTaxCalculation' => 'TaxExcluded',
             'Line' => $lines,
             'TxnTaxDetail' => $this->taxDetail($groups),
-            'PrivateNote' => $this->note("Yardline rental {$rental->number}", $rental->organization === null ? $rental->customer : null),
+            'PrivateNote' => $this->note("YardRunner rental {$rental->number}", $rental->organization === null ? $rental->customer : null),
             ...$this->department($rental->location),
         ];
 
@@ -467,7 +467,7 @@ class QuickBooksPusher
             'TotalAmt' => $this->dollars($payment->amount_cents),
             'TxnDate' => $this->localDate($payment->succeeded_at),
             'DepositToAccountRef' => ['value' => $this->depositAccount($payment->tender->value)],
-            'PrivateNote' => 'Yardline '.($payment->kind === RentalPaymentKind::DepositCapture ? 'deposit kept' : 'payment')." on rental {$rental->number}",
+            'PrivateNote' => 'YardRunner '.($payment->kind === RentalPaymentKind::DepositCapture ? 'deposit kept' : 'payment')." on rental {$rental->number}",
             ...($payment->reference ? ['PaymentRefNum' => mb_substr($payment->reference, 0, 21)] : []),
             'Line' => [['Amount' => $this->dollars($payment->amount_cents), 'LinkedTxn' => [['TxnId' => $invoiceId, 'TxnType' => 'Invoice']]]],
         ])['Payment'] ?? [];
@@ -511,7 +511,7 @@ class QuickBooksPusher
                 'line1' => $org->address_line1, 'line2' => $org->address_line2, 'city' => $org->city,
                 'region' => $org->region, 'postal_code' => $org->postal_code, 'country' => $org->country,
             ]) : null,
-            'Notes' => trim("Yardline account {$org->account_number}. Terms: {$org->payment_terms->label()}.".($org->tax_exempt ? " Tax exempt: {$org->tax_exempt_number}." : '')),
+            'Notes' => trim("YardRunner account {$org->account_number}. Terms: {$org->payment_terms->label()}.".($org->tax_exempt ? " Tax exempt: {$org->tax_exempt_number}." : '')),
         ]);
 
         return $this->upsertNamed($org, 'Customer', $payload, fallbackName: "{$this->clean($org->name)} ({$org->account_number})");
@@ -519,7 +519,7 @@ class QuickBooksPusher
 
     public function cashSalesCustomer(): string
     {
-        return $this->cached('cash_customer', fn () => $this->findOrCreate('Customer', 'DisplayName', 'Cash sales', ['DisplayName' => 'Cash sales', 'Notes' => 'Walk-in and one-time customers from Yardline. The person’s name is in each document’s memo.']));
+        return $this->cached('cash_customer', fn () => $this->findOrCreate('Customer', 'DisplayName', 'Cash sales', ['DisplayName' => 'Cash sales', 'Notes' => 'Walk-in and one-time customers from YardRunner. The person’s name is in each document’s memo.']));
     }
 
     public function productItem(?Product $product, string $description, bool $rental = false): string
@@ -562,7 +562,7 @@ class QuickBooksPusher
 
     /**
      * Creates the record, or adopts one already in QuickBooks with the same
-     * name, or updates it when what Yardline sends has changed.
+     * name, or updates it when what YardRunner sends has changed.
      *
      * @param  array<string, mixed>  $payload
      */
@@ -659,7 +659,7 @@ class QuickBooksPusher
 
         $entry = $this->qbo->post('journalentry', [
             'TxnDate' => $this->localDate($on),
-            'PrivateNote' => "Yardline: {$note}",
+            'PrivateNote' => "YardRunner: {$note}",
             'Line' => [
                 [
                     'DetailType' => 'JournalEntryLineDetail',
@@ -724,7 +724,7 @@ class QuickBooksPusher
     }
 
     /**
-     * The tax Yardline charged, split across the code's rates (GST and QST
+     * The tax YardRunner charged, split across the code's rates (GST and QST
      * in Quebec) so QuickBooks files it on the right lines of the return.
      *
      * @param  array<string, array{net: int, tax: int}>  $groups
@@ -913,7 +913,7 @@ class QuickBooksPusher
         $message = null;
 
         if ($expectedCents !== null && isset($record['TotalAmt']) && (int) round((float) $record['TotalAmt'] * 100) !== $expectedCents) {
-            $message = 'Total in QuickBooks is $'.number_format((float) $record['TotalAmt'], 2).', Yardline has $'.number_format($expectedCents / 100, 2).'. Check the tax codes.';
+            $message = 'Total in QuickBooks is $'.number_format((float) $record['TotalAmt'], 2).', YardRunner has $'.number_format($expectedCents / 100, 2).'. Check the tax codes.';
         }
 
         $sync = QuickBooksSync::for($model);

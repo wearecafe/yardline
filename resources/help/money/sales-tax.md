@@ -6,7 +6,7 @@ popular: true
 related: accounts/organizations, products-pricing/add-a-product
 ---
 
-Yardline uses Stripe Tax to work out sales tax on every order and rental.
+YardRunner uses Stripe Tax to work out sales tax on every order and rental.
 
 ## Where the sale happens
 
@@ -36,4 +36,4 @@ On the organization, tick **Tax exempt** and enter the **Exemption number**. Its
 
 Untick **Taxable** on a product, or give it a **Stripe tax code** if it's taxed differently from general goods. Leave the code blank for the default.
 
-> **Heads up** Yardline calculates tax from your settings and Stripe Tax's rules. You're still responsible for your tax registrations and filings, so check with your accountant.
+> **Heads up** YardRunner calculates tax from your settings and Stripe Tax's rules. You're still responsible for your tax registrations and filings, so check with your accountant.

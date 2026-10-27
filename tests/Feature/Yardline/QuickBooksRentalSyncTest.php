@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Yardline;
+namespace Tests\Feature\YardRunner;
 
 use App\Accounting\QuickBooks\QuickBooks;
 use App\Enums\IntegrationProvider;

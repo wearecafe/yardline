@@ -105,12 +105,12 @@ export default function DriverLayout({ children }: { children: ReactNode }) {
                                 ? DriverController.today.url()
                                 : dashboard().url
                         }
-                        className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"
+                        className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#1c1f1d] text-[#eeefec]"
                         aria-label={
                             auth.can.drive ? 'My run' : 'Back to the yard'
                         }
                     >
-                        <AppLogoIcon className="size-4 fill-current" />
+                        <AppLogoIcon className="size-5 fill-current" />
                     </Link>
                     <div className="min-w-0 flex-1 leading-tight">
                         <div className="truncate text-sm font-semibold">

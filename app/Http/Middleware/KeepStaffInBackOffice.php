@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Yardline staff have no yard of their own, so the yard's pages would be
+ * YardRunner staff have no yard of their own, so the yard's pages would be
  * empty for them (and could try to save rows with no tenant). They get the
  * back office and their own account settings; anything else sends them to
  * the back office.
@@ -58,6 +58,6 @@ class KeepStaffInBackOffice
             return redirect()->route('admin.overview');
         }
 
-        abort(403, 'Yardline staff work from the back office.');
+        abort(403, 'YardRunner staff work from the back office.');
     }
 }

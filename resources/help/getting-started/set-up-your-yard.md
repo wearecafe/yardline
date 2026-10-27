@@ -10,7 +10,7 @@ Work through these in order. Each step builds on the one before, so your first s
 
 ## 1. Create your account
 
-Go to **Set up your yard** on the Yardline home page and enter your business name, your name and your email. You become the business's **owner**, with access to every setting.
+Go to **Set up your yard** on the YardRunner home page and enter your business name, your name and your email. You become the business's **owner**, with access to every setting.
 
 ## 2. Fill in your business settings
 

@@ -17,7 +17,7 @@ use Throwable;
 
 /**
  * Payments the bookkeeper entered straight into QuickBooks (a cheque mailed
- * to the office) against invoices Yardline sent, so the order shows paid
+ * to the office) against invoices YardRunner sent, so the order shows paid
  * and the account's credit frees up. Uses QuickBooks' change feed.
  */
 class PullPayments
@@ -63,7 +63,7 @@ class PullPayments
     {
         $qboId = (string) ($payment['Id'] ?? '');
 
-        // One Yardline sent: nothing to bring back.
+        // One YardRunner sent: nothing to bring back.
         if ($qboId === '' || QuickBooksSync::query()->where('qbo_type', 'Payment')->where('qbo_id', $qboId)->whereIn('syncable_type', ['payment', 'rental_payment'])->whereNull('meta->pulled')->exists()) {
             return 0;
         }
@@ -128,7 +128,7 @@ class PullPayments
                     'status' => 'synced',
                     'qbo_type' => 'Payment',
                     'qbo_id' => $qboId,
-                    'message' => 'Entered in QuickBooks and brought into Yardline.',
+                    'message' => 'Entered in QuickBooks and brought into YardRunner.',
                     'meta' => ['pulled' => $key],
                     'synced_at' => now(),
                 ]);

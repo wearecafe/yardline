@@ -272,7 +272,7 @@ export default function TimeClockKiosk({ people, yards, business }: Props) {
                             href={dashboard()}
                             className="flex items-center gap-1 text-sm text-[#a8a29e]"
                         >
-                            <ChevronLeft className="size-4" /> Yardline
+                            <ChevronLeft className="size-4" /> YardRunner
                         </Link>
                         <h1 className="text-2xl font-bold">Time clock</h1>
                         <p className="text-sm text-[#a8a29e]">{business}</p>

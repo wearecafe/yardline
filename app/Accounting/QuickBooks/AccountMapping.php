@@ -5,7 +5,7 @@ namespace App\Accounting\QuickBooks;
 use App\Models\Integration;
 
 /**
- * Which QuickBooks account each kind of Yardline line and payment posts to.
+ * Which QuickBooks account each kind of YardRunner line and payment posts to.
  * The yard picks from its own chart of accounts; the defaults are names
  * to look for, or to create if missing.
  */

@@ -152,7 +152,7 @@ class OverviewController extends Controller
     }
 
     /**
-     * Share of live tenants that used each part of Yardline this week.
+     * Share of live tenants that used each part of YardRunner this week.
      *
      * @param  array<int, mixed>  $liveIds
      * @return list<array{key: string, label: string, percent: int}>

@@ -26,7 +26,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 /**
- * The back office (/admin) where Yardline staff look after tenants.
+ * The back office (/admin) where YardRunner staff look after tenants.
  */
 class BackOfficeTest extends TestCase
 {
@@ -211,7 +211,7 @@ class BackOfficeTest extends TestCase
                 ->component('admin/tenants/show')
                 ->where('tenant.status', 'past_due')
                 ->where('stats.orders', 1)
-                ->where('audit.0.who', $staff->name.' (Yardline staff)'));
+                ->where('audit.0.who', $staff->name.' (YardRunner staff)'));
 
         // The tenant's owner doesn't see staff notes on their account.
         $owner = User::factory()->create(['tenant_id' => $tenant->id, 'role' => UserRole::Owner]);

@@ -1,12 +1,12 @@
-# Yardline Commerce Data Model
+# YardRunner Commerce Data Model
 
 Oct 26, 2026 · @Jon Moore
 
 ## Overview
 
-Yardline is the yard's complete commerce system. There is no Shopify integration: every goods sale and every rental is quoted, priced, taxed, paid for and fulfilled in Yardline. QuickBooks Online receives the accounting, and Stripe handles payments and tax.
+YardRunner is the yard's complete commerce system. There is no Shopify integration: every goods sale and every rental is quoted, priced, taxed, paid for and fulfilled in YardRunner. QuickBooks Online receives the accounting, and Stripe handles payments and tax.
 
-The five core entities are not enough on their own. Yardline also needs tax, payments, invoicing, fulfillment, returns and a counter sales screen. Rentals run in the same system and use the same Stripe payments, but are invoiced separately from goods sales.
+The five core entities are not enough on their own. YardRunner also needs tax, payments, invoicing, fulfillment, returns and a counter sales screen. Rentals run in the same system and use the same Stripe payments, but are invoiced separately from goods sales.
 
 ## Core entities
 
@@ -74,19 +74,19 @@ The same calculation runs on every sales channel (counter, staff-entered orders,
 
 ## Additional components required
 
-Yardline needs nine more components to take an order and complete it. They're listed in rough build order.
+YardRunner needs nine more components to take an order and complete it. They're listed in rough build order.
 
 | #   | Component                              | What it covers                                                                                                                                                                                                                                 | Why it's needed                                                                                                                                                |
 | --- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | Units of measure                       | Base unit per product (ton, yard, bag, pallet, each), conversions between units, units switched on or off for sale, rounding to the nearest mix of units for sale, minimum quantities                                                          | Pricing, inventory and pick lists all depend on it                                                                                                             |
-| 2   | Locations and inventory                | Yards, stock levels per yard, a history of every stock movement (received, sold, adjusted, transferred)                                                                                                                                        | Orders need a yard to pull stock from. Yardline is the inventory system                                                                                        |
-| 3   | Tax                                    | Stripe Tax for Ontario HST and Quebec GST + QST, tax based on where the order is delivered vs picked up, tax-exempt orgs with exemption numbers                                                                                                | Every sale is taxed in Yardline                                                                                                                                |
-| 4   | Payments                               | Stripe connection, card-present payments at the counter (Stripe Terminal), payments recorded against orders, deposits, partial payments, refunds                                                                                               | Yardline takes every payment, goods and rentals                                                                                                                |
+| 2   | Locations and inventory                | Yards, stock levels per yard, a history of every stock movement (received, sold, adjusted, transferred)                                                                                                                                        | Orders need a yard to pull stock from. YardRunner is the inventory system                                                                                        |
+| 3   | Tax                                    | Stripe Tax for Ontario HST and Quebec GST + QST, tax based on where the order is delivered vs picked up, tax-exempt orgs with exemption numbers                                                                                                | Every sale is taxed in YardRunner                                                                                                                                |
+| 4   | Payments                               | Stripe connection, card-present payments at the counter (Stripe Terminal), payments recorded against orders, deposits, partial payments, refunds                                                                                               | YardRunner takes every payment, goods and rentals                                                                                                                |
 | 5   | Invoices, credit terms and receivables | Net terms, credit limits, account holds, statements, aging, sync to QuickBooks Online                                                                                                                                                          | Contractors buy on account up to their credit limit. Above it, a credit card is required unless staff apply a manual override. Rentals are invoiced separately |
 | 6   | Quotes and estimates                   | Quote with an expiry date, revisions, convert to order                                                                                                                                                                                         | Contractor sales usually start as a quote                                                                                                                      |
 | 7   | Fulfillment and delivery               | Pickup vs delivery, configurable pick/load stages with optional quality-check sign-off (see Order picking below), delivery fees by zone, distance or truckload (configurable per tenant), truck dispatch, partial shipments, proof of delivery | Pick/pack lists hang off this                                                                                                                                  |
 | 8   | Returns and credits                    | Returns, credit notes, restocking fees, pallet deposits (turned on or off per tenant/yard) charged per pallet and credited when the pallet comes back                                                                                          | Pallet deposits are a big deal in masonry                                                                                                                      |
-| 9   | Counter sales screen                   | Ring up a sale at the counter, look up a customer or org, charge to account or take payment, print or email a receipt                                                                                                                          | Yardline is the yard's point of sale                                                                                                                           |
+| 9   | Counter sales screen                   | Ring up a sale at the counter, look up a customer or org, charge to account or take payment, print or email a receipt                                                                                                                          | YardRunner is the yard's point of sale                                                                                                                           |
 
 Supporting pieces: order and invoice numbering, CAD currency, and an audit log of changes to orders, prices, price list rules, credit terms and fulfillment stage changes and sign-offs.
 
@@ -148,7 +148,7 @@ If a tenant switches off a stage that has a sign-off, the sign-off is switched o
 
 ## Integrations
 
-Yardline is the system of record for orgs, customers, products, pricing, inventory, orders, fulfillment and rentals. Two outside services connect to it.
+YardRunner is the system of record for orgs, customers, products, pricing, inventory, orders, fulfillment and rentals. Two outside services connect to it.
 
 | Service           | What it does                                                                                                                     |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -157,7 +157,7 @@ Yardline is the system of record for orgs, customers, products, pricing, invento
 
 Sync requirements:
 
-- Every synced record stores both IDs (Yardline's and the outside service's).
+- Every synced record stores both IDs (YardRunner's and the outside service's).
 - Webhooks and retries must be safe to run twice without creating duplicates.
 - A periodic reconciliation job catches missed webhooks.
 
@@ -165,14 +165,14 @@ Sync requirements:
 
 | Question                            | Decision                                                                                                                                                                                                                                                                      |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shopify                             | Removed. Yardline is the only sales channel and point of sale, with no Shopify integration                                                                                                                                                                                    |
+| Shopify                             | Removed. YardRunner is the only sales channel and point of sale, with no Shopify integration                                                                                                                                                                                    |
 | Tax engine                          | Stripe Tax                                                                                                                                                                                                                                                                    |
 | Payment processor                   | Stripe, including Stripe Terminal for card-present payments at the counter                                                                                                                                                                                                    |
 | Card vs on-account                  | Orgs have credit limits. A credit card is required for any amount above the limit, unless staff apply a manual override                                                                                                                                                       |
 | Pallet deposits                     | Configurable per tenant/yard: each one chooses whether to charge pallet deposits                                                                                                                                                                                              |
 | Delivery pricing                    | Zone, distance and truckload pricing are all supported; each tenant picks which to use                                                                                                                                                                                        |
 | Rental vs goods invoices            | Separate invoices. Every rental is prepaid with a deposit during the rental process                                                                                                                                                                                           |
-| Pricing control                     | Yardline controls all pricing on every channel                                                                                                                                                                                                                                |
+| Pricing control                     | YardRunner controls all pricing on every channel                                                                                                                                                                                                                                |
 | Units not sold on their own         | Each selling unit can be switched off for sale (e.g. square feet of interlock sold by the layer or pallet). Each product chooses to refuse, round up or round down a quantity that doesn't fit, to the nearest mix of units for sale; staff confirm the mix before it's added |
 | Price list exempt products          | A product can be flagged exempt. It always sells at its base price, and no price list rule, tier, contract price, volume break or category rule applies                                                                                                                       |
 | Category rules                      | Price lists can give a $ or % discount on a whole category. $ amounts are per base unit, converted to each selling unit                                                                                                                                                       |

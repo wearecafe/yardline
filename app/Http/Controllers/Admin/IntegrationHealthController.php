@@ -19,7 +19,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Whether Yardline's connections are working, across every tenant:
+ * Whether YardRunner's connections are working, across every tenant:
  * webhooks from Stripe, QuickBooks syncs and background jobs.
  */
 class IntegrationHealthController extends Controller
@@ -110,7 +110,7 @@ class IntegrationHealthController extends Controller
             $failed = QuickBooksSync::query()->where('status', 'failed')->get();
 
             foreach ($failed as $sync) {
-                $sync->forceFill(['status' => 'waiting', 'message' => 'Queued to send again by Yardline staff.'])->save();
+                $sync->forceFill(['status' => 'waiting', 'message' => 'Queued to send again by YardRunner staff.'])->save();
                 SendToQuickBooks::dispatch($sync->syncable_type, $sync->syncable_id);
             }
 
@@ -210,7 +210,7 @@ class IntegrationHealthController extends Controller
                 'tenant_id' => $tenantId,
                 'integration' => self::PROVIDERS[$failures['provider']] ?? Str::headline($failures['provider']),
                 'tone' => 'danger',
-                'problem' => 'Webhooks failed while Yardline handled them.',
+                'problem' => 'Webhooks failed while YardRunner handled them.',
                 'detail' => $failures['latest'],
                 'count' => $failures['count'].' in 24 hours',
                 'since' => null,

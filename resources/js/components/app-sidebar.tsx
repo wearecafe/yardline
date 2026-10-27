@@ -25,7 +25,7 @@ export function AppSidebar() {
     const team = teamSection(time, auth.can.manageTime);
     const reports = reportsSection(auth.can.viewProfit);
     // Drivers only reach settings pages here; their run is the way back.
-    // Yardline staff get the back office instead of a yard.
+    // YardRunner staff get the back office instead of a yard.
     const sections = auth.can.backOffice
         ? adminNavSections
         : // Order pickers only work the order queue.

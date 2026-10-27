@@ -276,11 +276,11 @@ const compare: { feature: string; sheet: string; pos: string; erp: string }[] =
 const faqs: { q: string; a: string }[] = [
     {
         q: 'Do I need a separate point of sale?',
-        a: 'No. Yardline is your counter, order desk and contractor portal in one, so products, prices, accounts and orders all live in one place.',
+        a: 'No. YardRunner is your counter, order desk and contractor portal in one, so products, prices, accounts and orders all live in one place.',
     },
     {
         q: 'Does it replace my accounting software?',
-        a: 'No. Yardline handles invoices, payments, aging and statements for your accounts. Your books stay in QuickBooks Online: invoices, payments, credit memos and rental invoices are sent there as they happen, and payments you enter in QuickBooks come back to Yardline.',
+        a: 'No. YardRunner handles invoices, payments, aging and statements for your accounts. Your books stay in QuickBooks Online: invoices, payments, credit memos and rental invoices are sent there as they happen, and payments you enter in QuickBooks come back to YardRunner.',
     },
     {
         q: 'What hardware do I need?',
@@ -308,11 +308,11 @@ const faqs: { q: string; a: string }[] = [
     },
     {
         q: 'We sell interlock by the layer and the pallet, never the single paver. Can it handle that?',
-        a: 'Yes. Switch off the units you don’t sell on their own and they still count stock. Ask for 300 sq ft and Yardline offers the nearest mix, like 2 pallets and 7 layers, rounding up or down as you choose for that product. Staff confirm it before it goes on the order, and the portal and patio calculator round the same way.',
+        a: 'Yes. Switch off the units you don’t sell on their own and they still count stock. Ask for 300 sq ft and YardRunner offers the nearest mix, like 2 pallets and 7 layers, rounding up or down as you choose for that product. Staff confirm it before it goes on the order, and the portal and patio calculator round the same way.',
     },
     {
         q: 'Does it track hours for the yard crew and drivers?',
-        a: 'Yes, with the time and attendance add-on. Staff clock in on the counter tablet with a PIN, on their phone, or from the driver app. Yardline works out weekly overtime for Ontario and Quebec, flags missed punches, and exports approved hours to QuickBooks Online, ADP or a spreadsheet.',
+        a: 'Yes, with the time and attendance add-on. Staff clock in on the counter tablet with a PIN, on their phone, or from the driver app. YardRunner works out weekly overtime for Ontario and Quebec, flags missed punches, and exports approved hours to QuickBooks Online, ADP or a spreadsheet.',
     },
 ];
 
@@ -331,7 +331,7 @@ export default function Welcome({ demo, canRegister }: Props) {
         </Link>
     ) : signedIn ? (
         <Link href={dashboard()} className={ctaPrimary}>
-            Open Yardline
+            Open YardRunner
         </Link>
     ) : canRegister ? (
         <Link href={register()} className={ctaPrimary}>
@@ -341,14 +341,14 @@ export default function Welcome({ demo, canRegister }: Props) {
 
     return (
         <>
-            <Head title="Yardline: inventory, orders and rentals for masonry and landscape supply yards" />
+            <Head title="YardRunner: inventory, orders and rentals for masonry and landscape supply yards" />
             <div className="min-h-screen bg-background text-foreground">
                 <header className="sticky top-0 z-20 border-b border-transparent bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
                     <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
                         <Link href="/" className="flex items-center gap-2">
                             <AppLogoIcon className="size-7 fill-current" />
                             <span className="text-xl font-bold tracking-tight">
-                                Yardline
+                                YardRunner
                             </span>
                         </Link>
                         <nav className="hidden items-center gap-1 text-sm lg:flex">
@@ -368,7 +368,7 @@ export default function Welcome({ demo, canRegister }: Props) {
                                     href={dashboard()}
                                     className="rounded-md bg-primary px-4 py-2.5 font-medium text-primary-foreground"
                                 >
-                                    Open Yardline
+                                    Open YardRunner
                                 </Link>
                             ) : (
                                 <>
@@ -417,7 +417,7 @@ export default function Welcome({ demo, canRegister }: Props) {
                                 aria-hidden="true"
                             />
                             <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-                                Yardline runs the counter, the yard, the trucks,
+                                YardRunner runs the counter, the yard, the trucks,
                                 the rental fleet, the crew’s hours and the
                                 receivables in one system, built around how a
                                 supply yard actually sells: by the bag, the
@@ -508,7 +508,7 @@ export default function Welcome({ demo, canRegister }: Props) {
                         <Feature
                             eyebrow="Pricing and units"
                             title="The right price, in the unit they asked for"
-                            body="Set up a product once in the unit you count it in, then sell it by the layer, the pallet, the bag or the tonne. Yardline converts every sale back to the base unit, so stock is always right."
+                            body="Set up a product once in the unit you count it in, then sell it by the layer, the pallet, the bag or the tonne. YardRunner converts every sale back to the base unit, so stock is always right."
                             points={[
                                 'Contract prices for a builder’s job beat the price list, which beats retail',
                                 'Price lists by selling unit, with quantity breaks and start and end dates',
@@ -648,7 +648,7 @@ export default function Welcome({ demo, canRegister }: Props) {
                                         <tr className="border-y border-border text-left">
                                             <th className="px-6 py-3 font-medium sm:px-8" />
                                             <th className="px-3 py-3 font-semibold text-primary">
-                                                Yardline
+                                                YardRunner
                                             </th>
                                             <th className="px-3 py-3 font-medium text-muted-foreground">
                                                 Spreadsheets
@@ -976,7 +976,7 @@ export default function Welcome({ demo, canRegister }: Props) {
                         <div>
                             <div className="flex items-center gap-2">
                                 <AppLogoIcon className="size-5 fill-current" />
-                                <span className="font-bold">Yardline</span>
+                                <span className="font-bold">YardRunner</span>
                             </div>
                             <p className="mt-2 text-muted-foreground">
                                 Inventory, orders and rentals for masonry and
