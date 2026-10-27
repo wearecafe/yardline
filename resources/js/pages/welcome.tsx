@@ -104,7 +104,7 @@ const day: { time: string; who: string; title: string; body: string }[] = [
 
 const everything: { group: string; items: string[] }[] = [
     {
-        group: 'Selling',
+        group: 'Units and pricing',
         items: [
             'Selling units with conversion factors',
             'Fractional and bulk quantities',
@@ -113,6 +113,11 @@ const everything: { group: string; items: string[] }[] = [
             'Price lists with dates and quantity breaks',
             'Category discounts in $ or %',
             'Products exempt from discounts',
+        ],
+    },
+    {
+        group: 'Selling',
+        items: [
             'Quotes with expiry and online accept',
             'Walk-in counter checkout',
             'Credit limits, holds and overrides',
@@ -690,7 +695,7 @@ export default function Welcome({ demo, canRegister }: Props) {
                         <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
                             Works with what you already use
                         </h2>
-                        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                             <Integration
                                 name="Stripe"
                                 status="Available"
@@ -871,7 +876,7 @@ export default function Welcome({ demo, canRegister }: Props) {
                         <h2 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
                             One system, not six.
                         </h2>
-                        <div className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
                             {everything.map((group) => (
                                 <div key={group.group}>
                                     <h3 className="border-b border-border pb-2 font-semibold">
