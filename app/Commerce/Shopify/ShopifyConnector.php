@@ -62,9 +62,11 @@ class ShopifyConnector implements CommerceConnector
             return $reference?->external_id;
         }
 
-        // One variant per selling unit. Only the base unit tracks stock in
-        // Shopify; other units convert back to it when the order comes in.
-        $units = $product->units()->get();
+        // One variant per unit for sale; units switched off for sale (a base
+        // unit only used to count stock) aren't offered in Shopify. Only the
+        // base unit tracks stock there; other units convert back to it when
+        // the order comes in.
+        $units = $product->units()->where('sellable', true)->get();
         $names = $units->map(fn ($unit) => $unit->variant_title ?: $unit->name)->values();
 
         $variables = [

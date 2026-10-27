@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\OrderType;
 use App\Enums\PaymentTender;
 use App\Enums\ProductKind;
+use App\Enums\QuantityRounding;
 use App\Enums\Settlement;
 use App\Models\Customer;
 use App\Models\Location;
@@ -59,13 +60,21 @@ class CounterController extends Controller
                     'name' => $p->name,
                     'category' => $p->category ?? 'Other',
                     'on_hand' => $p->track_inventory ? ($onHand[$p->id] ?? '0.000') : null,
-                    'units' => $p->units->map(fn (ProductUnit $u) => [
-                        'id' => $u->id,
-                        'name' => $u->name,
-                        'is_base' => $u->is_base,
-                        'price_cents' => $u->price_cents,
-                        'increment' => $u->increment,
-                    ])->values(),
+                    // Units for sale, plus the base unit to enter an amount
+                    // in when the product rounds to its sellable units.
+                    'units' => $p->units
+                        ->filter(fn (ProductUnit $u) => $u->sellable || ($u->is_base && $p->quantity_rounding !== QuantityRounding::Off))
+                        ->map(fn (ProductUnit $u) => [
+                            'id' => $u->id,
+                            'name' => $u->name,
+                            'is_base' => $u->is_base,
+                            'sellable' => $u->sellable,
+                            'price_cents' => $u->price_cents,
+                            'increment' => $u->increment,
+                            'min_quantity' => $u->min_quantity,
+                        ])->values(),
+                    'default_unit_id' => $p->defaultSellingUnit()?->id,
+                    'rounding' => $p->quantity_rounding->value,
                 ]),
             'organizations' => Organization::query()->orderBy('name')->get(['id', 'name', 'account_number', 'credit_hold']),
             'customers' => Customer::query()->orderBy('first_name')->get(['id', 'organization_id', 'first_name', 'last_name', 'phone']),

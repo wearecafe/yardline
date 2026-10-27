@@ -24,6 +24,7 @@ class OrderLineController extends Controller
             'product_unit_id' => ['nullable', TenantRule::exists('product_units')],
             'quantity' => ['required', 'numeric', 'min:0.001', 'max:999999'],
             'unit_price' => ['nullable', 'numeric', 'min:0', 'max:9999999'],
+            'round' => ['boolean'],
         ]);
 
         $priceOverride = $this->priceOverride($data['unit_price'] ?? null);
@@ -34,6 +35,7 @@ class OrderLineController extends Controller
             $data['quantity'],
             $priceOverride,
             isset($data['product_unit_id']) ? ProductUnit::query()->findOrFail((int) $data['product_unit_id']) : null,
+            (bool) ($data['round'] ?? false),
         );
 
         return back();

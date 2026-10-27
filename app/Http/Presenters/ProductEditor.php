@@ -3,6 +3,7 @@
 namespace App\Http\Presenters;
 
 use App\Enums\OrderStatus;
+use App\Enums\QuantityRounding;
 use App\Models\ContractPrice;
 use App\Models\OrderLine;
 use App\Models\PriceList;
@@ -55,6 +56,7 @@ final class ProductEditor
                 'name' => $unit->name,
                 'factor' => $unit->factor,
                 'is_base' => $unit->is_base,
+                'sellable' => $unit->sellable,
                 'price_cents' => $unit->price_cents,
                 'variant_title' => $unit->variant_title,
                 'measured_by' => $unit->measured_by,
@@ -66,6 +68,8 @@ final class ProductEditor
                         && ($item->product_unit_id === $unit->id || ($unit->is_base && $item->product_unit_id === null)))?->price_cents,
                 ]),
             ])->values(),
+            'rounding' => $product->quantity_rounding->value,
+            'roundingOptions' => QuantityRounding::options(),
             'priceLists' => $priceLists,
             'measures' => collect(ProductUnit::MEASURES)->map(fn ($label, $value) => ['value' => $value, 'label' => $label])->values(),
             'stock' => [

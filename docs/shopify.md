@@ -17,15 +17,30 @@ A public OAuth app replaces step 1 if Yardline is offered to other yards.
 
 ## What syncs
 
-| Yardline                 | Shopify                                             | Status                                                               |
-| ------------------------ | --------------------------------------------------- | -------------------------------------------------------------------- |
-| Products (sale items)    | Products, one variant, price copied from list price | Built (`productSet`)                                                 |
-| Customers                | Customers                                           | Built (`customerCreate` / `customerUpdate`)                          |
-| Rental equipment         | Not sent                                            | By design                                                            |
-| Organizations            | B2B companies (Shopify Plus)                        | Not built                                                            |
-| Price lists              | B2B catalogs and price lists                        | Not built                                                            |
-| Stock levels             | Inventory levels per location                       | Not built                                                            |
-| Orders placed in Shopify | Yardline orders                                     | Webhook verified and queued; import is a stub (`ImportShopifyOrder`) |
+| Yardline                 | Shopify                                                               | Status                                                               |
+| ------------------------ | --------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Products (sale items)    | Products, one variant per unit for sale, price copied from list price | Built (`productSet`)                                                 |
+| Customers                | Customers                                                             | Built (`customerCreate` / `customerUpdate`)                          |
+| Rental equipment         | Not sent                                                              | By design                                                            |
+| Organizations            | B2B companies (Shopify Plus)                                          | Not built                                                            |
+| Price lists              | B2B catalogs and price lists                                          | Not built                                                            |
+| Stock levels             | Inventory levels per location                                         | Not built                                                            |
+| Orders placed in Shopify | Yardline orders                                                       | Webhook verified and queued; import is a stub (`ImportShopifyOrder`) |
+
+## Selling units
+
+Each selling unit that's for sale is a variant (option "Unit"), named by
+its Shopify variant title or its name. Units switched off for sale aren't
+sent, so a base unit that only counts stock (square feet of interlock sold
+by the layer or pallet) doesn't show up in Shopify. Only the base unit's
+variant is marked as tracking stock, so a product whose base unit isn't for
+sale has no tracked variant until stock sync is built; it should then set
+each variant to the stock on hand divided by its factor.
+
+Shopify doesn't know about steps, minimums or rounding: a Shopify POS sale
+can be any whole quantity of a variant. The webhook import should run each
+line through `QuantityFit` and flag lines that don't fit rather than round
+them silently.
 
 ## How it works
 

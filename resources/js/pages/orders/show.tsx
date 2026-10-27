@@ -9,6 +9,7 @@ import OrderActionController from '@/actions/App/Http/Controllers/OrderActionCon
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import OrderLineController from '@/actions/App/Http/Controllers/OrderLineController';
 import OrganizationController from '@/actions/App/Http/Controllers/OrganizationController';
+import ProductUnitController from '@/actions/App/Http/Controllers/ProductUnitController';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import { Chip } from '@/components/yard/chip';
 import { History } from '@/components/yard/history';
@@ -26,6 +27,8 @@ import type {
     OrderHeaderData,
 } from '@/components/yard/order-header-fields';
 import { PageBody, PageHeader, Section } from '@/components/yard/page-header';
+import { checkFit, RoundingPrompt } from '@/components/yard/rounding-prompt';
+import type { FitResult } from '@/components/yard/rounding-prompt';
 import { OrderStatusBadge, PaymentBadge } from '@/components/yard/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -493,10 +496,13 @@ function AddLine({
         unit_price: '',
     });
     const [search, setSearch] = useState('');
+    const [fit, setFit] = useState<FitResult | null>(null);
+    const [checking, setChecking] = useState(false);
     const product = products.find((p) => String(p.id) === form.data.product_id);
     const units = product?.units ?? [];
     const unit =
         units.find((u) => String(u.id) === form.data.product_unit_id) ??
+        units.find((u) => u.id === product?.default_unit_id) ??
         units.find((u) => u.is_base);
     const price = unit?.price_cents ?? product?.price_cents ?? 0;
     const sourceLabel: Record<string, string> = {
@@ -504,15 +510,68 @@ function AddLine({
         price_list: ' (price list)',
     };
 
-    function submit(event: FormEvent) {
-        event.preventDefault();
-        form.post(OrderLineController.store.url(order.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                form.reset();
-                setSearch('');
+    function post(round: boolean) {
+        router.post(
+            OrderLineController.store.url(order.id),
+            {
+                ...form.data,
+                product_unit_id: unit ? String(unit.id) : '',
+                ...(round ? { round: true, unit_price: '' } : {}),
             },
-        });
+            {
+                preserveScroll: true,
+                onStart: () => setChecking(true),
+                onFinish: () => setChecking(false),
+                onError: (errors) => {
+                    form.clearErrors();
+                    form.setError(errors as Record<string, string>);
+                },
+                onSuccess: () => {
+                    form.reset();
+                    form.clearErrors();
+                    setSearch('');
+                    setFit(null);
+                },
+            },
+        );
+    }
+
+    async function submit(event: FormEvent) {
+        event.preventDefault();
+        setFit(null);
+
+        // Products that round are checked first, so staff see and accept
+        // the mix of units before it goes on the order.
+        if (product && order.type === 'sale' && product.rounding !== 'off') {
+            setChecking(true);
+
+            try {
+                const result = await checkFit(
+                    ProductUnitController.fit.url(product.id),
+                    form.data.quantity,
+                    unit?.id ?? null,
+                );
+
+                if (!result.fits && result.proposal) {
+                    form.clearErrors();
+                    setFit(result);
+
+                    return;
+                }
+
+                if (!result.fits && result.problem) {
+                    form.setError('quantity', result.problem);
+
+                    return;
+                }
+            } catch {
+                // Fall through: the server checks again when the line is added.
+            } finally {
+                setChecking(false);
+            }
+        }
+
+        post(false);
     }
 
     return (
@@ -536,6 +595,7 @@ function AddLine({
                         const match = products.find(
                             (p) => `${p.name} (${p.sku})` === e.target.value,
                         );
+                        setFit(null);
                         form.setData((d) => ({
                             ...d,
                             product_id: match ? String(match.id) : '',
@@ -577,7 +637,10 @@ function AddLine({
                     id="quantity"
                     inputMode="decimal"
                     value={form.data.quantity}
-                    onChange={(e) => form.setData('quantity', e.target.value)}
+                    onChange={(e) => {
+                        setFit(null);
+                        form.setData('quantity', e.target.value);
+                    }}
                     required
                 />
             </Field>
@@ -590,14 +653,15 @@ function AddLine({
                     id="product_unit_id"
                     value={form.data.product_unit_id || String(unit?.id ?? '')}
                     disabled={units.length < 2}
-                    onChange={(e) =>
-                        form.setData('product_unit_id', e.target.value)
-                    }
+                    onChange={(e) => {
+                        setFit(null);
+                        form.setData('product_unit_id', e.target.value);
+                    }}
                 >
                     {units.length === 0 && <option value="">—</option>}
                     {units.map((u) => (
                         <option key={u.id} value={u.id}>
-                            {u.name}
+                            {u.sellable ? u.name : `${u.name} (rounds)`}
                         </option>
                     ))}
                 </NativeSelect>
@@ -620,11 +684,26 @@ function AddLine({
             <div className="sm:pt-[1.375rem]">
                 <Button
                     type="submit"
-                    disabled={form.processing || !form.data.product_id}
+                    disabled={
+                        form.processing || checking || !form.data.product_id
+                    }
                 >
                     Add
                 </Button>
             </div>
+            {fit && (
+                <div className="sm:col-span-5">
+                    <RoundingPrompt
+                        fit={fit}
+                        busy={checking}
+                        onAccept={() => post(true)}
+                        onCancel={() => {
+                            setFit(null);
+                            document.getElementById('quantity')?.focus();
+                        }}
+                    />
+                </div>
+            )}
         </form>
     );
 }

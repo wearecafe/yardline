@@ -89,6 +89,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Catalog and pricing
     Route::resource('products', ProductController::class)->except(['show', 'destroy']);
     Route::put('products/{product}/units', [ProductUnitController::class, 'sync'])->name('products.units.sync');
+    Route::get('products/{product}/fit', [ProductUnitController::class, 'fit'])->name('products.fit');
 
     Route::scopeBindings()->prefix('organizations/{organization}')->name('organizations.')->group(function () {
         Route::post('locations', [OrganizationLocationController::class, 'store'])->name('locations.store');
@@ -186,6 +187,7 @@ Route::middleware('portal')->prefix('portal/account')->name('portal.')->group(fu
     Route::get('orders/{order}', [PortalController::class, 'order'])->name('order');
     Route::post('orders/{order}/reorder', [PortalController::class, 'reorder'])->name('reorder');
     Route::post('calculator', [PortalController::class, 'calculate'])->name('calculate');
+    Route::get('calculator/pavers', [PortalController::class, 'pavers'])->name('calculator.pavers');
     Route::get('statement', [PortalController::class, 'statement'])->name('statement');
     Route::get('statement.pdf', [PortalController::class, 'statementPdf'])->name('statement.pdf');
     Route::post('pallet-pickup', [PortalController::class, 'palletPickup'])->name('pallet-pickup');

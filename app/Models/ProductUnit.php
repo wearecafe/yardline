@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $code
  * @property string $factor
  * @property bool $is_base
+ * @property bool $sellable
  * @property int $price_cents
  * @property string|null $variant_title
  * @property string|null $measured_by
@@ -29,7 +30,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read Product $product
  */
 #[Fillable([
-    'product_id', 'name', 'code', 'factor', 'is_base', 'price_cents', 'variant_title',
+    'product_id', 'name', 'code', 'factor', 'is_base', 'sellable', 'price_cents', 'variant_title',
     'measured_by', 'increment', 'min_quantity', 'deposit_cents', 'position',
 ])]
 class ProductUnit extends Model
@@ -37,7 +38,7 @@ class ProductUnit extends Model
     use Audited, BelongsToTenant;
 
     /** Changes to these are written to the audit log. */
-    public const AUDITED = ['price_cents', 'factor', 'deposit_cents'];
+    public const AUDITED = ['price_cents', 'factor', 'deposit_cents', 'sellable'];
 
     public const MEASURES = [
         'scale' => 'Truck scale weight',
@@ -52,6 +53,7 @@ class ProductUnit extends Model
     protected $attributes = [
         'factor' => 1,
         'is_base' => false,
+        'sellable' => true,
         'deposit_cents' => 0,
         'position' => 0,
     ];
@@ -61,6 +63,7 @@ class ProductUnit extends Model
         return [
             'factor' => 'decimal:6',
             'is_base' => 'boolean',
+            'sellable' => 'boolean',
             'price_cents' => 'integer',
             'increment' => 'decimal:3',
             'min_quantity' => 'decimal:3',
@@ -89,6 +92,29 @@ class ProductUnit extends Model
      * Why a quantity can't be sold in this unit, if it can't.
      */
     public function quantityProblem(string|int|float $quantity): ?string
+    {
+        if (! $this->sellable) {
+            return "{$this->name} isn’t sold on its own.";
+        }
+
+        return $this->stepProblem($quantity);
+    }
+
+    /**
+     * The smallest quantity of this unit that can be sold, in its own unit.
+     */
+    public function smallestSale(): float
+    {
+        $step = (float) ($this->increment ?? 0) > 0 ? (float) $this->increment : 0.001;
+        $min = (float) ($this->min_quantity ?? 0);
+
+        return max($step, $min);
+    }
+
+    /**
+     * Minimum and step rules, ignoring whether the unit is for sale.
+     */
+    public function stepProblem(string|int|float $quantity): ?string
     {
         $quantity = (float) $quantity;
 

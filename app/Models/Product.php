@@ -6,6 +6,7 @@ use App\Accounting\QuickBooks\SendsToQuickBooks;
 use App\Audit\Audited;
 use App\Commerce\SyncsWithCommerce;
 use App\Enums\ProductKind;
+use App\Enums\QuantityRounding;
 use App\Enums\RentalPeriod;
 use App\Enums\Unit;
 use App\Tenancy\BelongsToTenant;
@@ -58,6 +59,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property bool $track_lots
  * @property-read Supplier|null $supplier
  * @property string|null $per_pallet base units on one pallet
+ * @property QuantityRounding $quantity_rounding
  * @property-read Collection<int, ProductUnit> $units
  * @property-read ProductUnit|null $baseUnit
  */
@@ -69,6 +71,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'rate_weekend_cents', 'minimum_charge_cents', 'fuel_charge_cents', 'cleaning_fee_cents',
     'service_interval_hours', 'service_interval_days', 'use_case', 'bookable_online',
     'weight_kg', 'supplier_name', 'supplier_id', 'track_lots', 'taxable', 'pallet_deposit', 'per_pallet',
+    'quantity_rounding',
 ])]
 class Product extends Model
 {
@@ -76,7 +79,7 @@ class Product extends Model
     use Audited, BelongsToTenant, HasFactory, SendsToQuickBooks, SyncsWithCommerce;
 
     /** Changes to these are written to the audit log. */
-    public const AUDITED = ['price_cents', 'cost_cents', 'is_active', 'taxable'];
+    public const AUDITED = ['price_cents', 'cost_cents', 'is_active', 'taxable', 'quantity_rounding'];
 
     /**
      * @var array<string, mixed>
@@ -92,6 +95,7 @@ class Product extends Model
         'cleaning_fee_cents' => 0,
         'bookable_online' => false,
         'taxable' => true,
+        'quantity_rounding' => 'off',
     ];
 
     protected static function booted(): void
@@ -156,6 +160,7 @@ class Product extends Model
             'pallet_deposit' => 'boolean',
             'track_lots' => 'boolean',
             'per_pallet' => 'decimal:3',
+            'quantity_rounding' => QuantityRounding::class,
         ];
     }
 
@@ -185,6 +190,28 @@ class Product extends Model
     public function units(): HasMany
     {
         return $this->hasMany(ProductUnit::class)->orderByDesc('is_base')->orderBy('position')->orderBy('id');
+    }
+
+    /**
+     * Units it can be sold in, largest first. The base unit is here only
+     * when it's sold on its own.
+     *
+     * @return Collection<int, ProductUnit>
+     */
+    public function sellableUnits(): Collection
+    {
+        return $this->units->where('sellable', true)->sortByDesc(fn (ProductUnit $unit) => (float) $unit->factor)->values();
+    }
+
+    /**
+     * The unit a line starts in: the base unit when it's sold on its own,
+     * otherwise the smallest unit that is.
+     */
+    public function defaultSellingUnit(): ?ProductUnit
+    {
+        $base = $this->units->firstWhere('is_base', true);
+
+        return $base !== null && $base->sellable ? $base : $this->sellableUnits()->last();
     }
 
     /**
