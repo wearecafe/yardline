@@ -25,6 +25,7 @@ use App\Models\RentalPayment;
 use App\Models\RentalUnit;
 use App\Models\Shipment;
 use App\Models\StockTransfer;
+use App\Models\Tenant;
 use App\Models\TimeAdjustment;
 use App\Models\Timesheet;
 use App\Models\User;
@@ -159,6 +160,7 @@ class AppServiceProvider extends ServiceProvider
             'product_unit' => ProductUnit::class,
             'purchase_order' => PurchaseOrder::class,
             'stock_transfer' => StockTransfer::class,
+            'tenant' => Tenant::class,
             'cycle_count' => CycleCount::class,
             'rental' => Rental::class,
             'rental_payment' => RentalPayment::class,
