@@ -11,7 +11,6 @@ type Props = {
         name: string;
         currency: string;
         timezone: string;
-        stripe_account_id: string | null;
         reply_to_email: string | null;
     };
     timezones: string[];
@@ -21,7 +20,6 @@ export default function Business({ business, timezones }: Props) {
     const form = useForm({
         name: business.name,
         timezone: business.timezone,
-        stripe_account_id: business.stripe_account_id ?? '',
         reply_to_email: business.reply_to_email ?? '',
     });
 
@@ -89,24 +87,6 @@ export default function Business({ business, timezones }: Props) {
                             placeholder="sales@youryard.ca"
                             onChange={(e) =>
                                 form.setData('reply_to_email', e.target.value)
-                            }
-                        />
-                    </Field>
-                    <Field
-                        label="Stripe connected account"
-                        htmlFor="stripe_account_id"
-                        error={form.errors.stripe_account_id}
-                        hint="Optional. With Stripe Connect, card payments and tax go to this account (acct_…). Leave blank to use YardRunner’s own Stripe account."
-                    >
-                        <Input
-                            id="stripe_account_id"
-                            value={form.data.stripe_account_id}
-                            placeholder="acct_"
-                            onChange={(e) =>
-                                form.setData(
-                                    'stripe_account_id',
-                                    e.target.value,
-                                )
                             }
                         />
                     </Field>

@@ -5,6 +5,7 @@ namespace App\Rentals\Payments;
 use App\Models\Customer;
 use App\Models\RentalPayment;
 use App\Payments\CheckoutLink;
+use App\Payments\Connect\PaymentsNotSetUp;
 use App\Support\StripeGateway;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
@@ -29,7 +30,11 @@ class StripeRentalGateway implements RentalGateway
 
     public function capture(string $reference, int $cents): void
     {
-        $this->stripe->client()->paymentIntents->capture($reference, ['amount_to_capture' => $cents], $this->stripe->requestOptions());
+        // The fee is set on capture: a deposit hold only pays on what's kept.
+        $this->stripe->client()->paymentIntents->capture($reference, [
+            'amount_to_capture' => $cents,
+            'application_fee_amount' => StripeGateway::applicationFee($cents),
+        ], $this->stripe->requestOptions());
     }
 
     public function release(string $reference): void
@@ -65,7 +70,11 @@ class StripeRentalGateway implements RentalGateway
             ]],
             'metadata' => $metadata,
             // Saves the card so the deposit can be held on it at pickup.
-            'payment_intent_data' => ['metadata' => $metadata, 'setup_future_usage' => 'off_session'],
+            'payment_intent_data' => [
+                'metadata' => $metadata,
+                'setup_future_usage' => 'off_session',
+                'application_fee_amount' => StripeGateway::applicationFee($payment->amount_cents),
+            ],
             'success_url' => $returnUrl,
             'cancel_url' => $returnUrl,
         ];
@@ -74,7 +83,7 @@ class StripeRentalGateway implements RentalGateway
             $params['customer'] = $this->stripeCustomer($customer);
         }
 
-        $session = $this->stripe->client()->checkout->sessions->create($params, $this->stripe->requestOptions());
+        $session = $this->stripe->client()->checkout->sessions->create($params, $this->stripe->chargeOptions());
 
         return new CheckoutLink($session->id, (string) $session->url);
     }
@@ -89,17 +98,32 @@ class StripeRentalGateway implements RentalGateway
         }
 
         try {
+            $options = $this->stripe->chargeOptions();
+        } catch (PaymentsNotSetUp $e) {
+            throw new CardDeclined($e->getMessage(), previous: $e);
+        }
+
+        $params = [
+            'amount' => $cents,
+            'currency' => strtolower($customer->tenant->currency),
+            'payment_method' => $customer->stripe_payment_method_id,
+            'off_session' => true,
+            'confirm' => true,
+            'capture_method' => $capture,
+            'description' => $description,
+            'metadata' => $metadata,
+        ];
+
+        // Holds pay their fee when captured (see capture()).
+        if ($capture === 'automatic') {
+            $params['application_fee_amount'] = StripeGateway::applicationFee($cents);
+        }
+
+        try {
             $intent = $this->stripe->client()->paymentIntents->create([
-                'amount' => $cents,
-                'currency' => strtolower($customer->tenant->currency),
+                ...$params,
                 'customer' => $this->stripeCustomer($customer),
-                'payment_method' => $customer->stripe_payment_method_id,
-                'off_session' => true,
-                'confirm' => true,
-                'capture_method' => $capture,
-                'description' => $description,
-                'metadata' => $metadata,
-            ], $this->stripe->requestOptions());
+            ], $options);
         } catch (CardException $e) {
             throw new CardDeclined('The card was declined: '.$e->getMessage(), previous: $e);
         } catch (ApiErrorException $e) {

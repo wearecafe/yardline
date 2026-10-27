@@ -5,6 +5,7 @@ use App\Http\Controllers\Settings\BillingController;
 use App\Http\Controllers\Settings\BusinessController;
 use App\Http\Controllers\Settings\DriverAccountsController;
 use App\Http\Controllers\Settings\OrderPickingController;
+use App\Http\Controllers\Settings\PaymentsController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\QuickBooksController;
 use App\Http\Controllers\Settings\RoleSettingsController;
@@ -52,6 +53,13 @@ Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function (
 
     Route::get('settings/picking', [OrderPickingController::class, 'edit'])->name('picking-settings.edit');
     Route::put('settings/picking', [OrderPickingController::class, 'update'])->name('picking-settings.update');
+
+    // Card payments on the yard's connected account (Stripe Connect).
+    Route::get('settings/payments', [PaymentsController::class, 'edit'])->name('payments.edit');
+    Route::post('settings/payments', [PaymentsController::class, 'store'])->middleware('throttle:6,1')->name('payments.store');
+    Route::post('settings/payments/session', [PaymentsController::class, 'session'])->middleware('throttle:30,1')->name('payments.session');
+    Route::post('settings/payments/refresh', [PaymentsController::class, 'refresh'])->middleware('throttle:30,1')->name('payments.refresh');
+    Route::post('settings/payments/simulate', [PaymentsController::class, 'simulate'])->name('payments.simulate');
 
     Route::post('settings/quickbooks/connect', [QuickBooksController::class, 'connect'])->name('quickbooks.connect');
     Route::get('settings/quickbooks/callback', [QuickBooksController::class, 'callback'])->name('quickbooks.callback');
