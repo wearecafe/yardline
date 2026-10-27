@@ -220,6 +220,6 @@ class ProfitReportController extends Controller
      */
     private function options(array $labels): array
     {
-        return collect($labels)->map(fn (string $label, string $value) => ['value' => $value, 'label' => $label])->values()->all();
+        return array_map(fn (string $value, string $label) => ['value' => $value, 'label' => $label], array_keys($labels), array_values($labels));
     }
 }

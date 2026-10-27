@@ -190,6 +190,6 @@ class AppServiceProvider extends ServiceProvider
         // Who's in, timesheet review and approval, corrections, payroll export.
         Gate::define('manage-time', fn (User $user) => $user->canManageBusiness());
         // Costs, margins and the profit report: the owner, and admins if the owner allows.
-        Gate::define('view-profit', fn (User $user) => ReportSettings::for($user->tenant)->canViewProfit($user));
+        Gate::define('view-profit', fn (User $user) => ReportSettings::current()->canViewProfit($user));
     }
 }

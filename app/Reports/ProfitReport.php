@@ -734,7 +734,7 @@ class ProfitReport
      * @template T of Model
      *
      * @param  Builder<T>  $query
-     * @param  array<string, string>  $expressions  alias => SQL aggregate
+     * @param  array<literal-string, literal-string>  $expressions  alias => SQL aggregate
      * @return array<string, int>
      */
     private function sums(Builder $query, array $expressions): array
@@ -784,7 +784,7 @@ class ProfitReport
     {
         usort($rows, fn ($a, $b) => $b['profit'] <=> $a['profit']);
 
-        return array_values($rows);
+        return $rows;
     }
 
     private function who(?Order $order): ?string
