@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Pricing\PricingSettings;
 use App\Support\Demo;
+use App\Time\TimeStatus;
 use App\Tenancy\CurrentTenant;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -50,8 +51,11 @@ class HandleInertiaRequests extends Middleware
                     // Set a price by hand on a product exempt from price lists.
                     'priceExempt' => (bool) $request->user()?->canManageBusiness()
                         && PricingSettings::current()->canPriceExempt($request->user()),
+                    'manageTime' => (bool) $request->user()?->canManageBusiness(),
                 ],
             ],
+            // Time and attendance: whether it's on, and the signed-in person's clock.
+            'time' => fn () => TimeStatus::forUser($request->user()),
             // Drivers' phones share their position while their run is open.
             'shareLocation' => function () use ($request): bool {
                 $user = $request->user();

@@ -5,6 +5,7 @@ import DeliverySettingsController from '@/actions/App/Http/Controllers/Settings/
 import DriverAccountsController from '@/actions/App/Http/Controllers/Settings/DriverAccountsController';
 import QuickBooksController from '@/actions/App/Http/Controllers/Settings/QuickBooksController';
 import RentalSettingsController from '@/actions/App/Http/Controllers/Settings/RentalSettingsController';
+import TimeSettingsController from '@/actions/App/Http/Controllers/Settings/TimeSettingsController';
 import ShopifyController from '@/actions/App/Http/Controllers/Settings/ShopifyController';
 import UserAccountsController from '@/actions/App/Http/Controllers/Settings/UserAccountsController';
 import type { PropsWithChildren } from 'react';
@@ -61,6 +62,11 @@ const businessNavItems: NavItem[] = [
     {
         title: 'Rentals',
         href: RentalSettingsController.edit(),
+        icon: null,
+    },
+    {
+        title: 'Time',
+        href: TimeSettingsController.edit(),
         icon: null,
     },
     {

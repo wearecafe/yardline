@@ -21,6 +21,7 @@ class RestrictDrivers
      */
     public const ALLOWED = [
         'driver.*',
+        'time.self.*',
         'shipments.deliver',
         'shipments.complete',
         'files.show',

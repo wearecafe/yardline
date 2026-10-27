@@ -1,5 +1,10 @@
 import {
     Boxes,
+    Clock,
+    ClipboardCheck,
+    IdCard,
+    MonitorSmartphone,
+    UsersRound,
     CalendarRange,
     ClipboardList,
     CreditCard,
@@ -35,8 +40,13 @@ import RentalController from '@/actions/App/Http/Controllers/Rentals/RentalContr
 import RentalPaymentController from '@/actions/App/Http/Controllers/Rentals/RentalPaymentController';
 import PriceListController from '@/actions/App/Http/Controllers/PriceListController';
 import ProductController from '@/actions/App/Http/Controllers/ProductController';
+import EmployeeController from '@/actions/App/Http/Controllers/Time/EmployeeController';
+import KioskController from '@/actions/App/Http/Controllers/Time/KioskController';
+import MyTimeController from '@/actions/App/Http/Controllers/Time/MyTimeController';
+import TimesheetController from '@/actions/App/Http/Controllers/Time/TimesheetController';
+import WhosInController from '@/actions/App/Http/Controllers/Time/WhosInController';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import type { NavItem, SharedTimeStatus } from '@/types';
 
 export type NavSection = { label: string; items: NavItem[] };
 
@@ -138,3 +148,54 @@ export const navSections: NavSection[] = [
         ],
     },
 ];
+
+/**
+ * Time and attendance, once the business has it on. Managers see who's
+ * in, timesheets and employees; everyone who clocks in sees their own.
+ */
+export function teamSection(
+    time: SharedTimeStatus,
+    canManage: boolean,
+): NavSection | null {
+    if (!time?.enabled) {
+        return null;
+    }
+
+    const items: NavItem[] = [];
+
+    if (canManage) {
+        items.push(
+            {
+                title: 'Who’s in',
+                href: WhosInController.index(),
+                icon: UsersRound,
+            },
+            {
+                title: 'Timesheets',
+                href: TimesheetController.index(),
+                icon: ClipboardCheck,
+            },
+            {
+                title: 'Employees',
+                href: EmployeeController.index(),
+                icon: IdCard,
+            },
+        );
+    }
+
+    if (time.tracks) {
+        items.push({
+            title: 'My time',
+            href: MyTimeController.show(),
+            icon: Clock,
+        });
+    }
+
+    items.push({
+        title: 'Time clock',
+        href: KioskController.show(),
+        icon: MonitorSmartphone,
+    });
+
+    return { label: 'Team', items };
+}

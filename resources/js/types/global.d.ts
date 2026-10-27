@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { SharedTimeStatus } from '@/types/time';
 
 declare module 'react' {
     interface InputHTMLAttributes<T> {
@@ -16,11 +17,13 @@ declare module '@inertiajs/core' {
                     manageUsers: boolean;
                     drive: boolean;
                     priceExempt: boolean;
+                    manageTime: boolean;
                 };
             };
             tenant: { id: number; name: string; currency: string } | null;
             isDemo: boolean;
             shareLocation: boolean;
+            time: SharedTimeStatus;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };
