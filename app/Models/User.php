@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -70,13 +71,42 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * Trucks this user drives (usually one).
+     * Trucks whose run this user signs in to (usually one).
      *
      * @return HasMany<Truck, $this>
      */
     public function trucks(): HasMany
     {
         return $this->hasMany(Truck::class, 'driver_id');
+    }
+
+    /**
+     * Trucks this driver is able to drive.
+     *
+     * @return BelongsToMany<Truck, $this>
+     */
+    public function drivableTrucks(): BelongsToMany
+    {
+        return $this->belongsToMany(Truck::class, 'driver_truck')
+            ->withPivot('tenant_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Set the trucks this driver can drive. They stop signing in to a truck
+     * they're no longer cleared for, and start signing in to a cleared
+     * truck nobody signs in to yet.
+     *
+     * @param  list<int>  $truckIds
+     */
+    public function setDrivableTrucks(array $truckIds): void
+    {
+        $this->drivableTrucks()->sync(
+            collect($truckIds)->mapWithKeys(fn (int $id) => [$id => ['tenant_id' => $this->tenant_id]])->all(),
+        );
+
+        Truck::query()->where('driver_id', $this->id)->whereNotIn('id', $truckIds)->update(['driver_id' => null]);
+        Truck::query()->whereIn('id', $truckIds)->whereNull('driver_id')->update(['driver_id' => $this->id]);
     }
 
     public function canManageUsers(): bool

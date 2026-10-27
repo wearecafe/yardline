@@ -37,6 +37,7 @@ Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function (
 
     Route::get('settings/drivers', [DriverAccountsController::class, 'index'])->name('drivers.index');
     Route::post('settings/drivers', [DriverAccountsController::class, 'store'])->name('drivers.store');
+    Route::put('settings/drivers/{driver}', [DriverAccountsController::class, 'update'])->name('drivers.update');
     Route::post('settings/drivers/{driver}/resend', [DriverAccountsController::class, 'resend'])->name('drivers.resend');
     Route::delete('settings/drivers/{driver}', [DriverAccountsController::class, 'destroy'])->name('drivers.destroy');
 
