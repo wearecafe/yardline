@@ -69,6 +69,13 @@ list (per selling unit, dated, best quantity break, or a $ / % category
 discount), then the unit's retail price. Products sell in several units (bag, pallet, tonne);
 stock is kept in the base unit and every line converts back to it.
 
+**Emails** (`app/Email`). Every email goes through one branded layout.
+Emails to a yard's own users carry YardRunner's brand
+(`BrandedMail::user`); emails to its customers and suppliers carry the
+yard's (`BrandedMail::customer`, or `YardMail::for`), from the yard's own
+domain once it's verified. See
+[docs/features.md](docs/features.md#emails-and-branding).
+
 **Orders** (`app/Orders`). Draft, confirmed, released (`fulfilled`), and
 for rentals, returned. Confirming calculates tax and decides settlement:
 

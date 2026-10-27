@@ -2,10 +2,12 @@
 title: Texts and emails to your customers
 summary: Every message YardRunner sends, and where replies go.
 order: 4
-related: yard-delivery/dispatch-board, rentals/rental-settings
+related: yard-delivery/dispatch-board, rentals/rental-settings, integrations/email-branding, integrations/sending-domain
 ---
 
 YardRunner sends messages under your business name. Set a **Reply-to email** under **Settings → Business** so replies come to you.
+
+Emails carry your logo and colours (see [Your logo and colours on emails](/help/integrations/email-branding)), and can come from your own addresses once you connect your domain (see [Sending from your own domain](/help/integrations/sending-domain)).
 
 ## Emails
 
