@@ -59,6 +59,7 @@ class QuoteController extends Controller
                 'lines' => $order->lines->map(fn ($line) => $line->only('id', 'sku', 'description', 'quantity', 'unit', 'unit_price_cents', 'line_total_cents', 'deposit_cents'))->all(),
                 'subtotal_cents' => $order->subtotal_cents,
                 'delivery_fee_cents' => $order->delivery_fee_cents,
+                'pallet_fee_cents' => $order->pallet_fee_cents,
                 'tax_cents' => $order->tax_cents,
                 'deposit_cents' => $order->deposit_cents,
                 'total_cents' => $order->total_cents,

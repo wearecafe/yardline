@@ -19,6 +19,7 @@ use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -120,7 +121,7 @@ class ReturnController extends Controller
 
         return Inertia::render('returns/show', [
             'credit' => [
-                ...$creditNote->only('id', 'number', 'kind', 'reason', 'subtotal_cents', 'restocking_fee_cents', 'tax_cents', 'deposit_cents', 'total_cents', 'applied_cents', 'refunded_cents', 'refund_tender', 'status', 'order_id'),
+                ...$creditNote->only('id', 'number', 'kind', 'reason', 'subtotal_cents', 'restocking_fee_cents', 'tax_cents', 'deposit_cents', 'pallet_fee_cents', 'total_cents', 'applied_cents', 'refunded_cents', 'refund_tender', 'status', 'order_id'),
                 'remaining_cents' => $creditNote->remainingCents(),
                 'issued_on' => $creditNote->issued_on->toDateString(),
                 'who' => $creditNote->organization->name ?? $creditNote->customer->full_name ?? '—',
@@ -192,7 +193,20 @@ class ReturnController extends Controller
             'return_window_days' => ['required', 'integer', 'min:0', 'max:3650'],
             'yards' => ['array'],
             'yards.*' => ['boolean'],
+            'pallet_usage_fees' => ['boolean'],
+            'pallet_usage_fee' => ['nullable', 'required_if_accepted:pallet_usage_fees', 'numeric', 'min:0', 'max:9999'],
+            'fee_yards' => ['array'],
+            'fee_yards.*' => ['boolean'],
+        ], [
+            'pallet_usage_fee.required_if_accepted' => 'Enter the usage fee per pallet.',
         ]);
+
+        $fees = (bool) ($data['pallet_usage_fees'] ?? false);
+        $feeCents = (int) (Money::parse($data['pallet_usage_fee'] ?? null) ?? 0);
+
+        if ($fees && $feeCents <= 0) {
+            throw ValidationException::withMessages(['pallet_usage_fee' => 'Enter a usage fee above $0, or turn usage fees off.']);
+        }
 
         $tenant = CurrentTenant::get();
         abort_if($tenant === null, 404);
@@ -203,6 +217,8 @@ class ReturnController extends Controller
             'pallet_deposits' => (bool) ($data['pallet_deposits'] ?? false),
             'pallet_deposit_cents' => (int) Money::parse($data['pallet_deposit']),
             'return_window_days' => (int) $data['return_window_days'],
+            'pallet_usage_fees' => $fees,
+            'pallet_usage_fee_cents' => $feeCents,
         ];
         $tenant->update(['settings' => $settings]);
 
@@ -210,7 +226,11 @@ class ReturnController extends Controller
             Location::query()->whereKey((int) $id)->update(['pallet_deposits' => (bool) $on]);
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Returns and deposits saved.']);
+        foreach ($data['fee_yards'] ?? [] as $id => $on) {
+            Location::query()->whereKey((int) $id)->update(['pallet_usage_fees' => (bool) $on]);
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Returns, deposits and usage fees saved.']);
 
         return back();
     }

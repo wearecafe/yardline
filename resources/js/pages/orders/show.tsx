@@ -744,15 +744,37 @@ function AddLine({
 
 function Totals({ order }: { order: Order }) {
     const isDraft = order.status === 'draft';
+    const palletFees = order.pallet_fee_cents ?? 0;
+    const showDelivery =
+        order.delivery_fee_cents > 0 || order.fulfillment === 'delivery';
+    const feePallets = order.lines.reduce(
+        (sum, l) => sum + (l.fee_pallets ?? 0),
+        0,
+    );
     const rows: [string, string, string?][] = [
-        ...(order.delivery_fee_cents > 0 || order.fulfillment === 'delivery'
+        ...(showDelivery || palletFees > 0
             ? ([
                   [
                       'Items',
                       formatMoney(
-                          order.subtotal_cents - order.delivery_fee_cents,
+                          order.subtotal_cents -
+                              order.delivery_fee_cents -
+                              palletFees,
                       ),
                   ],
+              ] as [string, string, string?][])
+            : []),
+        ...(palletFees > 0
+            ? ([
+                  [
+                      'Pallet usage fees',
+                      formatMoney(palletFees),
+                      `${feePallets} ${feePallets === 1 ? 'pallet' : 'pallets'}, not refundable`,
+                  ],
+              ] as [string, string, string?][])
+            : []),
+        ...(showDelivery
+            ? ([
                   [
                       'Delivery',
                       formatMoney(order.delivery_fee_cents),

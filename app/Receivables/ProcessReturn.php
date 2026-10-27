@@ -20,6 +20,10 @@ use Illuminate\Support\Facades\DB;
  * restocking fee; damaged stock is credited but not restocked. The credit,
  * with its share of the original tax, sits on the account until it's
  * applied or refunded.
+ *
+ * Pallet usage fees aren't refunded when an empty pallet comes back, but
+ * unused product coming back on full pallets credits the fee charged on
+ * those pallets, with its tax. The restocking fee never applies to it.
  */
 class ProcessReturn
 {
@@ -54,6 +58,8 @@ class ProcessReturn
             $subtotal = 0;
             $restockable = 0;
             $tax = 0;
+            $palletFees = 0;
+            $palletFeeTax = 0;
             $any = false;
 
             foreach ($lines as $row) {
@@ -95,6 +101,10 @@ class ProcessReturn
                     $this->ledger->record($line->product, $location, $base, StockMovementType::CustomerReturn, $credit, $user, "Return {$credit->number}", unitCostCents: $line->unit_cost_cents);
                 }
 
+                [$lineFee, $lineFeeTax] = $this->palletFeeBack($line, $quantity);
+                $palletFees += $lineFee;
+                $palletFeeTax += $lineFeeTax;
+
                 $line->returned_quantity = (string) ((float) $line->returned_quantity + $quantity);
                 $line->save();
 
@@ -115,12 +125,52 @@ class ProcessReturn
             $credit->forceFill([
                 'subtotal_cents' => $subtotal,
                 'restocking_fee_cents' => $fee,
-                'tax_cents' => $tax - $feeTax,
-                'total_cents' => $subtotal - $fee + $tax - $feeTax,
+                'pallet_fee_cents' => $palletFees,
+                'tax_cents' => $tax - $feeTax + $palletFeeTax,
+                'total_cents' => $subtotal - $fee + $tax - $feeTax + $palletFees + $palletFeeTax,
             ])->save();
 
             return $credit;
         });
+    }
+
+    /**
+     * The usage fee, and its tax, on the full pallets this return brings
+     * back, at the rate the line was charged. Counted against everything
+     * returned on the line so far, so two half-pallet returns credit one.
+     *
+     * @return array{0: int, 1: int}
+     */
+    private function palletFeeBack(OrderLine $line, float $quantity): array
+    {
+        if ($line->fee_pallets <= 0 || $line->pallet_fee_cents <= 0) {
+            return [0, 0];
+        }
+
+        $before = min($line->fee_pallets, $this->fullPallets($line, (float) $line->returned_quantity));
+        $after = min($line->fee_pallets, $this->fullPallets($line, (float) $line->returned_quantity + $quantity));
+        $count = max(0, $after - $before);
+
+        if ($count === 0) {
+            return [0, 0];
+        }
+
+        return [
+            $count * intdiv($line->pallet_fee_cents, $line->fee_pallets),
+            (int) round($line->pallet_fee_tax_cents * $count / $line->fee_pallets),
+        ];
+    }
+
+    /**
+     * Whole pallets in a quantity of the line's unit.
+     */
+    private function fullPallets(OrderLine $line, float $quantity): int
+    {
+        $perPallet = (float) ($line->product->per_pallet ?? 0);
+
+        return $perPallet > 0
+            ? (int) floor($quantity * (float) ($line->unit_factor ?: 1) / $perPallet + 1e-9)
+            : (int) floor($quantity + 1e-9);
     }
 
     private function qty(float $q): string

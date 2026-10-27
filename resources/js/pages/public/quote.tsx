@@ -40,6 +40,7 @@ type Props = {
         }[];
         subtotal_cents: number;
         delivery_fee_cents: number;
+        pallet_fee_cents: number;
         tax_cents: number;
         deposit_cents: number;
         total_cents: number;
@@ -190,6 +191,17 @@ export default function PublicQuote({ quote, business, token }: Props) {
                                     <dt>Delivery (included below)</dt>
                                     <dd className="figure">
                                         {formatMoney(quote.delivery_fee_cents)}
+                                    </dd>
+                                </div>
+                            )}
+                            {quote.pallet_fee_cents > 0 && (
+                                <div className="flex justify-between">
+                                    <dt>
+                                        Pallet usage fees (included below, not
+                                        refundable)
+                                    </dt>
+                                    <dd className="figure">
+                                        {formatMoney(quote.pallet_fee_cents)}
                                     </dd>
                                 </div>
                             )}

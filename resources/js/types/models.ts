@@ -46,6 +46,7 @@ export type Product = {
     weight_kg?: string | null;
     supplier_name?: string | null;
     pallet_deposit?: boolean;
+    pallet_usage_fee?: boolean;
     supplier_id?: number | null;
     track_lots?: boolean;
     per_pallet?: string | null;
@@ -186,9 +187,12 @@ export type OrderLine = {
     shipped_quantity?: string;
     returned_quantity?: string;
     pallets?: number;
+    fee_pallets?: number;
     line_total_cents: number;
     tax_cents: number;
     deposit_cents: number;
+    pallet_fee_cents?: number;
+    pallet_fee_tax_cents?: number;
 };
 
 export type Payment = {
@@ -232,6 +236,7 @@ export type Order = {
     tax_cents: number;
     total_cents: number;
     deposit_cents: number;
+    pallet_fee_cents: number;
     amount_paid_cents: number;
     amount_due_cents: number;
     balance_cents: number;

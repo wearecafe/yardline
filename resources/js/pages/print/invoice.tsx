@@ -39,8 +39,11 @@ type Props = {
             line_total_cents: number;
             deposit_cents: number;
             pallets: number;
+            fee_pallets: number;
+            pallet_fee_cents: number;
         }[];
         delivery_fee_cents: number;
+        pallet_fee_cents: number;
         subtotal_cents: number;
         tax_cents: number;
         deposit_cents: number;
@@ -156,6 +159,38 @@ export default function InvoicePage({ invoice, order, business }: Props) {
                                 </td>
                             </tr>
                         ))}
+                        {order.lines
+                            .filter((l) => l.pallet_fee_cents > 0)
+                            .map((l) => (
+                                <tr
+                                    key={`pallet-fee-${l.id}`}
+                                    className="border-b border-gray-200"
+                                >
+                                    <td className="py-1.5">
+                                        Pallet usage fee, {l.description}
+                                        <div className="text-xs text-gray-600">
+                                            Not refundable
+                                        </div>
+                                    </td>
+                                    <td className="text-right font-mono">
+                                        {l.fee_pallets}{' '}
+                                        {l.fee_pallets === 1
+                                            ? 'pallet'
+                                            : 'pallets'}
+                                    </td>
+                                    <td className="text-right font-mono">
+                                        {formatMoney(
+                                            Math.round(
+                                                l.pallet_fee_cents /
+                                                    Math.max(1, l.fee_pallets),
+                                            ),
+                                        )}
+                                    </td>
+                                    <td className="text-right font-mono">
+                                        {formatMoney(l.pallet_fee_cents)}
+                                    </td>
+                                </tr>
+                            ))}
                         {order.delivery_fee_cents > 0 && (
                             <tr className="border-b border-gray-200">
                                 <td className="py-1.5">Delivery</td>

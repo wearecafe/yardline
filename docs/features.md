@@ -62,8 +62,8 @@ total, and add one line per unit when accepted (`round` on
 `orders.lines.store`). When a product rounds, its base unit stays in the
 unit picker, marked "(rounds)", so staff can enter an area or weight.
 Rounding down below the smallest sale (5 sq ft when a layer is 10.62) is
-refused. Pallet deposits count each line on its own, so loose layers ship
-on (and pay for) one more pallet.
+refused. Pallet deposits and usage fees count each line on its own, so
+loose layers ship on (and pay for) one more pallet.
 
 Portal reorders round the same way when a unit has been switched off since,
 and the patio calculator prices pavers that round as the same mix
@@ -158,8 +158,23 @@ minutes instead.
 | Aging and statements (print, PDF, email)      | Receivables                   | `Aging`, `Statement`                |
 | Returns with restocking fees, credit notes    | Returns                       | `ProcessReturn`, `UseCredit`        |
 | Pallet deposits out and back                  | Order page, organization page | `PalletLedger`                      |
+| Pallet usage fees                             | Order page, invoice, receipt  | `RecalculateOrder`, `ProcessReturn` |
 | Card payments and payment links               | Order page                    | `app/Payments` (Stripe)             |
 | Sales tax                                     | Order confirm                 | `app/Tax` (Stripe Tax or flat rate) |
+
+**Pallet deposits and usage fees.** Two separate per-pallet charges, both
+under Settings → Delivery, Returns tab (`ReturnsSettings`): the tenant turns
+each on and sets its amount, each yard turns each on or off
+(`locations.pallet_deposits`, `locations.pallet_usage_fees`), and each
+product opts in (`products.pallet_deposit`, `products.pallet_usage_fee`).
+The deposit is refundable: it sits outside the subtotal, isn't taxed, posts
+to a liability and is credited when the pallet comes back. The usage fee
+isn't: it's in the subtotal (`orders.pallet_fee_cents`), taxed with the
+product's tax code, posts to QuickBooks as a "Pallet usage fee" item on the
+sales account, and is never credited for an empty pallet. It's only
+credited, with its tax, when unused product comes back on full pallets
+(`ProcessReturn`, `credit_notes.pallet_fee_cents`). A line keeps the rate
+it was charged once its prices are fixed.
 
 ## Profit and loss
 

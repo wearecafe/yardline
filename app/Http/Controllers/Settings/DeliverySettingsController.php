@@ -36,7 +36,7 @@ class DeliverySettingsController extends Controller
             ]),
             'trucks' => Truck::query()->orderBy('position')->orderBy('name')->get(['id', 'name', 'kind', 'capacities', 'has_boom', 'is_active', 'location_id']),
             'capacityUnits' => collect(Truck::CAPACITY_UNITS)->map(fn ($label, $value) => ['value' => $value, 'label' => $label])->values(),
-            'yards' => Location::query()->orderBy('name')->get(['id', 'name', 'pallet_deposits']),
+            'yards' => Location::query()->orderBy('name')->get(['id', 'name', 'pallet_deposits', 'pallet_usage_fees']),
             'returns' => ReturnsSettings::current()->toArray(),
         ]);
     }

@@ -37,6 +37,7 @@ type Option = { value: string; label: string };
 type LineKey =
     | 'goods_sales'
     | 'delivery_fees'
+    | 'pallet_fees'
     | 'restocking_fees'
     | 'returns'
     | 'rental_charges'

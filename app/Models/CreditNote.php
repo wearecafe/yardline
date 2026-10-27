@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $restocking_fee_cents
  * @property int $tax_cents
  * @property int $deposit_cents
+ * @property int $pallet_fee_cents pallet usage fees credited for unused product returned on full pallets, before tax
  * @property int $total_cents
  * @property int $applied_cents
  * @property int $refunded_cents
@@ -47,7 +48,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 #[Fillable([
     'number', 'kind', 'organization_id', 'customer_id', 'order_id', 'location_id', 'reason',
-    'subtotal_cents', 'restocking_fee_cents', 'tax_cents', 'deposit_cents', 'total_cents',
+    'subtotal_cents', 'restocking_fee_cents', 'tax_cents', 'deposit_cents', 'pallet_fee_cents', 'total_cents',
     'issued_on', 'created_by',
 ])]
 class CreditNote extends Model
@@ -68,6 +69,7 @@ class CreditNote extends Model
         'restocking_fee_cents' => 0,
         'tax_cents' => 0,
         'deposit_cents' => 0,
+        'pallet_fee_cents' => 0,
         'total_cents' => 0,
     ];
 
@@ -79,6 +81,7 @@ class CreditNote extends Model
             'restocking_fee_cents' => 'integer',
             'tax_cents' => 'integer',
             'deposit_cents' => 'integer',
+            'pallet_fee_cents' => 'integer',
             'total_cents' => 'integer',
             'applied_cents' => 'integer',
             'refunded_cents' => 'integer',

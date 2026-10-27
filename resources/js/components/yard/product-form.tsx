@@ -36,6 +36,7 @@ export function ProductForm({
         weight_kg: product?.weight_kg ? String(Number(product.weight_kg)) : '',
         supplier_name: product?.supplier_name ?? '',
         pallet_deposit: product?.pallet_deposit ?? false,
+        pallet_usage_fee: product?.pallet_usage_fee ?? false,
         supplier_id: product?.supplier_id ? String(product.supplier_id) : '',
         track_lots: product?.track_lots ?? false,
         per_pallet: product?.per_pallet
@@ -369,15 +370,27 @@ export function ProductForm({
                         />
                     </div>
                     <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:items-end">
-                        <Checkbox
-                            id="pallet_deposit"
-                            label="Ships on pallets that carry a deposit"
-                            checked={form.data.pallet_deposit}
-                            onChange={(checked) =>
-                                form.setData('pallet_deposit', checked)
-                            }
-                        />
-                        {form.data.pallet_deposit && (
+                        <div className="space-y-3">
+                            <Checkbox
+                                id="pallet_deposit"
+                                label="Ships on pallets that carry a deposit"
+                                checked={form.data.pallet_deposit}
+                                onChange={(checked) =>
+                                    form.setData('pallet_deposit', checked)
+                                }
+                            />
+                            <Checkbox
+                                id="pallet_usage_fee"
+                                label="Charge a pallet usage fee"
+                                hint="Not refunded when the pallet comes back."
+                                checked={form.data.pallet_usage_fee}
+                                onChange={(checked) =>
+                                    form.setData('pallet_usage_fee', checked)
+                                }
+                            />
+                        </div>
+                        {(form.data.pallet_deposit ||
+                            form.data.pallet_usage_fee) && (
                             <Field
                                 label="Base units per pallet"
                                 htmlFor="per_pallet"

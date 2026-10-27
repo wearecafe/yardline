@@ -47,12 +47,19 @@ type Props = {
     zones: Zone[];
     trucks: Truck[];
     capacityUnits: CapacityUnit[];
-    yards: { id: number; name: string; pallet_deposits: boolean }[];
+    yards: {
+        id: number;
+        name: string;
+        pallet_deposits: boolean;
+        pallet_usage_fees: boolean;
+    }[];
     returns: {
         restocking_percent: number;
         pallet_deposits: boolean;
         pallet_deposit_cents: number;
         return_window_days: number;
+        pallet_usage_fees: boolean;
+        pallet_usage_fee_cents: number;
     };
 };
 
@@ -64,6 +71,11 @@ function ReturnsForm({ returns, yards }: Pick<Props, 'returns' | 'yards'>) {
         return_window_days: String(returns.return_window_days),
         yards: Object.fromEntries(
             yards.map((y) => [String(y.id), y.pallet_deposits]),
+        ) as Record<string, boolean>,
+        pallet_usage_fees: returns.pallet_usage_fees,
+        pallet_usage_fee: centsToInput(returns.pallet_usage_fee_cents),
+        fee_yards: Object.fromEntries(
+            yards.map((y) => [String(y.id), y.pallet_usage_fees]),
         ) as Record<string, boolean>,
     });
 
@@ -183,8 +195,75 @@ function ReturnsForm({ returns, yards }: Pick<Props, 'returns' | 'yards'>) {
                 )}
             </section>
 
+            <section className="space-y-4 border-t border-border pt-8">
+                <Heading
+                    variant="small"
+                    title="Pallet usage fees"
+                    description="A charge on each pallet that leaves the yard for the use of the pallet. Unlike a deposit, it isn't credited when the pallet comes back. It's taxed like the product, and only credited when unused product comes back on full pallets."
+                />
+                <Checkbox
+                    id="pallet_usage_fees"
+                    label="Charge pallet usage fees"
+                    checked={form.data.pallet_usage_fees}
+                    onChange={(v) => form.setData('pallet_usage_fees', v)}
+                />
+                {form.data.pallet_usage_fees && (
+                    <div className="space-y-4 pl-6">
+                        <Field
+                            label="Usage fee per pallet"
+                            htmlFor="pallet_usage_fee"
+                            error={form.errors.pallet_usage_fee}
+                            className="max-w-48"
+                        >
+                            <Input
+                                id="pallet_usage_fee"
+                                inputMode="decimal"
+                                value={form.data.pallet_usage_fee}
+                                onChange={(e) =>
+                                    form.setData(
+                                        'pallet_usage_fee',
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                        </Field>
+                        <p className="text-sm text-muted-foreground">
+                            Turn it on for each product that ships on a pallet
+                            in the product editor.
+                        </p>
+                        {yards.length > 1 && (
+                            <fieldset className="space-y-2">
+                                <legend className="mb-2 text-sm font-medium">
+                                    At these yards
+                                </legend>
+                                <div className="flex flex-wrap gap-5">
+                                    {yards.map((y) => (
+                                        <Checkbox
+                                            key={y.id}
+                                            id={`yard-pallet-fees-${y.id}`}
+                                            label={y.name}
+                                            checked={
+                                                form.data.fee_yards[
+                                                    String(y.id)
+                                                ] ?? true
+                                            }
+                                            onChange={(v) =>
+                                                form.setData('fee_yards', {
+                                                    ...form.data.fee_yards,
+                                                    [String(y.id)]: v,
+                                                })
+                                            }
+                                        />
+                                    ))}
+                                </div>
+                            </fieldset>
+                        )}
+                    </div>
+                )}
+            </section>
+
             <Button type="submit" disabled={form.processing}>
-                Save returns and deposits
+                Save returns, deposits and fees
             </Button>
         </form>
     );

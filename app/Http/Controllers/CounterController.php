@@ -187,6 +187,7 @@ class CounterController extends Controller
                 'settlement' => $order->settlement?->value,
                 'yard' => ['name' => $order->location->name, 'address' => trim(implode(', ', array_filter([$order->location->address_line1, $order->location->city])))],
                 'lines' => $order->lines->map(fn ($l) => $l->only('id', 'description', 'quantity', 'unit', 'unit_price_cents', 'line_total_cents', 'deposit_cents'))->values(),
+                'pallet_fee_cents' => $order->pallet_fee_cents,
                 'subtotal_cents' => $order->subtotal_cents,
                 'tax_cents' => $order->tax_cents,
                 'deposit_cents' => $order->deposit_cents,
