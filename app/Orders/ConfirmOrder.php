@@ -87,6 +87,8 @@ class ConfirmOrder
         });
 
         if (! $order->isRental()) {
+            // What each line cost, fixed with the invoice for the profit report.
+            app(RecordLineCosts::class)->handle($order);
             app(IssueInvoice::class)->forOrder($order);
         }
 

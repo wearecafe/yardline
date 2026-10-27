@@ -1,4 +1,5 @@
 import {
+    ChartColumn,
     Boxes,
     Clock,
     ClipboardCheck,
@@ -39,6 +40,7 @@ import MaintenanceController from '@/actions/App/Http/Controllers/Rentals/Mainte
 import RentalController from '@/actions/App/Http/Controllers/Rentals/RentalController';
 import RentalPaymentController from '@/actions/App/Http/Controllers/Rentals/RentalPaymentController';
 import PriceListController from '@/actions/App/Http/Controllers/PriceListController';
+import ProfitReportController from '@/actions/App/Http/Controllers/ProfitReportController';
 import ProductController from '@/actions/App/Http/Controllers/ProductController';
 import EmployeeController from '@/actions/App/Http/Controllers/Time/EmployeeController';
 import KioskController from '@/actions/App/Http/Controllers/Time/KioskController';
@@ -148,6 +150,26 @@ export const navSections: NavSection[] = [
         ],
     },
 ];
+
+/**
+ * Reports with costs and margins: the owner, and admins if the owner allows.
+ */
+export function reportsSection(canViewProfit: boolean): NavSection | null {
+    if (!canViewProfit) {
+        return null;
+    }
+
+    return {
+        label: 'Reports',
+        items: [
+            {
+                title: 'Profit and loss',
+                href: ProfitReportController.index(),
+                icon: ChartColumn,
+            },
+        ],
+    };
+}
 
 /**
  * Time and attendance, once the business has it on. Managers see who's

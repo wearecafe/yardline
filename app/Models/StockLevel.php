@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $product_id
  * @property int $location_id
  * @property string $on_hand
+ * @property string|null $average_cost_cents average cost of what's on hand, per base unit
  * @property string|null $reorder_point
  * @property string|null $bin
  * @property-read Product $product
@@ -37,6 +38,7 @@ class StockLevel extends Model
     {
         return [
             'on_hand' => 'decimal:3',
+            'average_cost_cents' => 'decimal:4',
             'reorder_point' => 'decimal:3',
         ];
     }

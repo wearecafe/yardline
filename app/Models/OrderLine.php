@@ -29,6 +29,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $price_source
  * @property int|null $category_rule_id the price list category rule that priced the line
  * @property int $unit_price_cents
+ * @property string|null $unit_cost_cents cost per base unit, fixed when the order is invoiced
+ * @property string|null $cost_source average | product | missing | none
+ * @property int|null $list_price_cents the unit's retail price when it was invoiced
  * @property int $periods
  * @property string|null $period_unit
  * @property bool $price_overridden
@@ -42,7 +45,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'order_id', 'product_id', 'product_unit_id', 'sku', 'description', 'quantity', 'unit',
-    'unit_factor', 'base_quantity', 'shipped_quantity', 'returned_quantity', 'pallets', 'unit_price_cents', 'periods', 'period_unit', 'price_overridden',
+    'unit_factor', 'base_quantity', 'shipped_quantity', 'returned_quantity', 'pallets', 'unit_price_cents', 'unit_cost_cents', 'cost_source', 'list_price_cents', 'periods', 'period_unit', 'price_overridden',
     'price_source', 'category_rule_id', 'line_total_cents', 'tax_cents', 'deposit_cents', 'position',
 ])]
 class OrderLine extends Model
@@ -62,6 +65,8 @@ class OrderLine extends Model
             'returned_quantity' => 'decimal:3',
             'pallets' => 'integer',
             'unit_price_cents' => 'integer',
+            'unit_cost_cents' => 'decimal:4',
+            'list_price_cents' => 'integer',
             'periods' => 'integer',
             'price_overridden' => 'boolean',
             'line_total_cents' => 'integer',
@@ -106,6 +111,17 @@ class OrderLine extends Model
     /**
      * The quantity in the product's base unit, which is what stock moves by.
      */
+    /**
+     * What the line cost the yard, in cents: its base quantity at the cost
+     * fixed when it was invoiced. Null when there's no cost to use.
+     */
+    public function costCents(): ?int
+    {
+        return $this->unit_cost_cents !== null
+            ? (int) round($this->baseQuantity() * (float) $this->unit_cost_cents)
+            : null;
+    }
+
     public function baseQuantity(): float
     {
         return $this->base_quantity !== null

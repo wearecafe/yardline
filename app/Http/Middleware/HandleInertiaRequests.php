@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Fulfillment\DriverRun;
 use App\Pricing\PricingSettings;
+use App\Reports\ReportSettings;
 use App\Support\Demo;
 use App\Tenancy\CurrentTenant;
 use App\Time\TimeStatus;
@@ -56,6 +57,8 @@ class HandleInertiaRequests extends Middleware
                     'priceExempt' => (bool) $request->user()?->canManageBusiness()
                         && PricingSettings::current()->canPriceExempt($request->user()),
                     'manageTime' => (bool) $request->user()?->canManageBusiness(),
+                    // The profit report: the owner, and admins if the owner allows.
+                    'viewProfit' => ReportSettings::current()->canViewProfit($request->user()),
                 ],
             ],
             // Time and attendance: whether it's on, and the signed-in person's clock.

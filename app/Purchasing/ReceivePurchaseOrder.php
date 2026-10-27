@@ -45,13 +45,14 @@ class ReceivePurchaseOrder
                 $product = $line->product;
                 $lot = $this->lot($product, $po, $row['lot'] ?? null);
 
-                $this->ledger->record($product, $po->location, $quantity, StockMovementType::Receipt, $po, $user, "{$po->number} · {$po->supplier->name}", $lot);
-
-                $line->received_quantity = (string) ((float) $line->received_quantity + $quantity);
-
                 if (! empty($row['unit_cost_cents'])) {
                     $line->unit_cost_cents = (int) $row['unit_cost_cents'];
                 }
+
+                // Comes in at the landed cost, which blends into the yard's average cost.
+                $this->ledger->record($product, $po->location, $quantity, StockMovementType::Receipt, $po, $user, "{$po->number} · {$po->supplier->name}", $lot, $line->unit_cost_cents > 0 ? $line->unit_cost_cents : null);
+
+                $line->received_quantity = (string) ((float) $line->received_quantity + $quantity);
 
                 $line->save();
                 self::updateCost($product, $line->unit_cost_cents);

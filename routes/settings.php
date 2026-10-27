@@ -58,6 +58,7 @@ Route::middleware(['auth', 'verified', 'can:manage-users'])->group(function () {
     Route::patch('settings/users/{user}', [UserAccountsController::class, 'update'])->name('users.update');
     Route::post('settings/users/{user}/resend', [UserAccountsController::class, 'resend'])->name('users.resend');
     Route::delete('settings/users/{user}', [UserAccountsController::class, 'destroy'])->name('users.destroy');
+    Route::put('settings/users/reports', [UserAccountsController::class, 'reports'])->name('users.reports');
 });
 
 Route::get('.well-known/passkey-endpoints', function () {
