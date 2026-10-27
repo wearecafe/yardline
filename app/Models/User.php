@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Access\AccessSettings;
 use App\Enums\Permission;
 use App\Enums\UserRole;
+use App\Tenancy\CurrentTenant;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -157,7 +158,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         $roles = [];
 
         foreach ($values as $value) {
-            $role = $value instanceof UserRole ? $value : UserRole::fromValue(is_string($value) ? $value : null);
+            $role = $value instanceof UserRole ? $value : UserRole::fromValue($value);
 
             if ($role !== null && ! in_array($role, $roles, true)) {
                 $roles[] = $role;
@@ -229,7 +230,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     /** What their roles give, before anything granted or removed on them. */
     public function permissionFromRoles(Permission $permission): bool
     {
-        $settings = AccessSettings::for($this->tenant);
+        $settings = AccessSettings::for($this->currentTenant());
 
         foreach ($this->roleList() as $role) {
             if ($settings->roleGives($role, $permission)) {
@@ -259,7 +260,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
      */
     public function refundLimit(?string $kind = null): ?int
     {
-        $settings = AccessSettings::for($this->tenant);
+        $settings = AccessSettings::for($this->currentTenant());
         $limit = 0;
 
         foreach ($this->roleList() as $role) {
@@ -291,6 +292,17 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         $limit = $this->refundLimit($kind);
 
         return $limit === null || $cents <= $limit;
+    }
+
+    /**
+     * Their business, as this request knows it, so settings changed
+     * during the request (or a test) are the ones used.
+     */
+    private function currentTenant(): ?Tenant
+    {
+        $current = CurrentTenant::get();
+
+        return $current !== null && $current->id === $this->tenant_id ? $current : $this->tenant;
     }
 
     /** Sees selling prices, totals and balances (not yard crew, dispatch, drivers or service techs). */

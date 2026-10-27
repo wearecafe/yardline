@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Enums\UserRole;
 use App\Models\Tenant;
-use App\Models\User;
 use App\Tenancy\CurrentTenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -49,14 +48,6 @@ class UserFactory extends Factory
     /**
      * Indicate that the model's email address should be unverified.
      */
-    /**
-     * @param  list<UserRole>  $roles
-     */
-    public function withRoles(UserRole ...$roles): static
-    {
-        return $this->afterMaking(fn (User $user) => $user->setRoles($roles));
-    }
-
     public function unverified(): static
     {
         return $this->state(fn (array $attributes) => [

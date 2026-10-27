@@ -99,7 +99,7 @@ class UserAccountsTest extends TestCase
         // Someone added without yards starts with every yard.
         $this->post(route('users.store'), ['name' => 'Pat', 'email' => 'pat@example.com', 'roles' => ['yard_crew']])->assertSessionHasNoErrors();
         $pat = User::query()->where('email', 'pat@example.com')->firstOrFail();
-        $this->assertEqualsCanonicalizing([$waterdown->id, $stoney->id], $pat->yardIds());
+        $this->assertEqualsCanonicalizing(Location::query()->pluck('id')->all(), $pat->yardIds());
 
         $this->patch(route('users.update', $casey), ['roles' => ['sales', 'rental_desk'], 'location_ids' => [$waterdown->id, $stoney->id]])
             ->assertSessionHasNoErrors();

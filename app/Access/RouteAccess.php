@@ -5,6 +5,8 @@ namespace App\Access;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 /**
@@ -219,8 +221,11 @@ final class RouteAccess
 
         // Routes behind a gate (settings, the P&L, timesheets, users) are
         // decided by that permission, whatever the role: someone given
-        // Approve timesheets reaches the timesheets.
-        if (is_object($route) && self::gated($route->gatherMiddleware())) {
+        // Approve timesheets reaches the timesheets. People who only drive
+        // stay on their run.
+        $abilities = $route instanceof Route ? self::abilities($route->gatherMiddleware()) : [];
+
+        if ($abilities !== [] && (! $user->isOnlyDriver() || Gate::forUser($user)->check($abilities))) {
             return true;
         }
 
@@ -252,17 +257,22 @@ final class RouteAccess
     }
 
     /**
+     * The gates a route's can: middleware checks.
+     *
      * @param  array<int, mixed>  $middleware
+     * @return list<string>
      */
-    private static function gated(array $middleware): bool
+    private static function abilities(array $middleware): array
     {
+        $abilities = [];
+
         foreach ($middleware as $m) {
             if (is_string($m) && str_starts_with($m, 'can:')) {
-                return true;
+                $abilities[] = explode(',', substr($m, 4))[0];
             }
         }
 
-        return false;
+        return $abilities;
     }
 
     /** The route a user lands on, and is sent back to. */
