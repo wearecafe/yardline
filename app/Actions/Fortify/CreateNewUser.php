@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
+use App\Enums\TenantStatus;
 use App\Enums\UserRole;
 use App\Models\Location;
 use App\Models\Tenant;
@@ -41,6 +42,7 @@ class CreateNewUser implements CreatesNewUsers
             $tenant = Tenant::query()->create([
                 'name' => $input['business_name'],
                 'slug' => $this->uniqueSlug($input['business_name']),
+                'status' => TenantStatus::Trial,
             ]);
 
             CurrentTenant::run($tenant, fn () => Location::query()->create([

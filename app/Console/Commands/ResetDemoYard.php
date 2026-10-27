@@ -25,6 +25,8 @@ class ResetDemoYard extends Command
      * @var list<string>
      */
     private const TABLES = [
+        'user_activity_days',
+        'webhook_deliveries',
         'audit_events',
         'payroll_exports',
         'timesheets',

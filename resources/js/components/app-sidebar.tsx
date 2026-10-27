@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { ClipboardList, LifeBuoy, Route } from 'lucide-react';
+import OverviewController from '@/actions/App/Http/Controllers/Admin/OverviewController';
 import DriverController from '@/actions/App/Http/Controllers/DriverController';
 import FulfillmentController from '@/actions/App/Http/Controllers/FulfillmentController';
 import AppLogo from '@/components/app-logo';
@@ -15,6 +16,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { adminNavSections } from '@/lib/admin-navigation';
 import { navSections, reportsSection, teamSection } from '@/lib/navigation';
 import { dashboard } from '@/routes';
 
@@ -23,40 +25,43 @@ export function AppSidebar() {
     const team = teamSection(time, auth.can.manageTime);
     const reports = reportsSection(auth.can.viewProfit);
     // Drivers only reach settings pages here; their run is the way back.
-    // Order pickers only work the order queue.
-    const sections = auth.can.pick
-        ? [
-              {
-                  label: 'Yard',
-                  items: [
-                      {
-                          title: 'Orders and picking',
-                          href: FulfillmentController.queue(),
-                          icon: ClipboardList,
-                      },
-                  ],
-              },
-              // Their own time clock, when the business tracks time.
-              ...(team ? [team] : []),
-          ]
-        : auth.can.drive
+    // Yardline staff get the back office instead of a yard.
+    const sections = auth.can.backOffice
+        ? adminNavSections
+        : // Order pickers only work the order queue.
+          auth.can.pick
           ? [
                 {
-                    label: 'Driving',
+                    label: 'Yard',
                     items: [
                         {
-                            title: 'My run',
-                            href: DriverController.today(),
-                            icon: Route,
+                            title: 'Orders and picking',
+                            href: FulfillmentController.queue(),
+                            icon: ClipboardList,
                         },
                     ],
                 },
-            ]
-          : [
-                ...navSections,
-                ...(reports ? [reports] : []),
+                // Their own time clock, when the business tracks time.
                 ...(team ? [team] : []),
-            ];
+            ]
+          : auth.can.drive
+            ? [
+                  {
+                      label: 'Driving',
+                      items: [
+                          {
+                              title: 'My run',
+                              href: DriverController.today(),
+                              icon: Route,
+                          },
+                      ],
+                  },
+              ]
+            : [
+                  ...navSections,
+                  ...(reports ? [reports] : []),
+                  ...(team ? [team] : []),
+              ];
 
     return (
         <Sidebar collapsible="icon" variant="sidebar">
@@ -70,11 +75,13 @@ export function AppSidebar() {
                         >
                             <Link
                                 href={
-                                    auth.can.pick
-                                        ? FulfillmentController.queue()
-                                        : auth.can.drive
-                                          ? DriverController.today()
-                                          : dashboard()
+                                    auth.can.backOffice
+                                        ? OverviewController.url()
+                                        : auth.can.pick
+                                          ? FulfillmentController.queue()
+                                          : auth.can.drive
+                                            ? DriverController.today()
+                                            : dashboard()
                                 }
                                 prefetch
                             >

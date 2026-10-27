@@ -61,7 +61,9 @@ export function PortalOrderCards({
                                 {showTotal
                                     ? ` · ${formatMoney(o.total_cents)}`
                                     : ''}
-                                {o.items ? ` · ${o.items}` : ''}
+                                {o.lines.length > 0
+                                    ? ` · ${o.lines.map((l) => `${l.qty} ${l.name}`).join(', ')}${o.more_lines > 0 ? ` +${o.more_lines} more` : ''}`
+                                    : ''}
                             </div>
                         </div>
                         <ChevronRight className="size-4 shrink-0 text-muted-foreground" />

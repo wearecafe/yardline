@@ -49,6 +49,7 @@ class HandleInertiaRequests extends Middleware
                 'can' => [
                     'manageBusiness' => (bool) $request->user()?->canManageBusiness(),
                     'manageUsers' => (bool) $request->user()?->canManageUsers(),
+                    'backOffice' => (bool) $request->user()?->isPlatformStaff(),
                     'drive' => (bool) $request->user()?->isDriver(),
                     // Order pickers only work the order queue.
                     'pick' => (bool) $request->user()?->isPicker(),

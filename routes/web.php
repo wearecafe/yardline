@@ -225,5 +225,6 @@ Route::post('q/{token}/accept', [QuoteController::class, 'accept'])->middleware(
 Route::post('webhooks/stripe', StripeWebhookController::class)->name('webhooks.stripe');
 
 require __DIR__.'/settings.php';
+require __DIR__.'/admin.php';
 require __DIR__.'/rentals.php';
 require __DIR__.'/time.php';
