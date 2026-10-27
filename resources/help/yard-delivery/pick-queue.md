@@ -5,7 +5,7 @@ order: 1
 related: yard-delivery/picking-on-the-kiosk, yard-delivery/short-picks
 ---
 
-Confirmed orders that still have something to ship wait in the pick queue. Open **Orders and picking** to see it.
+Confirmed orders that still have something to ship wait in the pick queue. Open **Orders and picking** to see it. Yard crew who've turned on [alerts](/help/getting-started/app-and-alerts) get one on their phone or tablet when a new order lands in the queue at their yards.
 
 ## Work the queue
 

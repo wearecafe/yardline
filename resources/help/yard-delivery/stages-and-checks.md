@@ -29,7 +29,7 @@ You can require a sign-off at **Picked**, **Loaded**, or both. For each check yo
 - **Who can sign off**: any mix of owners, admins, Sales, Dispatchers and Yard crew. Anyone given **Quality-check sign-off** can sign off any stage.
 - **Must be checked by someone else**: on by default, so whoever marked the order picked (or loaded) can't sign off their own work.
 
-When a check is required, an order marked picked (or loaded) shows **Awaiting check** in the queue and can't move on until it's signed off. Select **Awaiting check** at the top of the queue to see only those orders.
+When a check is required, an order marked picked (or loaded) shows **Awaiting check** in the queue and can't move on until it's signed off. Select **Awaiting check** at the top of the queue to see only those orders. People who can sign off, other than whoever marked it, also get an [alert](/help/getting-started/app-and-alerts) on their phone or tablet if they've turned alerts on, and the picker gets one if their work is rejected.
 
 To check an order, select it in the queue, compare the load with the pick list, then:
 
