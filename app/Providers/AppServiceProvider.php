@@ -2,17 +2,21 @@
 
 namespace App\Providers;
 
+use App\Models\ContractPrice;
 use App\Models\CreditNote;
 use App\Models\Customer;
 use App\Models\CycleCount;
 use App\Models\Invoice;
 use App\Models\Location;
 use App\Models\Order;
+use App\Models\OrderLine;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\PriceList;
 use App\Models\PriceListCategoryRule;
+use App\Models\PriceListItem;
 use App\Models\Product;
+use App\Models\ProductUnit;
 use App\Models\PurchaseOrder;
 use App\Models\Rental;
 use App\Models\RentalPayment;
@@ -131,16 +135,20 @@ class AppServiceProvider extends ServiceProvider
         // Stable names in polymorphic columns (stock movement references,
         // external references) instead of PHP class names.
         Relation::enforceMorphMap([
+            'contract_price' => ContractPrice::class,
             'credit_note' => CreditNote::class,
             'customer' => Customer::class,
             'invoice' => Invoice::class,
             'location' => Location::class,
             'order' => Order::class,
+            'order_line' => OrderLine::class,
             'organization' => Organization::class,
             'payment' => Payment::class,
             'price_list' => PriceList::class,
             'price_list_category_rule' => PriceListCategoryRule::class,
+            'price_list_item' => PriceListItem::class,
             'product' => Product::class,
+            'product_unit' => ProductUnit::class,
             'purchase_order' => PurchaseOrder::class,
             'stock_transfer' => StockTransfer::class,
             'cycle_count' => CycleCount::class,
