@@ -15,12 +15,13 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { navSections, teamSection } from '@/lib/navigation';
+import { navSections, reportsSection, teamSection } from '@/lib/navigation';
 import { dashboard } from '@/routes';
 
 export function AppSidebar() {
     const { auth, time } = usePage().props;
     const team = teamSection(time, auth.can.manageTime);
+    const reports = reportsSection(auth.can.viewProfit);
     // Drivers only reach settings pages here; their run is the way back.
     // Order pickers only work the order queue.
     const sections = auth.can.pick
@@ -51,9 +52,11 @@ export function AppSidebar() {
                     ],
                 },
             ]
-          : team
-            ? [...navSections, team]
-            : navSections;
+          : [
+                ...navSections,
+                ...(reports ? [reports] : []),
+                ...(team ? [team] : []),
+            ];
 
     return (
         <Sidebar collapsible="icon" variant="sidebar">

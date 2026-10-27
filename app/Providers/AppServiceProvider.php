@@ -31,11 +31,15 @@ use App\Models\Timesheet;
 use App\Models\User;
 use App\Payments\CheckoutLinks;
 use App\Payments\FakeCheckoutLinks;
+use App\Payments\Fees\CardFees;
+use App\Payments\Fees\EstimatedCardFees;
+use App\Payments\Fees\StripeCardFees;
 use App\Payments\StripeCheckoutLinks;
 use App\Rentals\Payments\FakeRentalGateway;
 use App\Rentals\Payments\RentalGateway;
 use App\Rentals\Payments\StripeRentalGateway;
 use App\Rentals\RentalSettings;
+use App\Reports\ReportSettings;
 use App\Support\Demo;
 use App\Support\StripeGateway;
 use App\Tax\FlatRateTaxCalculator;
@@ -82,6 +86,12 @@ class AppServiceProvider extends ServiceProvider
 
             return $driver === 'stripe' ? $app->make(StripeRentalGateway::class) : new FakeRentalGateway;
         });
+
+        // Card fees for the profit report: read from Stripe, or estimated
+        // where there's no processor (local development, the demo yard).
+        $this->app->bind(CardFees::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardline.payments.driver') === 'stripe'
+            ? $app->make(StripeCardFees::class)
+            : new EstimatedCardFees);
 
         $this->app->bind(RentalSettings::class, fn () => RentalSettings::current());
         $this->app->bind(TimeSettings::class, fn () => TimeSettings::current());
@@ -179,5 +189,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('override-credit', fn (User $user) => $user->canManageBusiness());
         // Who's in, timesheet review and approval, corrections, payroll export.
         Gate::define('manage-time', fn (User $user) => $user->canManageBusiness());
+        // Costs, margins and the profit report: the owner, and admins if the owner allows.
+        Gate::define('view-profit', fn (User $user) => ReportSettings::current()->canViewProfit($user));
     }
 }

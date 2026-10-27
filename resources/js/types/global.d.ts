@@ -19,6 +19,7 @@ declare module '@inertiajs/core' {
                     pick: boolean;
                     priceExempt: boolean;
                     manageTime: boolean;
+                    viewProfit: boolean;
                 };
             };
             tenant: { id: number; name: string; currency: string } | null;

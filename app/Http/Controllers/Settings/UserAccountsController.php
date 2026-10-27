@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Location;
 use App\Models\User;
 use App\Notifications\UserInviteMessage;
+use App\Reports\ReportSettings;
 use App\Tenancy\CurrentTenant;
 use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
@@ -54,7 +55,33 @@ class UserAccountsController extends Controller
                 'label' => $role->label(),
             ], UserRole::assignable()),
             'locations' => Location::query()->orderBy('name')->get(['id', 'name']),
+            'reports' => ReportSettings::current()->toArray(),
         ]);
+    }
+
+    /**
+     * Whether admins see the profit report (costs and margins). The owner
+     * always does; staff, order pickers and drivers never do.
+     */
+    public function reports(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['admins_can_view_profit' => ['required', 'boolean']]);
+        $tenant = CurrentTenant::get();
+        abort_if($tenant === null, 404);
+
+        $before = ReportSettings::for($tenant)->adminsCanViewProfit;
+        $after = (bool) $data['admins_can_view_profit'];
+        $settings = $tenant->settings ?? [];
+        $settings['reports'] = (new ReportSettings($after))->toArray();
+        $tenant->update(['settings' => $settings]);
+
+        if ($before !== $after) {
+            Audit::record($tenant, 'updated', ['admins can view profit report' => [$before ? 'yes' : 'no', $after ? 'yes' : 'no']]);
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => $after ? 'Admins can now see the profit report.' : 'Only you can see the profit report now.']);
+
+        return back();
     }
 
     public function store(Request $request): RedirectResponse

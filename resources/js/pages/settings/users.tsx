@@ -25,6 +25,7 @@ type Props = {
     users: UserAccount[];
     roles: { value: Role; label: string }[];
     locations: Yard[];
+    reports: { admins_can_view_profit: boolean };
 };
 
 const roleLabels: Record<Role, string> = {
@@ -186,7 +187,12 @@ function AddUser({ roles, locations }: Pick<Props, 'roles' | 'locations'>) {
     );
 }
 
-export default function UsersSettings({ users, roles, locations }: Props) {
+export default function UsersSettings({
+    users,
+    roles,
+    locations,
+    reports,
+}: Props) {
     return (
         <>
             <Head title="Users" />
@@ -306,6 +312,27 @@ export default function UsersSettings({ users, roles, locations }: Props) {
                     </ul>
 
                     <AddUser roles={roles} locations={locations} />
+                </section>
+
+                <section className="space-y-4">
+                    <Heading
+                        variant="small"
+                        title="Profit report"
+                        description="Costs, margins and gross profit. You always see the profit report. Staff, order pickers and drivers never do."
+                    />
+                    <Checkbox
+                        id="admins-view-profit"
+                        label="Admins can see the profit report"
+                        hint="Includes product costs and the margin on every account."
+                        checked={reports.admins_can_view_profit}
+                        onChange={(on) =>
+                            router.put(
+                                UserAccountsController.reports.url(),
+                                { admins_can_view_profit: on },
+                                { preserveScroll: true },
+                            )
+                        }
+                    />
                 </section>
             </div>
         </>
