@@ -35,10 +35,13 @@ class StripeCheckoutLinks implements CheckoutLinks
                 ],
             ]],
             'metadata' => $metadata,
-            'payment_intent_data' => ['metadata' => $metadata],
+            'payment_intent_data' => [
+                'metadata' => $metadata,
+                'application_fee_amount' => StripeGateway::applicationFee($payment->amount_cents),
+            ],
             'success_url' => route('orders.show', $order).'?paid=1',
             'cancel_url' => route('orders.show', $order),
-        ], $this->stripe->requestOptions());
+        ], $this->stripe->chargeOptions());
 
         return new CheckoutLink($session->id, $session->url);
     }

@@ -39,10 +39,26 @@ return [
     | "stripe" creates Stripe Checkout payment links. "fake" creates local
     | links that mark the payment as paid when opened (non-production only).
     |
+    | With Stripe, every yard takes cards on a connected account YardRunner
+    | creates for it (Stripe Connect, no Stripe dashboard): the yard is the
+    | merchant and pays Stripe's fees, and YardRunner's application fee is
+    | taken from each card payment. Yards onboard, manage payouts and
+    | answer disputes in Settings, Payments, through Stripe's embedded
+    | components.
+    |
     */
 
     'payments' => [
         'driver' => env('YARDLINE_PAYMENTS_DRIVER', 'fake'),
+
+        // YardRunner's cut of each card payment, on top of Stripe's fees.
+        'application_fee' => [
+            'percent' => (float) env('YARDLINE_APPLICATION_FEE_PERCENT', 0.5),
+            'fixed_cents' => (int) env('YARDLINE_APPLICATION_FEE_FIXED_CENTS', 0),
+        ],
+
+        // Country new connected accounts are created in.
+        'country' => env('YARDLINE_CONNECT_COUNTRY', 'CA'),
     ],
 
     /*

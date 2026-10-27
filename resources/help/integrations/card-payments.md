@@ -11,9 +11,23 @@ YardRunner uses Stripe for:
 - **Saved cards and deposit holds** for rentals.
 - **Stripe Tax** to work out sales tax.
 
-## Your Stripe account
+## Setting up card payments
 
-Under **Settings → Business**, the **Stripe connected account** field links YardRunner to your own Stripe account (an ID starting `acct_`). Card payments and tax then go to your account. Contact us to set this up.
+An owner or admin sets up card payments under **Settings → Payments**. Click **Set up card payments**, then enter your business details and the bank account for payouts. It takes about ten minutes, all inside YardRunner. Once it's done, payment links, saved cards and deposit holds work right away.
+
+The same page is where you:
+
+- See and schedule **payouts** to your bank account.
+- See **payments** and answer **disputes** (chargebacks) with evidence.
+- Change your **business and bank details**.
+- Set up **sales tax**: your head office address and your tax registrations (for example your HST number), which Stripe Tax uses for every sale.
+- Download **documents** such as fee statements.
+
+If Stripe needs more details later, a banner at the top of the page says what's needed. Until card payments are set up (or while they're paused), YardRunner can't create payment links or charge saved cards; cash, cheque, e-Transfer and your own terminal still work.
+
+## Fees
+
+Each card payment pays the card processing fee and YardRunner's payment fee, shown on the Payments page. Both come off the payment before it's paid out to your bank, so your payouts are already net of fees. Refunds don't return the fees.
 
 ## Your card terminal
 

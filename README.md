@@ -92,8 +92,12 @@ shows them in place.
 (calculation at confirmation, transaction when the sale completes) and a
 flat-rate driver. `CheckoutLinks` creates Stripe Checkout payment links;
 the Stripe webhook marks them paid. Counter payments are recorded by
-hand. Tenants can have a Stripe Connect account ID; requests then go to
-that account.
+hand. Every yard takes cards on a connected account YardRunner creates
+(Stripe Connect, no Stripe dashboard), set up under Settings → Payments
+with Stripe's embedded components. `StripeGateway::requestOptions()`
+sends requests to it and never falls back to YardRunner's own account;
+`chargeOptions()` also requires charges to be on. Each payment carries
+YardRunner's application fee.
 
 **Frontend.** Pages in `resources/js/pages`, YardRunner components in
 `resources/js/components/yard`. Routes are typed with Wayfinder: import

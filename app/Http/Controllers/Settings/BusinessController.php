@@ -17,7 +17,7 @@ class BusinessController extends Controller
     {
         return Inertia::render('settings/business', [
             'business' => ($tenant = CurrentTenant::get()) === null ? null : [
-                ...$tenant->only('name', 'currency', 'timezone', 'stripe_account_id'),
+                ...$tenant->only('name', 'currency', 'timezone'),
                 'reply_to_email' => $tenant->replyToEmail(),
             ],
             'timezones' => array_values(array_filter(
@@ -35,7 +35,6 @@ class BusinessController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'timezone' => ['required', Rule::in(DateTimeZone::listIdentifiers())],
-            'stripe_account_id' => ['nullable', 'string', 'starts_with:acct_', 'max:255'],
             'reply_to_email' => ['nullable', 'email', 'max:255'],
         ]);
 

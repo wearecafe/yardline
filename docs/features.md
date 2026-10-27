@@ -417,8 +417,17 @@ shown how to add it first. Alerts are off in the demo yard.
 
 ## Integrations
 
-- **Stripe** for payments and **Stripe Tax** for tax. See
-  [laravel-cloud.md](laravel-cloud.md).
+- **Stripe** for payments and **Stripe Tax** for tax, on a connected
+  account per yard (Stripe Connect, white-labelled). Settings → Payments
+  (`Settings\PaymentsController`, `app/Payments/Connect`) creates the
+  account and hosts Stripe's embedded components: onboarding, payouts,
+  payments and disputes, business and bank details, tax settings and
+  registrations, documents. The `account.updated` webhook keeps
+  `tenants.stripe_charges_enabled` and friends current. Card payments are
+  refused until charges are on; each one carries YardRunner's application
+  fee (`yardline.payments.application_fee`), set at capture for deposit
+  holds. Local development and the demo yard simulate setup
+  (`FakeConnectAccounts`). See [laravel-cloud.md](laravel-cloud.md).
 - **QuickBooks Online** receives invoices, payments, credit memos, refunds
   and rental invoices, and sends back payments entered there. See
   [quickbooks.md](quickbooks.md).

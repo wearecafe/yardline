@@ -21,6 +21,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WebhookDelivery;
 use App\Notifications\UserInviteMessage;
+use App\Payments\Connect\AccountStatus;
 use App\Tenancy\CurrentTenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -107,7 +108,7 @@ class TenantController extends Controller
             'orders' => $orders[$t->id]['orders'] ?? 0,
             'rentals' => $rentals[$t->id] ?? 0,
             'last_active_at' => $t->last_active_at?->toIso8601String(),
-            'connections' => $this->connections($integrations[$t->id] ?? [], $quickBooks[$t->id] ?? null, $t->stripe_account_id),
+            'connections' => $this->connections($integrations[$t->id] ?? [], $quickBooks[$t->id] ?? null, $t),
             'health' => TenantHealth::of($t, $orders[$t->id]['orders'] ?? 0, $prior[$t->id]['orders'] ?? 0, $integrations[$t->id] ?? [], $quickBooks[$t->id] ?? null, $failures[$t->id]['count'] ?? 0),
         ]);
 
@@ -438,12 +439,12 @@ class TenantController extends Controller
      * @param  array{failed: int, waiting: int, oldest_failure: string|null}|null  $quickBooks
      * @return list<array{code: string, label: string, ok: bool}>
      */
-    private function connections(array $integrations, ?array $quickBooks, ?string $stripeAccount): array
+    private function connections(array $integrations, ?array $quickBooks, Tenant $tenant): array
     {
         $out = [];
 
-        if ($stripeAccount !== null) {
-            $out[] = ['code' => 'ST', 'label' => 'Stripe', 'ok' => true];
+        if ($tenant->stripe_account_id !== null) {
+            $out[] = ['code' => 'ST', 'label' => 'Card payments', 'ok' => AccountStatus::for($tenant)->state === AccountStatus::ACTIVE];
         }
 
         if (isset($integrations['quickbooks'])) {
@@ -472,12 +473,16 @@ class TenantController extends Controller
         $received = (int) ($webhooks[WebhookDelivery::ACCEPTED] ?? 0) + (int) ($webhooks[WebhookDelivery::IGNORED] ?? 0);
         $failed = (int) ($webhooks[WebhookDelivery::FAILED] ?? 0);
 
+        $payments = AccountStatus::for($tenant);
         $cards[] = $tenant->stripe_account_id === null
-            ? ['name' => 'Stripe', 'state' => 'Not connected', 'tone' => 'neutral', 'lines' => ['No Stripe account linked for card payments.']]
-            : ['name' => 'Stripe', 'state' => $failed > 0 ? 'Webhooks failing' : 'Connected', 'tone' => $failed > 0 ? 'warning' : 'success', 'lines' => [
+            ? ['name' => 'Card payments', 'state' => $payments->label, 'tone' => $payments->tone, 'lines' => ['No connected account yet. The yard sets it up in Settings, Payments.']]
+            : ['name' => 'Card payments', 'state' => $failed > 0 ? 'Webhooks failing' : $payments->label, 'tone' => $failed > 0 ? 'warning' : $payments->tone, 'lines' => array_values(array_filter([
                 $tenant->stripe_account_id,
+                $tenant->stripe_payouts_enabled ? 'Payouts on' : 'Payouts off',
+                $payments->due === [] ? null : count($payments->due).' details due: '.implode(', ', array_slice($payments->due, 0, 3)).(count($payments->due) > 3 ? '…' : ''),
+                $tenant->stripe_requirements['disabled_reason'] ?? null,
                 "{$received} webhooks received, {$failed} failed (7 days)",
-            ]];
+            ]))];
 
         $qbo = $integrations['quickbooks'] ?? null;
 

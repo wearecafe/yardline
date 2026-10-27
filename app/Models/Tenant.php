@@ -20,7 +20,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $slug
  * @property string $currency
  * @property string $timezone
- * @property string|null $stripe_account_id
+ * @property string|null $stripe_account_id the yard's connected account (Stripe Connect), created by YardRunner
+ * @property bool $stripe_charges_enabled
+ * @property bool $stripe_payouts_enabled
+ * @property bool $stripe_details_submitted
+ * @property array{currently_due?: list<string>, past_due?: list<string>, disabled_reason?: string|null, current_deadline?: int|null}|null $stripe_requirements
+ * @property CarbonImmutable|null $stripe_account_synced_at
  * @property array<string, mixed>|null $settings
  * @property TenantStatus $status
  * @property CarbonImmutable|null $status_changed_at
@@ -42,7 +47,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
-    'name', 'slug', 'currency', 'timezone', 'stripe_account_id', 'settings',
+    'name', 'slug', 'currency', 'timezone', 'settings',
     'status', 'trial_ends_at', 'rentals_enabled', 'staff_notes',
 ])]
 class Tenant extends Model
@@ -71,6 +76,11 @@ class Tenant extends Model
             'billed_seats' => 'integer',
             'suspended_at' => 'immutable_datetime',
             'last_active_at' => 'datetime',
+            'stripe_charges_enabled' => 'boolean',
+            'stripe_payouts_enabled' => 'boolean',
+            'stripe_details_submitted' => 'boolean',
+            'stripe_requirements' => 'array',
+            'stripe_account_synced_at' => 'immutable_datetime',
         ];
     }
 
@@ -94,6 +104,15 @@ class Tenant extends Model
             'time' => TimeSettings::for($this)->enabled,
             default => true,
         };
+    }
+
+    /**
+     * Whether the yard can take card payments: its connected account exists
+     * and Stripe has switched charges on.
+     */
+    public function acceptsCards(): bool
+    {
+        return $this->stripe_account_id !== null && $this->stripe_charges_enabled;
     }
 
     public function billing(): BillingState

@@ -2,15 +2,20 @@
 
 namespace App\Tax;
 
+use App\Payments\Connect\PaymentsNotSetUp;
 use App\Support\StripeGateway;
 use Stripe\Exception\ApiErrorException;
 
 /**
  * Stripe Tax: Ontario HST, Quebec GST + QST and the rest, based on where the
  * sale happens. A calculation at confirmation, a transaction when committed.
+ * Runs on the yard's connected account, with the yard's own registrations.
  */
 class StripeTaxCalculator implements TaxCalculator
 {
+    /** Tax runs on the yard's own connected account, set up with payments. */
+    private const NOT_SET_UP = 'Sales tax isn’t set up for this business yet. An owner or admin can set up payments and sales tax under Settings, Payments.';
+
     public function __construct(private readonly StripeGateway $stripe) {}
 
     public function calculate(TaxRequest $request): TaxResult
@@ -66,6 +71,8 @@ class StripeTaxCalculator implements TaxCalculator
                 'customer_details' => $customerDetails,
                 'expand' => ['line_items'],
             ], $this->stripe->requestOptions());
+        } catch (PaymentsNotSetUp $e) {
+            throw new TaxCalculationFailed(self::NOT_SET_UP, previous: $e);
         } catch (ApiErrorException $e) {
             throw new TaxCalculationFailed('Stripe Tax could not calculate this sale: '.$e->getMessage(), previous: $e);
         }
@@ -85,6 +92,8 @@ class StripeTaxCalculator implements TaxCalculator
                 'calculation' => $calculationReference,
                 'reference' => $saleReference,
             ], $this->stripe->requestOptions());
+        } catch (PaymentsNotSetUp $e) {
+            throw new TaxCalculationFailed(self::NOT_SET_UP, previous: $e);
         } catch (ApiErrorException $e) {
             throw new TaxCalculationFailed('Stripe Tax could not record this sale: '.$e->getMessage(), previous: $e);
         }

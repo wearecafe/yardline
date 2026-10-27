@@ -35,6 +35,9 @@ use App\Models\TimeAdjustment;
 use App\Models\Timesheet;
 use App\Models\User;
 use App\Payments\CheckoutLinks;
+use App\Payments\Connect\ConnectAccounts;
+use App\Payments\Connect\FakeConnectAccounts;
+use App\Payments\Connect\StripeConnectAccounts;
 use App\Payments\FakeCheckoutLinks;
 use App\Payments\Fees\CardFees;
 use App\Payments\Fees\EstimatedCardFees;
@@ -90,6 +93,12 @@ class AppServiceProvider extends ServiceProvider
 
             return $driver === 'stripe' ? $app->make(StripeRentalGateway::class) : new FakeRentalGateway;
         });
+
+        // Each yard's connected account (Stripe Connect). The demo yard and
+        // local development simulate it.
+        $this->app->bind(ConnectAccounts::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardline.payments.driver') === 'stripe'
+            ? $app->make(StripeConnectAccounts::class)
+            : new FakeConnectAccounts);
 
         // Card fees for the profit report: read from Stripe, or estimated
         // where there's no processor (local development, the demo yard).

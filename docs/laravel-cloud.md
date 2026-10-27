@@ -90,16 +90,33 @@ environment can use Stripe test keys with the same drivers.
 
 ## Stripe
 
-- Turn on Stripe Tax and add your tax registrations (e.g. Ontario HST).
-  Set a default product tax code in Stripe; products can override it with
-  their own tax code.
-- Add a webhook endpoint at `https://<your-domain>/webhooks/stripe` for
+- Turn on Stripe Tax on the platform account (for YardRunner's own
+  subscription billing; see below).
+  Yards take cards on connected accounts YardRunner creates (Stripe
+  Connect, controller properties: no Stripe dashboard, Stripe collects
+  verification details and carries negative-balance risk, the yard pays
+  Stripe's fees). YardRunner takes an application fee on each payment
+  (`YARDLINE_APPLICATION_FEE_PERCENT`, `YARDLINE_APPLICATION_FEE_FIXED_CENTS`).
+  Yards onboard and manage everything under Settings → Payments through
+  Stripe's embedded components; there is no way to link an outside Stripe
+  account.
+
+- Turn on Connect for the platform account, complete the platform profile,
+  and set Connect branding (name, icon, colour): Stripe uses it in the
+  embedded components and in the few emails it sends yards.
+- In Connect settings, set the URLs Stripe's emails send yards to:
+  `https://<your-domain>/settings/payments` for onboarding, account
+  management, payouts, payments and notifications.
+- Add a **Connect** webhook endpoint (events on connected accounts) at
+  `https://<your-domain>/webhooks/stripe` for `account.updated`,
   `checkout.session.completed` and
   `checkout.session.async_payment_succeeded`. Put its signing secret in
-  `STRIPE_WEBHOOK_SECRET`.
-- If yards get their own Stripe accounts via Connect, add a Connect
-  webhook with the same events, and set each business's `acct_...` ID in
-  Settings, Business.
+  `STRIPE_CONNECT_WEBHOOK_SECRET`. (`STRIPE_WEBHOOK_SECRET` is still
+  accepted on the same URL for a platform endpoint, if you keep one.)
+- `STRIPE_KEY` (the publishable key) must be set: the Payments page loads
+  the embedded components with it.
+- Stripe Tax runs on each yard's account: yards add their head office and
+  registrations under Settings → Payments, Sales tax.
 
 ## Stripe: tenant subscriptions
 
