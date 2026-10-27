@@ -125,7 +125,14 @@ const businessNavItems: NavItem[] = [
     },
 ];
 
-export default function SettingsLayout({ children }: PropsWithChildren) {
+/**
+ * `wide` (set on a page's `layout`) gives the page the full width beside
+ * the menu, for pages with a side-by-side preview, like Branding.
+ */
+export default function SettingsLayout({
+    children,
+    wide = false,
+}: PropsWithChildren<{ wide?: boolean }>) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
     const { auth, modules } = usePage().props;
     // Rental settings only once the Rentals add-on is on.
@@ -177,8 +184,13 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
 
                 <Separator className="my-6 lg:hidden" />
 
-                <div className="flex-1 md:max-w-2xl">
-                    <section className="max-w-xl space-y-12">
+                <div className={cn('min-w-0 flex-1', !wide && 'md:max-w-2xl')}>
+                    <section
+                        className={cn(
+                            'space-y-12',
+                            wide ? 'max-w-6xl' : 'max-w-xl',
+                        )}
+                    >
                         {children}
                     </section>
                 </div>
