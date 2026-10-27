@@ -103,7 +103,7 @@ class DispatchController extends Controller
             'user_id.exists' => 'Tick this truck for them under Settings → Drivers first.',
         ]);
 
-        $driver = isset($data['user_id']) ? User::query()->where('tenant_id', CurrentTenant::id())->findOrFail($data['user_id']) : null;
+        $driver = isset($data['user_id']) ? User::query()->where('tenant_id', CurrentTenant::id())->findOrFail((int) $data['user_id']) : null;
         $run->assign($truck, $data['date'], $driver);
 
         return back();
