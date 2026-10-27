@@ -5,7 +5,6 @@ namespace App\Access;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
@@ -223,7 +222,7 @@ final class RouteAccess
         // decided by that permission, whatever the role: someone given
         // Approve timesheets reaches the timesheets. People who only drive
         // stay on their run.
-        $abilities = $route instanceof Route ? self::abilities($route->gatherMiddleware()) : [];
+        $abilities = self::abilities($route->gatherMiddleware());
 
         if ($abilities !== [] && (! $user->isOnlyDriver() || Gate::forUser($user)->check($abilities))) {
             return true;
