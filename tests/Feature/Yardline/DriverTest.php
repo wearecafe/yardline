@@ -231,7 +231,7 @@ class DriverTest extends TestCase
         // The board shows where the truck was last seen.
         $this->actingAs($this->owner);
         $this->get(route('dispatch.board'))->assertInertia(fn (Assert $page) => $page
-            ->where('trucks.0.driver', 'Sam Rinaldi')
+            ->where('trucks.0.driver.name', 'Sam Rinaldi')
             ->where('trucks.0.location.latitude', 43.3343)
             ->where('trucks.1.location', null));
 
