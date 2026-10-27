@@ -6,6 +6,7 @@ use App\Enums\IntegrationStatus;
 use App\Enums\TenantStatus;
 use App\Models\Tenant;
 use App\Models\WebhookDelivery;
+use App\Onboarding\Setup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -27,7 +28,7 @@ final class Attention
     {
         $tenants = Tenant::query()
             ->whereNotIn('status', [TenantStatus::Cancelled->value, TenantStatus::Suspended->value])
-            ->get(['id', 'name', 'status', 'trial_ends_at', 'last_active_at', 'created_at'])
+            ->get(['id', 'name', 'status', 'trial_ends_at', 'last_active_at', 'created_at', 'onboarded_at', 'settings'])
             ->keyBy('id');
 
         $items = [];
@@ -81,6 +82,10 @@ final class Attention
             if (in_array($tenant->status, [TenantStatus::Active, TenantStatus::PastDue], true)
                 && ($tenant->last_active_at === null || $tenant->last_active_at->lt(now()->subDays(TenantHealth::DORMANT_DAYS)))) {
                 $items[] = $this->item('warning', $tenant->last_active_at === null ? 'Hasn’t used YardRunner yet' : 'No one has signed in for '.TenantHealth::DORMANT_DAYS.' days', 'A paying tenant gone quiet is a churn risk.', $tenant, 'tenant');
+            }
+
+            if ($tenant->onboarded_at === null && $tenant->created_at !== null && $tenant->created_at->lt(now()->subDays(2))) {
+                $items[] = $this->item('warning', 'Hasn’t finished setup', Setup::for($tenant)->summary().'. Signed up '.$tenant->created_at->format('M j').'.', $tenant, 'tenant');
             }
         }
 

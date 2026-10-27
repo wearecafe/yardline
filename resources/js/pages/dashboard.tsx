@@ -2,15 +2,17 @@ import { Head, Link } from '@inertiajs/react';
 import InventoryController from '@/actions/App/Http/Controllers/InventoryController';
 import RentalController from '@/actions/App/Http/Controllers/Rentals/RentalController';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
+import { SetupChecklistCard } from '@/components/setup/checklist';
 import { Table, Td, Th, EmptyRow } from '@/components/yard/data-table';
 import { PageBody, PageHeader, Section } from '@/components/yard/page-header';
 import { OrderStatusBadge, PaymentBadge } from '@/components/yard/status-badge';
 import { Button } from '@/components/ui/button';
 import { formatMoney, formatQuantity, unitLabel } from '@/lib/format';
 import { dashboard } from '@/routes';
-import type { OrderSummary } from '@/types';
+import type { OrderSummary, SetupChecklist } from '@/types';
 
 type Props = {
+    setup: SetupChecklist | null;
     stats: {
         drafts: number;
         to_release: number;
@@ -27,7 +29,12 @@ type Props = {
     }[];
 };
 
-export default function Dashboard({ stats, recentOrders, lowStock }: Props) {
+export default function Dashboard({
+    setup,
+    stats,
+    recentOrders,
+    lowStock,
+}: Props) {
     const today = new Date().toLocaleDateString('en-CA', {
         weekday: 'long',
         month: 'long',
@@ -64,6 +71,8 @@ export default function Dashboard({ stats, recentOrders, lowStock }: Props) {
                         </>
                     }
                 />
+
+                {setup && <SetupChecklistCard setup={setup} />}
 
                 <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
                     <Section

@@ -37,6 +37,8 @@ type Props = {
         currency: string;
         timezone: string;
         created_at: string | null;
+        setup: string;
+        set_up: boolean;
         last_active_at: string | null;
         status_changed_at: string | null;
         staff_notes: string | null;
@@ -468,6 +470,15 @@ export default function ShowTenant({
                                     {formatDate(tenant.created_at)}
                                 </span>
                             )}
+                            <span
+                                className={
+                                    tenant.set_up
+                                        ? undefined
+                                        : 'font-medium text-warning'
+                                }
+                            >
+                                {tenant.setup}
+                            </span>
                             {tenant.owner && (
                                 <span>
                                     Owner: {tenant.owner.name} (

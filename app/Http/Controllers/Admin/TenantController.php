@@ -22,6 +22,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WebhookDelivery;
 use App\Notifications\UserInviteMessage;
+use App\Onboarding\Setup;
 use App\Payments\Connect\AccountStatus;
 use App\Tenancy\CurrentTenant;
 use Carbon\CarbonImmutable;
@@ -254,6 +255,8 @@ class TenantController extends Controller
                 'currency' => $tenant->currency,
                 'timezone' => $tenant->timezone,
                 'created_at' => $tenant->created_at?->toIso8601String(),
+                'setup' => Setup::for($tenant)->summary(),
+                'set_up' => $tenant->onboarded_at !== null,
                 'last_active_at' => $tenant->last_active_at?->toIso8601String(),
                 'status_changed_at' => $tenant->status_changed_at?->toIso8601String(),
                 'staff_notes' => $tenant->staff_notes,

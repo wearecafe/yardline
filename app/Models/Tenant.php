@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property array<string, mixed>|null $settings
  * @property TenantStatus $status
  * @property CarbonImmutable|null $status_changed_at
+ * @property CarbonImmutable|null $onboarded_at finished the required part of Setup (see App\Onboarding\Setup)
  * @property string|null $plan
  * @property int|null $monthly_price_cents
  * @property CarbonImmutable|null $trial_ends_at last day of the free trial
@@ -68,6 +69,7 @@ class Tenant extends Model
             'settings' => 'array',
             'status' => TenantStatus::class,
             'status_changed_at' => 'datetime',
+            'onboarded_at' => 'immutable_datetime',
             'trial_ends_at' => 'immutable_date',
             'rentals_enabled' => 'boolean',
             'subscription_period_ends_at' => 'immutable_datetime',

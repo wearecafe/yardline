@@ -7,6 +7,7 @@ import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import DriverLayout from '@/layouts/driver-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import SetupLayout from '@/layouts/setup-layout';
 import { initializePwa } from '@/lib/pwa';
 
 const appName = import.meta.env.VITE_APP_NAME || 'YardRunner';
@@ -27,6 +28,8 @@ void createInertiaApp({
             case name.startsWith('auth/'):
             case name.startsWith('billing/'):
                 return AuthLayout;
+            case name.startsWith('setup/'):
+                return SetupLayout;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
             default:
