@@ -41,6 +41,12 @@ jobs:
         id: setup
         run: composer setup 2>&1 | tee "$RUNNER_TEMP/setup.log"; s=${PIPESTATUS[0]}; [ "$s" -eq 0 ] || touch "$RUNNER_TEMP/setup.failed"; exit $s
 
+      - name: Diag versions
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: |
+          echo "::notice title=diag-date::$(date -u) TZ=$(php -r 'echo date_default_timezone_get();')"
+          echo "::notice title=diag-deps::$(composer show | awk '{print $1"@"$2}' | tr '\n' ' ')"
+
       # Each check runs on its own (so one failure doesn't hide the others)
       # and posts its output as annotations when it fails.
 

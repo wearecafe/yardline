@@ -2,6 +2,8 @@
 
 namespace Tests;
 
+use App\Accounting\QuickBooks\QuickBooks;
+use App\Audit\Audit;
 use App\Enums\UserRole;
 use App\Models\Location;
 use App\Models\Tenant;
@@ -15,6 +17,9 @@ abstract class TestCase extends BaseTestCase
     protected function tearDown(): void
     {
         CurrentTenant::set(null);
+        // Static state that would otherwise leak into the next test.
+        Audit::$customerId = null;
+        QuickBooks::forget();
 
         parent::tearDown();
     }

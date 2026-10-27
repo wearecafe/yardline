@@ -39,6 +39,12 @@ class EnsurePortalCustomer
             'yard' => ['name' => $tenant->name ?? 'Yardline', 'slug' => $tenant->slug ?? ''],
         ]);
 
-        return $next($request);
+        try {
+            return $next($request);
+        } finally {
+            // Static, so it would outlive the request in a long-running
+            // worker and pin later audit events on this customer.
+            Audit::$customerId = null;
+        }
     }
 }

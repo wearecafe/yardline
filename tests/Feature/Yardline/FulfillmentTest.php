@@ -138,6 +138,7 @@ class FulfillmentTest extends TestCase
 
     public function test_deliveries_go_from_plan_to_proof_of_delivery(): void
     {
+        \Illuminate\Support\Facades\Exceptions::fake();
         $truck = Truck::query()->create(['name' => 'Truck 2 · boom', 'capacity_kg' => 12000, 'has_boom' => true]);
         $customer = Customer::factory()->create(['organization_id' => $this->org->id, 'phone' => '905-555-0100']);
         $order = $this->confirmedOrder([
@@ -169,7 +170,8 @@ class FulfillmentTest extends TestCase
         $this->post(route('stops.en-route', $stop), ['eta' => '10:40'])->assertSessionHasNoErrors();
         $this->assertSame(ShipmentStatus::Out, $shipment->refresh()->status);
         $this->post(route('dispatch.etas'))->assertSessionHasNoErrors();
-        $this->assertNotNull($stop->refresh()->eta_sent_at);
+        $this->assertSame([], array_map(fn ($e) => get_class($e).': '.mb_substr($e->getMessage(), 0, 300), \Illuminate\Support\Facades\Exceptions::reported()));
+        $this->assertNotNull($stop->refresh()->eta_sent_at, 'DIAG now='.now()->toIso8601String().' stopdate='.$stop->date?->toDateString().' status='.$stop->status->value.' phone='.json_encode($stop->stoppable?->order?->customer?->phone).' demo='.json_encode(\App\Support\Demo::tenantId()).' tenant='.\App\Tenancy\CurrentTenant::id());
 
         $this->get(route('dispatch.board'))->assertOk();
         $this->get(route('shipments.deliver', $shipment))->assertOk();
