@@ -266,6 +266,14 @@ export default function EditProduct(props: Props) {
                                                   'Standard'}
                                         </dd>
                                     </div>
+                                    {product.price_list_exempt && (
+                                        <div className="flex justify-between gap-3">
+                                            <dt className="text-muted-foreground">
+                                                Price lists
+                                            </dt>
+                                            <dd>Exempt</dd>
+                                        </div>
+                                    )}
                                 </dl>
                                 {costChange && (
                                     <Notice tone="warning">

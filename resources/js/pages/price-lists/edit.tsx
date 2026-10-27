@@ -1,9 +1,11 @@
 import { Head, router, useForm } from '@inertiajs/react';
+import type { InertiaFormProps } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import PriceListCategoryRuleController from '@/actions/App/Http/Controllers/PriceListCategoryRuleController';
 import PriceListController from '@/actions/App/Http/Controllers/PriceListController';
 import PriceListItemController from '@/actions/App/Http/Controllers/PriceListItemController';
 import { EmptyRow, Table, Td, Th } from '@/components/yard/data-table';
-import { Field, NativeSelect } from '@/components/yard/field';
+import { Checkbox, Field, NativeSelect } from '@/components/yard/field';
 import { PageBody, PageHeader, Section } from '@/components/yard/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,16 +15,23 @@ import {
     formatQuantity,
     unitLabel,
 } from '@/lib/format';
-import type { PriceListItem, Product } from '@/types';
+import type { CategoryRule, PriceListItem, Product } from '@/types';
 
 type Props = {
     priceList: {
         id: number;
         name: string;
         description: string | null;
+        category_rules_override: boolean | null;
+        stack_volume_breaks: boolean;
         items: PriceListItem[];
+        category_rules: CategoryRule[];
     };
-    products: (Pick<Product, 'id' | 'sku' | 'name' | 'unit' | 'price_cents'> & {
+    tenantOverride: boolean;
+    products: (Pick<
+        Product,
+        'id' | 'sku' | 'name' | 'unit' | 'price_cents' | 'price_list_exempt'
+    > & {
         units: {
             id: number;
             name: string;
@@ -30,13 +39,47 @@ type Props = {
             price_cents: number;
         }[];
     })[];
+    categories: { name: string; products: number; exempt: number }[];
 };
 
-export default function EditPriceList({ priceList, products }: Props) {
+type RuleForm = {
+    category: string;
+    discount_type: 'percent' | 'amount';
+    discount: string;
+    starts_on: string;
+    ends_on: string;
+};
+
+function overrideValue(value: boolean | null): 'default' | 'on' | 'off' {
+    if (value === null) {
+        return 'default';
+    }
+
+    return value ? 'on' : 'off';
+}
+
+export default function EditPriceList({
+    priceList,
+    tenantOverride,
+    products,
+    categories,
+}: Props) {
     const details = useForm({
         name: priceList.name,
         description: priceList.description ?? '',
+        category_rules_override: overrideValue(
+            priceList.category_rules_override,
+        ),
+        stack_volume_breaks: priceList.stack_volume_breaks,
     });
+    const rule = useForm<RuleForm>({
+        category: '',
+        discount_type: 'percent',
+        discount: '',
+        starts_on: '',
+        ends_on: '',
+    });
+    const categoryWins = priceList.category_rules_override ?? tenantOverride;
     const item = useForm({
         product_id: '',
         product_unit_id: '',
@@ -74,6 +117,29 @@ export default function EditPriceList({ priceList, products }: Props) {
         });
     }
 
+    function addRule(event: FormEvent) {
+        event.preventDefault();
+        rule.transform((d) => ({
+            ...d,
+            starts_on: d.starts_on || null,
+            ends_on: d.ends_on || null,
+        }));
+        rule.post(PriceListCategoryRuleController.store.url(priceList.id), {
+            preserveScroll: true,
+            onSuccess: () => rule.reset(),
+        });
+    }
+
+    function removeRule(ruleId: number) {
+        router.delete(
+            PriceListCategoryRuleController.destroy.url({
+                priceList: priceList.id,
+                rule: ruleId,
+            }),
+            { preserveScroll: true },
+        );
+    }
+
     function remove(itemId: number) {
         router.delete(
             PriceListItemController.destroy.url({
@@ -90,7 +156,7 @@ export default function EditPriceList({ priceList, products }: Props) {
             <PageBody>
                 <PageHeader
                     title={priceList.name}
-                    description="Each price applies from its minimum quantity up. Products not listed sell at list price."
+                    description={`Each price applies from its minimum quantity up. Category discounts cover products without a price here${categoryWins ? ', and replace the prices here for their category' : ''}. Products exempt from price lists always sell at list price.`}
                 />
 
                 <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -127,6 +193,9 @@ export default function EditPriceList({ priceList, products }: Props) {
                                                 </div>
                                                 <div className="text-xs text-muted-foreground">
                                                     {row.product.sku}
+                                                    {row.product
+                                                        .price_list_exempt &&
+                                                        ', exempt from price lists: not applied'}
                                                 </div>
                                             </Td>
                                             <Td numeric>
@@ -192,6 +261,13 @@ export default function EditPriceList({ priceList, products }: Props) {
                     </Section>
 
                     <div className="grid content-start gap-8">
+                        <CategoryRules
+                            priceList={priceList}
+                            categories={categories}
+                            rule={rule}
+                            onAdd={addRule}
+                            onRemove={removeRule}
+                        />
                         <Section title="Add or change a price">
                             <form onSubmit={addItem} className="grid gap-4">
                                 <Field
@@ -217,6 +293,9 @@ export default function EditPriceList({ priceList, products }: Props) {
                                         {products.map((p) => (
                                             <option key={p.id} value={p.id}>
                                                 {p.name} ({p.sku})
+                                                {p.price_list_exempt
+                                                    ? ' — exempt'
+                                                    : ''}
                                             </option>
                                         ))}
                                     </NativeSelect>
@@ -341,7 +420,7 @@ export default function EditPriceList({ priceList, products }: Props) {
                             </form>
                         </Section>
 
-                        <Section title="Details">
+                        <Section title="Details and rules">
                             <form onSubmit={saveDetails} className="grid gap-4">
                                 <Field
                                     label="Name"
@@ -375,6 +454,55 @@ export default function EditPriceList({ priceList, products }: Props) {
                                         }
                                     />
                                 </Field>
+                                <Field
+                                    label="When a product has a price here and a category discount"
+                                    htmlFor="category_rules_override"
+                                    error={
+                                        details.errors.category_rules_override
+                                    }
+                                >
+                                    <NativeSelect
+                                        id="category_rules_override"
+                                        value={
+                                            details.data.category_rules_override
+                                        }
+                                        onChange={(e) =>
+                                            details.setData(
+                                                'category_rules_override',
+                                                e.target.value as
+                                                    | 'default'
+                                                    | 'on'
+                                                    | 'off',
+                                            )
+                                        }
+                                    >
+                                        <option value="default">
+                                            Business default (
+                                            {tenantOverride
+                                                ? 'category discount wins'
+                                                : 'product price wins'}
+                                            )
+                                        </option>
+                                        <option value="off">
+                                            Product price wins
+                                        </option>
+                                        <option value="on">
+                                            Category discount wins
+                                        </option>
+                                    </NativeSelect>
+                                </Field>
+                                <Checkbox
+                                    id="stack_volume_breaks"
+                                    label="Stack category discounts on volume breaks"
+                                    hint="A price for more than 1 gets the category discount taken off it as well."
+                                    checked={details.data.stack_volume_breaks}
+                                    onChange={(checked) =>
+                                        details.setData(
+                                            'stack_volume_breaks',
+                                            checked,
+                                        )
+                                    }
+                                />
                                 <div>
                                     <Button
                                         type="submit"
@@ -396,3 +524,175 @@ export default function EditPriceList({ priceList, products }: Props) {
 EditPriceList.layout = {
     breadcrumbs: [{ title: 'Price lists', href: PriceListController.index() }],
 };
+
+function describeRule(rule: CategoryRule): string {
+    return rule.discount_type === 'percent'
+        ? `${Number(rule.discount_percent)}% off`
+        : `${formatMoney(rule.discount_cents ?? 0)} off per base unit`;
+}
+
+function CategoryRules({
+    priceList,
+    categories,
+    rule,
+    onAdd,
+    onRemove,
+}: {
+    priceList: Props['priceList'];
+    categories: Props['categories'];
+    rule: InertiaFormProps<RuleForm>;
+    onAdd: (event: FormEvent) => void;
+    onRemove: (ruleId: number) => void;
+}) {
+    const counts = new Map(
+        categories.map((c) => [c.name.trim().toLowerCase(), c]),
+    );
+
+    return (
+        <Section title="Category discounts">
+            {priceList.category_rules.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                    None yet. Take $ or % off everything in a category.
+                </p>
+            ) : (
+                <ul className="grid gap-2 text-sm">
+                    {priceList.category_rules.map((r) => {
+                        const c = counts.get(r.category.trim().toLowerCase());
+
+                        return (
+                            <li
+                                key={r.id}
+                                className="flex items-start justify-between gap-3"
+                            >
+                                <div>
+                                    <div className="font-medium">
+                                        {r.category}: {describeRule(r)}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                        {c
+                                            ? `${c.products} product${c.products === 1 ? '' : 's'}${c.exempt ? `, ${c.exempt} exempt` : ''}`
+                                            : 'No active products'}
+                                        {(r.starts_on || r.ends_on) &&
+                                            `. ${r.starts_on ? formatDate(r.starts_on) : 'Now'} – ${r.ends_on ? formatDate(r.ends_on) : 'ongoing'}`}
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => onRemove(r.id)}
+                                >
+                                    Remove
+                                </Button>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+            <form onSubmit={onAdd} className="mt-4 grid gap-4">
+                <Field
+                    label="Category"
+                    htmlFor="rule_category"
+                    error={rule.errors.category}
+                >
+                    <NativeSelect
+                        id="rule_category"
+                        value={rule.data.category}
+                        onChange={(e) =>
+                            rule.setData('category', e.target.value)
+                        }
+                        required
+                    >
+                        <option value="">Choose a category</option>
+                        {categories.map((c) => (
+                            <option key={c.name} value={c.name}>
+                                {c.name}
+                            </option>
+                        ))}
+                    </NativeSelect>
+                </Field>
+                <div className="grid grid-cols-2 gap-4">
+                    <Field
+                        label="Discount"
+                        htmlFor="discount_type"
+                        error={rule.errors.discount_type}
+                    >
+                        <NativeSelect
+                            id="discount_type"
+                            value={rule.data.discount_type}
+                            onChange={(e) =>
+                                rule.setData(
+                                    'discount_type',
+                                    e.target.value as 'percent' | 'amount',
+                                )
+                            }
+                        >
+                            <option value="percent">% off</option>
+                            <option value="amount">$ off</option>
+                        </NativeSelect>
+                    </Field>
+                    <Field
+                        label={
+                            rule.data.discount_type === 'percent'
+                                ? 'Percent'
+                                : 'Amount'
+                        }
+                        htmlFor="discount"
+                        error={rule.errors.discount}
+                        hint={
+                            rule.data.discount_type === 'amount'
+                                ? 'Per base unit. Scales up for pallets and other units.'
+                                : undefined
+                        }
+                    >
+                        <Input
+                            id="discount"
+                            inputMode="decimal"
+                            value={rule.data.discount}
+                            onChange={(e) =>
+                                rule.setData('discount', e.target.value)
+                            }
+                            required
+                        />
+                    </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <Field
+                        label="From"
+                        htmlFor="rule_starts_on"
+                        error={rule.errors.starts_on}
+                        hint="Blank for now"
+                    >
+                        <Input
+                            id="rule_starts_on"
+                            type="date"
+                            value={rule.data.starts_on}
+                            onChange={(e) =>
+                                rule.setData('starts_on', e.target.value)
+                            }
+                        />
+                    </Field>
+                    <Field
+                        label="Until"
+                        htmlFor="rule_ends_on"
+                        error={rule.errors.ends_on}
+                        hint="Blank for ongoing"
+                    >
+                        <Input
+                            id="rule_ends_on"
+                            type="date"
+                            value={rule.data.ends_on}
+                            onChange={(e) =>
+                                rule.setData('ends_on', e.target.value)
+                            }
+                        />
+                    </Field>
+                </div>
+                <div>
+                    <Button type="submit" disabled={rule.processing}>
+                        Save category discount
+                    </Button>
+                </div>
+            </form>
+        </Section>
+    );
+}

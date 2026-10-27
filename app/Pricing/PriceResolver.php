@@ -4,6 +4,8 @@ namespace App\Pricing;
 
 use App\Models\ContractPrice;
 use App\Models\Organization;
+use App\Models\PriceList;
+use App\Models\PriceListCategoryRule;
 use App\Models\PriceListItem;
 use App\Models\Product;
 use App\Models\ProductUnit;
@@ -13,10 +15,16 @@ use Carbon\CarbonImmutable;
  * Yardline is the source of truth for price. For a product sold in a unit
  * to an organization on a date, the first of these that applies wins:
  *
- *  1. A contract price agreed with the organization, in effect that day.
- *  2. The organization's price list: of the entries in effect that day,
- *     the tier with the highest min_quantity the quantity reaches.
- *  3. The unit's retail price.
+ *  1. Products exempt from price lists sell at the unit's retail price.
+ *  2. A contract price agreed with the organization, in effect that day.
+ *  3. The organization's price list, which has two kinds of rule:
+ *     - product entries: of those in effect that day, the tier with the
+ *       highest min_quantity the quantity reaches;
+ *     - a category rule: $ or % off everything in the product's category.
+ *     When both match, the list's override setting (or the tenant default)
+ *     picks one; they never add up, except that a list can stack its
+ *     category discount on a volume-break price (an entry for more than 1).
+ *  4. The unit's retail price.
  *
  * Contract and price list entries are per unit. An entry without a unit is
  * for the base unit and is converted for other units by their factor.
@@ -34,6 +42,11 @@ class PriceResolver
         $on ??= CarbonImmutable::today();
         $factor = $unit !== null ? (float) $unit->factor : 1.0;
         $isBase = $unit === null || $unit->is_base;
+        $retail = $unit !== null ? $unit->price_cents : $product->price_cents;
+
+        if ($product->price_list_exempt) {
+            return new ResolvedPrice($retail, 'exempt');
+        }
 
         if ($organization !== null) {
             $contract = ContractPrice::query()
@@ -56,10 +69,12 @@ class PriceResolver
             }
         }
 
-        if ($organization?->price_list_id !== null) {
+        $priceList = $organization?->price_list_id !== null ? PriceList::query()->find($organization->price_list_id) : null;
+
+        if ($priceList !== null) {
             $baseQuantity = (float) $quantity * $factor;
             $entries = PriceListItem::query()
-                ->where('price_list_id', $organization->price_list_id)
+                ->where('price_list_id', $priceList->id)
                 ->where('product_id', $product->id)
                 ->inEffect($on)
                 ->get();
@@ -72,13 +87,42 @@ class PriceResolver
                     ->filter(fn (PriceListItem $i) => (float) $i->min_quantity <= $baseQuantity + 1e-9)
                     ->sortByDesc(fn ($i) => $this->rank($i))
                     ->first();
+            $itemCents = $item !== null ? $this->convert($item->price_cents, $own->isNotEmpty() ? $item->product_unit_id : null, $unit, $factor) : null;
+            $rule = $this->categoryRule($priceList, $product, $on);
+
+            if ($rule !== null && $item !== null && $priceList->stack_volume_breaks && (float) $item->min_quantity > 1) {
+                return new ResolvedPrice($rule->apply((int) $itemCents, $factor), 'volume+category', $priceList->id, categoryRuleId: $rule->id);
+            }
+
+            if ($rule !== null && ($item === null || $priceList->categoryRulesWin())) {
+                return new ResolvedPrice($rule->apply($retail, $factor), 'category', $priceList->id, categoryRuleId: $rule->id);
+            }
 
             if ($item !== null) {
-                return new ResolvedPrice($this->convert($item->price_cents, $own->isNotEmpty() ? $item->product_unit_id : null, $unit, $factor), 'price_list', $item->price_list_id);
+                return new ResolvedPrice((int) $itemCents, 'price_list', $priceList->id);
             }
         }
 
-        return new ResolvedPrice($unit !== null ? $unit->price_cents : $product->price_cents, 'list');
+        return new ResolvedPrice($retail, 'list');
+    }
+
+    /**
+     * The list's rule for the product's category, matched without regard
+     * to case or surrounding spaces.
+     */
+    private function categoryRule(PriceList $priceList, Product $product, CarbonImmutable $on): ?PriceListCategoryRule
+    {
+        $category = mb_strtolower(trim((string) $product->category));
+
+        if ($category === '') {
+            return null;
+        }
+
+        return PriceListCategoryRule::query()
+            ->where('price_list_id', $priceList->id)
+            ->whereRaw('lower(trim(category)) = ?', [$category])
+            ->inEffect($on)
+            ->first();
     }
 
     /**

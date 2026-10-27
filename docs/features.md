@@ -12,9 +12,27 @@ Mockups for each screen are in [scope/mockups](scope/mockups).
 | Selling units (bag, pallet, tonne…) converting to a base unit              | Product editor                   | `ProductUnit`, `ProductUnitController`       |
 | Units switched off for sale; rounding to the nearest mix of units for sale | Product editor, order lines      | `QuantityFit`, `UnitMix`                     |
 | Price resolution: contract → price list (per unit, dated, breaks) → retail | Order lines                      | `app/Pricing/PriceResolver`                  |
+| Category discounts ($ or %) on price lists; products exempt from price lists | Price lists, product editor    | `PriceListCategoryRule`, `PricingSettings`   |
 | Quotes with expiry, accepted from a public link                            | Order page, `/q/{token}`         | `SendQuote`, `QuoteController`               |
 | Job sites (with PO required), contacts with roles and charge rights        | Organization page                | `OrganizationLocation`, `CustomerMembership` |
 | Counter screen for walk-ins                                                | Counter                          | `CounterController`                          |
+
+### Category discounts and exempt products
+
+A price list can take $ or % off a whole category. A $ amount is off each
+base unit, so $0.50 off a bag is $28 off a 56-bag pallet. Prices never go
+below zero.
+
+When a product has its own price on the list and its category has a
+discount, one of them wins; they never add up. Price lists → Pricing rules
+sets the business default, and each price list can follow it or choose.
+A list can also stack its category discount on a volume-break price (an
+entry for a quantity above 1). Contract prices still beat both.
+
+A product marked "Exempt from price lists" always sells at its own price:
+no contract, price list or category discount touches it. Pricing rules
+also says which roles (owner, admin) may set an exempt product's price by
+hand. They give a reason, logged on the order with the price it replaced.
 
 ### Units for sale and rounding
 

@@ -23,6 +23,7 @@ use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationLocationController;
 use App\Http\Controllers\Portal\PortalAuthController;
 use App\Http\Controllers\Portal\PortalController;
+use App\Http\Controllers\PriceListCategoryRuleController;
 use App\Http\Controllers\PriceListController;
 use App\Http\Controllers\PriceListItemController;
 use App\Http\Controllers\ProductController;
@@ -109,6 +110,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('price-lists/{priceList}/items/{item}', [PriceListItemController::class, 'destroy'])
         ->scopeBindings()
         ->name('price-lists.items.destroy');
+    Route::post('price-lists/{priceList}/category-rules', [PriceListCategoryRuleController::class, 'store'])->name('price-lists.category-rules.store');
+    Route::delete('price-lists/{priceList}/category-rules/{rule}', [PriceListCategoryRuleController::class, 'destroy'])
+        ->scopeBindings()
+        ->name('price-lists.category-rules.destroy');
 
     // Inventory
     Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');

@@ -15,6 +15,7 @@ declare module '@inertiajs/core' {
                     manageBusiness: boolean;
                     manageUsers: boolean;
                     drive: boolean;
+                    priceExempt: boolean;
                 };
             };
             tenant: { id: number; name: string; currency: string } | null;

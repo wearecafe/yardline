@@ -56,9 +56,10 @@ modules and where each lives in the code.
 
 **Commerce.** Yardline owns organizations, customers, products, pricing
 and orders, and works without Shopify. Prices resolve in
-`App\Pricing\PriceResolver`: a contract price for the organization, then
-its price list (per selling unit, dated, best quantity break), then the
-unit's retail price. Products sell in several units (bag, pallet, tonne);
+`App\Pricing\PriceResolver`: products exempt from price lists sell at
+retail; otherwise a contract price for the organization, then its price
+list (per selling unit, dated, best quantity break, or a $ / % category
+discount), then the unit's retail price. Products sell in several units (bag, pallet, tonne);
 stock is kept in the base unit and every line converts back to it.
 
 **Orders** (`app/Orders`). Draft, confirmed, released (`fulfilled`), and

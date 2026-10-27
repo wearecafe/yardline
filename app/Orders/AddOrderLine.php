@@ -85,6 +85,7 @@ class AddOrderLine
                 'unit_price_cents' => $unitPriceCents ?? $resolved->cents,
                 'price_overridden' => $unitPriceCents !== null,
                 'price_source' => $unitPriceCents !== null ? 'manual' : $resolved->source,
+                'category_rule_id' => $unitPriceCents !== null ? null : $resolved->categoryRuleId,
                 'position' => (int) $order->lines()->max('position') + 1,
             ]);
 

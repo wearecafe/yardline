@@ -11,6 +11,7 @@ use App\Models\Order;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\PriceList;
+use App\Models\PriceListCategoryRule;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Rental;
@@ -138,6 +139,7 @@ class AppServiceProvider extends ServiceProvider
             'organization' => Organization::class,
             'payment' => Payment::class,
             'price_list' => PriceList::class,
+            'price_list_category_rule' => PriceListCategoryRule::class,
             'product' => Product::class,
             'purchase_order' => PurchaseOrder::class,
             'stock_transfer' => StockTransfer::class,

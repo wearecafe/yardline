@@ -298,7 +298,8 @@ class OrderController extends Controller
             return [
                 ...$product->only('id', 'sku', 'name', 'unit', 'rental_period', 'deposit_cents', 'track_inventory'),
                 'price_cents' => $base['price_cents'] ?? $product->price_cents,
-                'contract_price' => ($base['price_source'] ?? 'list') !== 'list',
+                'contract_price' => ! in_array($base['price_source'] ?? 'list', ['list', 'exempt'], true),
+                'price_list_exempt' => $product->price_list_exempt,
                 'units' => $units->all(),
                 'default_unit_id' => $product->defaultSellingUnit()?->id,
                 'rounding' => $product->quantity_rounding->value,
