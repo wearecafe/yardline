@@ -5,17 +5,17 @@ Mockups for each screen are in [scope/mockups](scope/mockups).
 
 ## Counter and orders
 
-| Feature                                                                    | Screens                          | Code                                         |
-| -------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------- |
-| Orders: draft → confirmed → fulfilled, settled on account or prepaid       | Orders, order page               | `app/Orders`                                 |
-| Credit checks, holds and owner overrides                                   | Order confirm, organization page | `app/Credit`                                 |
-| Selling units (bag, pallet, tonne…) converting to a base unit              | Product editor                   | `ProductUnit`, `ProductUnitController`       |
-| Units switched off for sale; rounding to the nearest mix of units for sale | Product editor, order lines      | `QuantityFit`, `UnitMix`                     |
-| Price resolution: contract → price list (per unit, dated, breaks) → retail | Order lines                      | `app/Pricing/PriceResolver`                  |
-| Category discounts ($ or %) on price lists; products exempt from price lists | Price lists, product editor    | `PriceListCategoryRule`, `PricingSettings`   |
-| Quotes with expiry, accepted from a public link                            | Order page, `/q/{token}`         | `SendQuote`, `QuoteController`               |
-| Job sites (with PO required), contacts with roles and charge rights        | Organization page                | `OrganizationLocation`, `CustomerMembership` |
-| Counter screen for walk-ins                                                | Counter                          | `CounterController`                          |
+| Feature                                                                      | Screens                          | Code                                         |
+| ---------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------- |
+| Orders: draft → confirmed → fulfilled, settled on account or prepaid         | Orders, order page               | `app/Orders`                                 |
+| Credit checks, holds and owner overrides                                     | Order confirm, organization page | `app/Credit`                                 |
+| Selling units (bag, pallet, tonne…) converting to a base unit                | Product editor                   | `ProductUnit`, `ProductUnitController`       |
+| Units switched off for sale; rounding to the nearest mix of units for sale   | Product editor, order lines      | `QuantityFit`, `UnitMix`                     |
+| Price resolution: contract → price list (per unit, dated, breaks) → retail   | Order lines                      | `app/Pricing/PriceResolver`                  |
+| Category discounts ($ or %) on price lists; products exempt from price lists | Price lists, product editor      | `PriceListCategoryRule`, `PricingSettings`   |
+| Quotes with expiry, accepted from a public link                              | Order page, `/q/{token}`         | `SendQuote`, `QuoteController`               |
+| Job sites (with PO required), contacts with roles and charge rights          | Organization page                | `OrganizationLocation`, `CustomerMembership` |
+| Counter screen for walk-ins                                                  | Counter                          | `CounterController`                          |
 
 ### Category discounts and exempt products
 
@@ -196,13 +196,13 @@ Staff must turn on two-factor authentication before `/admin` opens
 users get a 404 there, and staff are sent back to `/admin` from the yard
 screens (`KeepStaffInBackOffice`).
 
-| Screen             | What's on it                                                                 | Code                                    |
-| ------------------ | ---------------------------------------------------------------------------- | --------------------------------------- |
-| Overview           | Tenants, trials, MRR, sales and orders across tenants, busiest tenants, what needs attention, growth, module adoption | `Admin\OverviewController`, `BackOffice\Attention` |
-| Tenants            | Every tenant with status, plan, connections, activity and health; set up a new tenant (emails the owner) | `Admin\TenantController`               |
-| Tenant page        | 30-day activity, integrations, yards, users (send a password link), audit log; plan, status, price, modules and staff notes | `Admin\TenantController`               |
-| Activity reports   | Volume per week, module usage by tenant, engagement and churn risk, retention by signup month | `Admin\ReportController`               |
-| Integration health | Webhooks, Shopify and QuickBooks connections, open issues, failed jobs (retry or clear) | `Admin\IntegrationHealthController`    |
+| Screen             | What's on it                                                                                                                | Code                                               |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Overview           | Tenants, trials, MRR, sales and orders across tenants, busiest tenants, what needs attention, growth, module adoption       | `Admin\OverviewController`, `BackOffice\Attention` |
+| Tenants            | Every tenant with status, plan, connections, activity and health; set up a new tenant (emails the owner)                    | `Admin\TenantController`                           |
+| Tenant page        | 30-day activity, integrations, yards, users (send a password link), audit log; plan, status, price, modules and staff notes | `Admin\TenantController`                           |
+| Activity reports   | Volume per week, module usage by tenant, engagement and churn risk, retention by signup month                               | `Admin\ReportController`                           |
+| Integration health | Webhooks, Shopify and QuickBooks connections, open issues, failed jobs (retry or clear)                                     | `Admin\IntegrationHealthController`                |
 
 Figures come from `App\BackOffice\TenantMetrics`, which reads tables
 directly and groups by `tenant_id` (staff have no tenant, so scoped models

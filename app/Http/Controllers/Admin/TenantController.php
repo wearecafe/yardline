@@ -477,7 +477,7 @@ class TenantController extends Controller
      */
     private function plans(): array
     {
-        return collect($this->planLabels())->map(fn (string $label, string $value) => ['value' => $value, 'label' => $label])->values()->all();
+        return array_values(collect($this->planLabels())->map(fn (string $label, string $value) => ['value' => $value, 'label' => $label])->all());
     }
 
     /**
