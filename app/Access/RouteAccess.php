@@ -60,6 +60,8 @@ final class RouteAccess
                 'counter.*',
                 'orders.index', 'orders.create', 'orders.store', 'orders.show', 'orders.update', 'orders.destroy',
                 'orders.lines.*', 'orders.confirm', 'orders.fulfill', 'orders.cancel', 'orders.payments.store', 'orders.payment-link', 'orders.quote',
+                // Refunds up to their role's limit; above it, someone approves.
+                'orders.payments.refund', 'orders.refund-and-cancel',
                 'orders.returns.*', 'returns.index', 'credit-notes.*', 'pallet-returns.store',
                 'organizations.index', 'organizations.create', 'organizations.store', 'organizations.show', 'organizations.edit', 'organizations.update',
                 'organizations.locations.*', 'organizations.contacts.*',
@@ -160,6 +162,7 @@ final class RouteAccess
                 'organizations.statement*',
                 'invoices.show',
                 'returns.index', 'orders.returns.*', 'credit-notes.*', 'pallet-returns.store',
+                'orders.payments.refund',
                 'organizations.index', 'organizations.show', 'organizations.edit', 'organizations.update',
                 'quickbooks.edit', 'quickbooks.resend',
                 'time.kiosk*',

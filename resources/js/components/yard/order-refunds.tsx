@@ -39,6 +39,8 @@ export type RefundRow = {
 export type Refunding = RefundApprovalProps & {
     payments: RefundablePayment[];
     refunds: RefundRow[];
+    can_refund: boolean;
+    can_refund_and_cancel: boolean;
 };
 
 type ErrorBag = Record<string, string | undefined>;
@@ -91,15 +93,17 @@ export function PaymentRefunds({
                                 <span className="tabular-nums">
                                     {formatMoney(p.amount_cents)}
                                 </span>
-                                {p.refundable_cents > 0 && open !== p.id && (
-                                    <button
-                                        type="button"
-                                        className="text-xs font-medium underline-offset-4 hover:underline"
-                                        onClick={() => setOpen(p.id)}
-                                    >
-                                        Refund
-                                    </button>
-                                )}
+                                {refunding.can_refund &&
+                                    p.refundable_cents > 0 &&
+                                    open !== p.id && (
+                                        <button
+                                            type="button"
+                                            className="text-xs font-medium underline-offset-4 hover:underline"
+                                            onClick={() => setOpen(p.id)}
+                                        >
+                                            Refund
+                                        </button>
+                                    )}
                             </span>
                         </div>
                         {open === p.id && (

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Access\RefundApproval;
+use App\Access\RouteAccess;
 use App\Credit\CreditCheck;
 use App\Enums\FulfillmentMethod;
 use App\Enums\OrderType;
@@ -225,6 +226,8 @@ class OrderController extends Controller
                     'at' => $r->created_at->toIso8601String(),
                 ])
                 ->values(),
+            'can_refund' => $user !== null && RouteAccess::allowsRoute($user, 'orders.payments.refund', false),
+            'can_refund_and_cancel' => $user !== null && RouteAccess::allowsRoute($user, 'orders.refund-and-cancel', false),
             'limit_cents' => $user === null || $user->hasPermission(Permission::RefundAboveLimit) ? null : $user->refundLimit('goods'),
             'approvers' => $user !== null ? RefundApproval::approvers($user) : [],
         ];

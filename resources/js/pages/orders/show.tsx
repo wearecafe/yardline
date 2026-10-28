@@ -105,7 +105,7 @@ export default function ShowOrder(props: Props) {
                         <HeaderActions
                             order={order}
                             onRefundAndCancel={
-                                props.refunding
+                                props.refunding?.can_refund_and_cancel
                                     ? () => setCancelling(true)
                                     : undefined
                             }

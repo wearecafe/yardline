@@ -99,6 +99,18 @@ class RefundsTest extends TestCase
         return new CardRefundResult('re_test_'.count($this->cardRefunds), 'succeeded');
     }
 
+    private function person(UserRole $role): User
+    {
+        $user = User::factory()->create(['tenant_id' => $this->owner->tenant_id]);
+        $user->setRoles([$role])->save();
+
+        if ($user->isYardScoped()) {
+            $user->setYards([$this->yard->id]);
+        }
+
+        return $user->refresh();
+    }
+
     /** A confirmed, prepaid order for mortar: $11.30 a bag with tax. */
     private function order(int $bags): Order
     {
@@ -225,10 +237,7 @@ class RefundsTest extends TestCase
         $order = $this->order(30); // $339
         $this->payByCard($order);
 
-        $sales = User::factory()->create(['tenant_id' => $this->owner->tenant_id]);
-        $sales->setRoles([UserRole::Sales])->save();
-        $sales->setYards([$this->yard->id]);
-        $sales->refresh();
+        $sales = $this->person(UserRole::Sales);
         $this->actingAs($sales);
 
         $this->post(route('orders.refund-and-cancel', $order))->assertSessionHasErrors('approver_id');
@@ -241,6 +250,21 @@ class RefundsTest extends TestCase
         $this->assertSame(OrderStatus::Cancelled, $order->refresh()->status);
         $this->assertSame($this->owner->id, Refund::query()->sole()->approved_by);
         $this->assertTrue(AuditEvent::query()->where('event', 'refund approved')->where('user_id', $sales->id)->exists());
+    }
+
+    public function test_accounts_can_refund_a_payment_but_not_cancel_and_dispatch_cant_refund(): void
+    {
+        $order = $this->order(10);
+        $card = $this->payByCard($order);
+
+        $this->actingAs($this->person(UserRole::Dispatcher));
+        $this->post(route('orders.payments.refund', [$order, $card]), ['amount' => '10.00'])->assertForbidden();
+
+        $this->actingAs($this->person(UserRole::Accounts));
+        $this->post(route('orders.refund-and-cancel', $order))->assertForbidden();
+        $this->post(route('orders.payments.refund', [$order, $card]), ['amount' => '10.00'])->assertSessionHasNoErrors();
+
+        $this->assertSame(10_300, $order->refresh()->amount_paid_cents);
     }
 
     public function test_a_refused_card_refund_changes_nothing(): void
