@@ -76,8 +76,6 @@ class MaintenanceRecord extends Model implements HasYard
     /** @return list<int> */
     public function yardIds(): array
     {
-        $yard = $this->unit?->location_id;
-
-        return $yard !== null ? [(int) $yard] : [];
+        return [(int) $this->unit->location_id];
     }
 }

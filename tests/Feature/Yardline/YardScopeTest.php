@@ -176,10 +176,12 @@ class YardScopeTest extends TestCase
 
         $this->actingAs($this->atWaterdown(UserRole::Dispatcher));
 
-        $this->get(route('dispatch.board'))->assertInertia(fn (Assert $page) => $page
-            ->where('trucks', fn ($trucks) => collect($trucks)->pluck('id')->sort()->values()->all() === collect([$ours->id, $shared->id])->sort()->values()->all())
-            ->where('unscheduled', fn ($stops) => collect($stops)->pluck('id')->all() === [$mine->id])
-            ->where('trucks', fn ($trucks) => collect($trucks)->firstWhere('id', $ours->id)['stops'][0]['id'] === $onOurTruck->id));
+        $board = $this->get(route('dispatch.board'))->assertOk()->viewData('page')['props'];
+        $trucks = collect($board['trucks']);
+
+        $this->assertEqualsCanonicalizing([$ours->id, $shared->id], $trucks->pluck('id')->all());
+        $this->assertSame([$mine->id], collect($board['unscheduled'])->pluck('id')->all());
+        $this->assertSame([$onOurTruck->id], collect($trucks->firstWhere('id', $ours->id)['stops'])->pluck('id')->all());
 
         $this->patch(route('stops.schedule', $theirs), ['truck_id' => $ours->id, 'date' => now()->toDateString(), 'starts_at' => '09:00'])->assertNotFound();
         $this->patch(route('stops.schedule', $mine), ['truck_id' => $other->id, 'date' => now()->toDateString(), 'starts_at' => '09:00'])->assertSessionHasErrors('truck_id');
