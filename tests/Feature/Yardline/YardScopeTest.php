@@ -183,10 +183,10 @@ class YardScopeTest extends TestCase
         $this->assertSame([$mine->id], collect($board['unscheduled'])->pluck('id')->all());
         $this->assertSame([$onOurTruck->id], collect($trucks->firstWhere('id', $ours->id)['stops'])->pluck('id')->all());
 
-        $this->patch(route('stops.schedule', $theirs), ['truck_id' => $ours->id, 'date' => now()->toDateString(), 'starts_at' => '09:00'])->assertNotFound();
-        $this->patch(route('stops.schedule', $mine), ['truck_id' => $other->id, 'date' => now()->toDateString(), 'starts_at' => '09:00'])->assertSessionHasErrors('truck_id');
-        $this->patch(route('stops.schedule', $mine), ['truck_id' => $shared->id, 'date' => now()->toDateString(), 'starts_at' => '09:00'])->assertSessionHasNoErrors();
-        $this->put(route('dispatch.driver', $other), ['date' => now()->toDateString(), 'user_id' => null])->assertNotFound();
+        $this->patch(route('stops.schedule', $theirs), ['truck_id' => $ours->id, 'date' => $this->today(), 'starts_at' => '09:00'])->assertNotFound();
+        $this->patch(route('stops.schedule', $mine), ['truck_id' => $other->id, 'date' => $this->today(), 'starts_at' => '09:00'])->assertSessionHasErrors('truck_id');
+        $this->patch(route('stops.schedule', $mine), ['truck_id' => $shared->id, 'date' => $this->today(), 'starts_at' => '09:00'])->assertSessionHasNoErrors();
+        $this->put(route('dispatch.driver', $other), ['date' => $this->today(), 'user_id' => null])->assertNotFound();
     }
 
     public function test_rentals_follow_their_yards(): void
@@ -218,6 +218,11 @@ class YardScopeTest extends TestCase
         $this->get(route('fleet.units.show', $ourUnit))->assertOk();
     }
 
+    private function today(): string
+    {
+        return now(CurrentTenant::get()->timezone ?? 'America/Toronto')->toDateString();
+    }
+
     private function stop(Order $order, ?Truck $truck = null): Stop
     {
         return Stop::query()->create([
@@ -225,7 +230,8 @@ class YardScopeTest extends TestCase
             'stoppable_id' => $order->id,
             'kind' => 'delivery',
             'truck_id' => $truck?->id,
-            'date' => now()->toDateString(),
+            // The board's day is the yard's today, not UTC's.
+            'date' => $this->today(),
             'starts_at' => $truck ? '10:00' : null,
             'status' => $truck ? StopStatus::Scheduled : StopStatus::Unscheduled,
             'address' => ['line1' => '1 Main St', 'city' => 'Waterdown'],
