@@ -28,6 +28,11 @@ Stripe Tax works out the rest of Canada the same way.
 
 Tax isn't worked out while you build a draft. It's calculated when you [send a quote](/help/selling/quotes) and when you [confirm the order](/help/selling/confirming-orders), and recorded with Stripe Tax when the sale is completed.
 
+When a recorded sale is undone, YardRunner tells Stripe Tax so its reports match the tax you kept:
+
+- **Cancelling an order** takes the whole sale back out.
+- **A return** takes out what's credited on each line: the goods less any restocking fee, and any pallet usage fees credited with them.
+
 ## Tax-exempt accounts
 
 On the organization, tick **Tax exempt** and enter the **Exemption number**. Its orders aren't taxed, and the number is kept on file with the account.

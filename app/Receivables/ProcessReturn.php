@@ -5,6 +5,7 @@ namespace App\Receivables;
 use App\Enums\OrderStatus;
 use App\Enums\StockMovementType;
 use App\Inventory\InventoryLedger;
+use App\Jobs\ReverseTax;
 use App\Models\CreditNote;
 use App\Models\Location;
 use App\Models\Order;
@@ -82,6 +83,8 @@ class ProcessReturn
                 $lineTax = $line->line_total_cents > 0 ? (int) round($line->tax_cents * $amount / $line->line_total_cents) : 0;
                 $base = $quantity * (float) ($line->unit_factor ?: 1);
 
+                [$lineFee, $lineFeeTax] = $this->palletFeeBack($line, $quantity);
+
                 $credit->lines()->create([
                     'order_line_id' => $line->id,
                     'product_id' => $line->product_id,
@@ -94,6 +97,8 @@ class ProcessReturn
                     'unit_cost_cents' => $restock ? $line->unit_cost_cents : null,
                     'line_total_cents' => $amount,
                     'tax_cents' => $lineTax,
+                    'pallet_fee_cents' => $lineFee,
+                    'pallet_fee_tax_cents' => $lineFeeTax,
                     'restock' => $restock,
                 ]);
 
@@ -101,7 +106,6 @@ class ProcessReturn
                     $this->ledger->record($line->product, $location, $base, StockMovementType::CustomerReturn, $credit, $user, "Return {$credit->number}", unitCostCents: $line->unit_cost_cents);
                 }
 
-                [$lineFee, $lineFeeTax] = $this->palletFeeBack($line, $quantity);
                 $palletFees += $lineFee;
                 $palletFeeTax += $lineFeeTax;
 
@@ -129,6 +133,11 @@ class ProcessReturn
                 'tax_cents' => $tax - $feeTax + $palletFeeTax,
                 'total_cents' => $subtotal - $fee + $tax - $feeTax + $palletFees + $palletFeeTax,
             ])->save();
+
+            // The credited part of the sale comes back out of Stripe Tax.
+            if ($order->tax_transaction_ref !== null && $credit->tax_cents > 0) {
+                ReverseTax::dispatch('credit_note', $credit->id)->afterCommit();
+            }
 
             return $credit;
         });

@@ -26,6 +26,11 @@ class FlatRateTaxCalculator implements TaxCalculator
         return null;
     }
 
+    public function reverse(string $transactionReference, string $reversalReference, ?array $lines = null): ?string
+    {
+        return null;
+    }
+
     public function rate(): float
     {
         return $this->rate;

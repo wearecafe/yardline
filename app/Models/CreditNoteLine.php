@@ -20,11 +20,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $unit_cost_cents cost per base unit put back in stock (restocked lines)
  * @property int $line_total_cents
  * @property int $tax_cents
+ * @property int $pallet_fee_cents pallet usage fees credited with this line, before tax
+ * @property int $pallet_fee_tax_cents
  * @property bool $restock
  * @property-read Product|null $product
  * @property-read CreditNote $creditNote
  */
-#[Fillable(['credit_note_id', 'order_line_id', 'product_id', 'description', 'quantity', 'unit', 'base_quantity', 'unit_price_cents', 'unit_cost_cents', 'line_total_cents', 'tax_cents', 'restock'])]
+#[Fillable(['credit_note_id', 'order_line_id', 'product_id', 'description', 'quantity', 'unit', 'base_quantity', 'unit_price_cents', 'unit_cost_cents', 'line_total_cents', 'tax_cents', 'pallet_fee_cents', 'pallet_fee_tax_cents', 'restock'])]
 class CreditNoteLine extends Model
 {
     use BelongsToTenant;
@@ -38,6 +40,8 @@ class CreditNoteLine extends Model
             'unit_cost_cents' => 'decimal:4',
             'line_total_cents' => 'integer',
             'tax_cents' => 'integer',
+            'pallet_fee_cents' => 'integer',
+            'pallet_fee_tax_cents' => 'integer',
             'restock' => 'boolean',
         ];
     }
