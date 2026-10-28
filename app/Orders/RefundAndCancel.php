@@ -41,7 +41,7 @@ class RefundAndCancel
             default => 2,
         };
 
-        return $order->payments()
+        $rows = $order->payments()
             ->where('status', PaymentState::Succeeded->value)
             ->oldest('id')
             ->get()
@@ -50,6 +50,8 @@ class RefundAndCancel
             ->sortBy(fn (array $row) => $rank($row['payment']))
             ->values()
             ->all();
+
+        return array_values($rows);
     }
 
     /**

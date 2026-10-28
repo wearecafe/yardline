@@ -225,8 +225,10 @@ class RefundsTest extends TestCase
         $order = $this->order(30); // $339
         $this->payByCard($order);
 
-        $sales = User::factory()->create(['tenant_id' => $this->owner->tenant_id, 'role' => UserRole::Sales]);
+        $sales = User::factory()->create(['tenant_id' => $this->owner->tenant_id]);
+        $sales->setRoles([UserRole::Sales])->save();
         $sales->setYards([$this->yard->id]);
+        $sales->refresh();
         $this->actingAs($sales);
 
         $this->post(route('orders.refund-and-cancel', $order))->assertSessionHasErrors('approver_id');

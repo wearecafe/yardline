@@ -170,7 +170,7 @@ class RefundPayments
             return [];
         }
 
-        return Payment::query()
+        return array_values(Payment::query()
             ->with('order:id,number,organization_id,customer_id')
             ->where('tender', PaymentTender::StripeCheckout->value)
             ->where('status', PaymentState::Succeeded->value)
@@ -190,7 +190,7 @@ class RefundPayments
                 'refundable_cents' => $p->refundableCents(),
             ])
             ->values()
-            ->all();
+            ->all());
     }
 
     public static function sameAccount(CreditNote $credit, Payment $payment): bool
