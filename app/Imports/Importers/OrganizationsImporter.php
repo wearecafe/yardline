@@ -17,7 +17,7 @@ use App\Models\Organization;
  */
 class OrganizationsImporter implements Importer
 {
-    /** @var array<string, PaymentTerms> */
+    /** @var array<string|int, PaymentTerms> */
     private const TERMS = [
         'due on receipt' => PaymentTerms::DueOnReceipt, 'due_on_receipt' => PaymentTerms::DueOnReceipt, 'on receipt' => PaymentTerms::DueOnReceipt,
         'receipt' => PaymentTerms::DueOnReceipt, 'cod' => PaymentTerms::DueOnReceipt, 'c.o.d.' => PaymentTerms::DueOnReceipt, '0' => PaymentTerms::DueOnReceipt,

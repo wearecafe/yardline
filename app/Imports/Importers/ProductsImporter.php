@@ -45,7 +45,7 @@ class ProductsImporter implements Importer
 
         $product = $context->product($sku);
         $unitName = $row->text('unit', 60);
-        $baseUnit = $product?->unit ?? self::unit($row->text('base_unit', 30));
+        $baseUnit = $product->unit ?? self::unit($row->text('base_unit', 30));
         $isProductRow = $unitName === null || ($baseUnit !== null && self::unit($unitName) === $baseUnit);
 
         $isProductRow ? $this->checkProduct($row, $context, $sku, $product) : $this->checkUnit($row, $context, $sku, $product, $unitName);
