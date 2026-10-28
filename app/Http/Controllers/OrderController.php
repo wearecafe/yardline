@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Access\RefundApproval;
 use App\Access\RouteAccess;
+use App\Access\YardScope;
 use App\Credit\CreditCheck;
 use App\Enums\FulfillmentMethod;
 use App\Enums\OrderType;
@@ -15,7 +16,6 @@ use App\Enums\QuantityRounding;
 use App\Fulfillment\DeliverySettings;
 use App\Http\Controllers\Settings\AuditController;
 use App\Models\Customer;
-use App\Models\Location;
 use App\Models\Order;
 use App\Models\Organization;
 use App\Models\OrganizationLocation;
@@ -47,7 +47,7 @@ class OrderController extends Controller
     {
         $search = $request->string('search')->toString();
 
-        $orders = Order::query()
+        $orders = YardScope::apply(Order::query(), $request->user())
             ->with(['organization:id,name', 'customer:id,first_name,last_name'])
             ->when($request->input('status'), fn ($query, $status) => match ($status) {
                 'quote' => $query->where('status', 'draft')->whereNotNull('quoted_at'),
@@ -78,7 +78,7 @@ class OrderController extends Controller
             'organizationId' => $request->integer('organization_id') ?: null,
             'organizations' => Organization::query()->orderBy('name')->get(['id', 'name', 'account_number']),
             'customers' => Customer::query()->orderBy('first_name')->get(['id', 'organization_id', 'first_name', 'last_name', 'phone']),
-            'locations' => Location::query()->orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'is_default']),
+            'locations' => YardScope::locations($request->user())->orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'is_default']),
         ]);
     }
 
@@ -145,7 +145,7 @@ class OrderController extends Controller
                 'url' => $order->quote_token ? route('quotes.public', $order->quote_token) : null,
             ],
             'customers' => $order->isDraft() ? Customer::query()->orderBy('first_name')->get(['id', 'organization_id', 'first_name', 'last_name']) : [],
-            'locations' => $order->isDraft() ? Location::query()->orderBy('name')->get(['id', 'name']) : [],
+            'locations' => $order->isDraft() ? YardScope::locations($request->user())->orderBy('name')->get(['id', 'name']) : [],
         ]);
     }
 
@@ -271,7 +271,7 @@ class OrderController extends Controller
             'organization_id' => ['nullable', TenantRule::exists('organizations')],
             'customer_id' => ['nullable', TenantRule::exists('customers')],
             'organization_location_id' => ['nullable', TenantRule::exists('organization_locations')->where('organization_id', $request->integer('organization_id'))],
-            'location_id' => ['required', TenantRule::exists('locations')],
+            'location_id' => ['required', YardScope::locationRule($request->user())],
             'fulfillment' => ['required', Rule::enum(FulfillmentMethod::class)],
             'delivery_address' => ['nullable', $needsAddress, 'array'],
             'delivery_address.line1' => ['nullable', $needsAddress, 'string', 'max:255'],

@@ -121,6 +121,7 @@ class OrderLifecycleTest extends TestCase
     public function test_sales_cannot_override_the_credit_limit(): void
     {
         $staff = User::factory()->create(['tenant_id' => $this->user->tenant_id, 'role' => UserRole::Sales]);
+        $staff->setYards([$this->yard->id]);
         $this->actingAs($staff);
 
         $org = Organization::factory()->withCredit(10_000)->create();

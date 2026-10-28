@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Rentals;
 
+use App\Access\YardScope;
 use App\Enums\DepositStatus;
 use App\Enums\PaymentState;
 use App\Enums\RentalStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Rental;
 use App\Models\RentalPayment;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,22 +19,26 @@ use Inertia\Response;
  */
 class RentalPaymentController extends Controller
 {
-    public function __invoke(): Response
+    public function __invoke(Request $request): Response
     {
+        $user = $request->user();
+        $rentals = YardScope::apply(Rental::query(), $user)->select('id');
+
         $payments = RentalPayment::query()
+            ->whereIn('rental_id', $rentals)
             ->with(['rental.organization:id,name', 'rental.customer:id,first_name,last_name', 'recordedBy:id,name'])
             ->where('status', PaymentState::Succeeded->value)
             ->latest('succeeded_at')
             ->limit(200)
             ->get();
 
-        $held = Rental::query()
+        $held = YardScope::apply(Rental::query(), $user)
             ->with(['organization:id,name', 'customer:id,first_name,last_name'])
             ->where('deposit_status', DepositStatus::Held->value)
             ->orderBy('ends_at')
             ->get();
 
-        $owing = Rental::query()
+        $owing = YardScope::apply(Rental::query(), $user)
             ->with(['organization:id,name', 'customer:id,first_name,last_name'])
             ->whereIn('status', [RentalStatus::Reserved->value, RentalStatus::Out->value, RentalStatus::Returned->value])
             ->whereColumn('amount_paid_cents', '<', 'total_cents')

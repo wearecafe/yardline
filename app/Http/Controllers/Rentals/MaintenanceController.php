@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Rentals;
 
+use App\Access\YardScope;
 use App\Enums\MaintenanceKind;
 use App\Enums\RentalUnitStatus;
 use App\Http\Controllers\Controller;
@@ -9,7 +10,6 @@ use App\Models\MaintenanceRecord;
 use App\Models\RentalUnit;
 use App\Rentals\Maintenance;
 use App\Support\Money;
-use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -18,9 +18,10 @@ use Inertia\Response;
 
 class MaintenanceController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $units = RentalUnit::query()
+        $user = $request->user();
+        $units = YardScope::apply(RentalUnit::query(), $user)
             ->with('product')
             ->where('status', '!=', RentalUnitStatus::Retired->value)
             ->get();
@@ -41,6 +42,7 @@ class MaintenanceController extends Controller
             ]);
 
         $records = MaintenanceRecord::query()
+            ->whereIn('rental_unit_id', YardScope::apply(RentalUnit::query(), $user)->select('id'))
             ->with(['unit.product', 'user:id,name'])
             ->latest('opened_at')
             ->limit(100)
@@ -61,7 +63,7 @@ class MaintenanceController extends Controller
     public function store(Request $request, Maintenance $maintenance): RedirectResponse
     {
         $data = $request->validate([
-            'rental_unit_id' => ['required', TenantRule::exists('rental_units')],
+            'rental_unit_id' => ['required', YardScope::existsIn('rental_units', $request->user())],
             'kind' => ['required', Rule::enum(MaintenanceKind::class)],
             'description' => ['required', 'string', 'max:255'],
             'done' => ['boolean'],

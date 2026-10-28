@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Access\YardScope;
 use App\Enums\StopStatus;
 use App\Fulfillment\DeliverySettings;
 use App\Fulfillment\Dispatch;
@@ -40,7 +41,9 @@ class DispatchController extends Controller
             ? CarbonImmutable::parse($request->string('date')->toString(), $tz)->startOfDay()
             : CarbonImmutable::now($tz)->startOfDay();
 
-        $stops = Stop::query()
+        $user = $request->user();
+
+        $stops = YardScope::stops(Stop::query(), $user)
             ->with(['stoppable', 'truck'])
             ->where('status', '!=', StopStatus::Cancelled->value)
             ->where(fn ($q) => $q
@@ -56,7 +59,7 @@ class DispatchController extends Controller
             Rental::class => ['organization:id,name', 'customer:id,first_name,last_name,phone', 'items'],
         ]);
 
-        $trucks = Truck::query()
+        $trucks = YardScope::trucks(Truck::query(), $user)
             ->with([
                 'assignments' => fn ($q) => $q->where('date', $date->toDateString())->with('driver:id,name,phone'),
                 'drivers' => fn ($q) => $q->orderBy('name'),
@@ -118,9 +121,16 @@ class DispatchController extends Controller
             'duration_minutes' => ['nullable', 'integer', 'min:15', 'max:600'],
         ]);
 
+        // One of their yards' trucks, or a truck based nowhere.
+        $truck = isset($data['truck_id']) ? YardScope::trucks(Truck::query(), $request->user())->find((int) $data['truck_id']) : null;
+
+        if (isset($data['truck_id']) && $truck === null) {
+            OrderRules::fail('Pick one of your yards’ trucks.', 'truck_id');
+        }
+
         $dispatch->schedule(
             $stop,
-            isset($data['truck_id']) ? Truck::query()->find((int) $data['truck_id']) : null,
+            $truck,
             isset($data['date']) ? CarbonImmutable::parse($data['date']) : null,
             $data['starts_at'] ?? null,
             isset($data['duration_minutes']) ? (int) $data['duration_minutes'] : null,
@@ -159,7 +169,7 @@ class DispatchController extends Controller
     {
         $tz = CurrentTenant::get()->timezone ?? 'America/Toronto';
         $date = $request->filled('date') ? CarbonImmutable::parse($request->string('date')->toString(), $tz) : CarbonImmutable::now($tz);
-        $sent = $dispatch->sendEtas($date);
+        $sent = $dispatch->sendEtas($date, $request->user());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => $sent === 1 ? 'Sent 1 ETA text.' : "Sent {$sent} ETA texts."]);
 

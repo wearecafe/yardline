@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Access\YardScope;
 use App\Enums\StockMovementType;
 use App\Inventory\InventoryLedger;
 use App\Models\Location;
@@ -22,7 +23,7 @@ class StockAdjustmentController extends Controller
     {
         $data = $request->validate([
             'product_id' => ['required', TenantRule::exists('products')],
-            'location_id' => ['required', TenantRule::exists('locations')],
+            'location_id' => ['required', YardScope::locationRule($request->user())],
             'mode' => ['required', Rule::in(['receive', 'adjust', 'count', 'damage'])],
             'quantity' => ['required', 'numeric', 'max:999999', $request->input('mode') === 'count' ? 'min:0' : 'not_in:0'],
             'reorder_point' => ['nullable', 'numeric', 'min:0', 'max:999999'],

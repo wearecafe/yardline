@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Access\HasYard;
 use App\Tenancy\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -23,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read Location $location
  */
 #[Fillable(['product_id', 'location_id', 'reorder_point', 'bin'])]
-class StockLevel extends Model
+class StockLevel extends Model implements HasYard
 {
     use BelongsToTenant;
 
@@ -57,5 +58,11 @@ class StockLevel extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
+    }
+
+    /** @return list<int> */
+    public function yardIds(): array
+    {
+        return [(int) $this->location_id];
     }
 }

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Access\YardScope;
 use App\Enums\OrderStatus;
 use App\Models\CycleCount;
-use App\Models\Location;
 use App\Models\OrderLine;
 use App\Models\PalletMovement;
 use App\Models\Product;
@@ -26,13 +26,20 @@ class InventoryController extends Controller
 {
     public function index(Request $request): Response
     {
-        $locations = Location::query()->orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'code', 'is_default']);
+        $user = $request->user();
+        $yards = YardScope::yards($user);
+        $locations = YardScope::locations($user)->orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'code', 'is_default']);
         $locationId = $request->input('location_id') === 'all' ? null : ($request->integer('location_id') ?: null);
+
+        // A yard they don't work reads as all of theirs.
+        if ($locationId !== null && ! $locations->contains('id', $locationId)) {
+            $locationId = null;
+        }
         $category = $request->string('category')->toString() ?: null;
         $search = $request->string('search')->toString();
         $lowOnly = $request->boolean('low');
 
-        $levels = StockLevel::query()
+        $levels = YardScope::apply(StockLevel::query(), $user)
             ->with(['product:id,sku,name,unit,category,track_inventory,track_lots,kind', 'location:id,name'])
             ->when($locationId, fn ($q) => $q->where('location_id', $locationId))
             ->whereHas('product', fn ($q) => $q->where('track_inventory', true)->where('kind', 'sale')
@@ -41,7 +48,7 @@ class InventoryController extends Controller
             ->get();
 
         $committed = $this->committed();
-        $lots = StockLot::query()->where('on_hand', '!=', 0)->get()->groupBy(fn (StockLot $l) => "{$l->product_id}:{$l->location_id}");
+        $lots = YardScope::apply(StockLot::query(), $user)->where('on_hand', '!=', 0)->get()->groupBy(fn (StockLot $l) => "{$l->product_id}:{$l->location_id}");
 
         /** @var list<array<string, mixed>> $rows */
         $rows = [];
@@ -106,9 +113,9 @@ class InventoryController extends Controller
             'rows' => $rows,
             'stats' => [
                 'low' => $levels->filter(fn (StockLevel $l) => $l->reorder_point !== null && (float) $l->on_hand - (float) ($committed["{$l->product_id}:{$l->location_id}"] ?? 0) <= (float) $l->reorder_point)->count(),
-                'pallets_out' => (int) PalletMovement::query()->sum('quantity'),
-                'arriving' => PurchaseOrder::query()->whereIn('status', ['sent', 'partial'])->whereBetween('expected_on', [now()->startOfWeek()->toDateString(), now()->endOfWeek()->toDateString()])->count(),
-                'variance' => CycleCounting::varianceSince($since),
+                'pallets_out' => (int) ($yards === null ? PalletMovement::query() : PalletMovement::query()->whereIn('location_id', $yards))->sum('quantity'),
+                'arriving' => YardScope::apply(PurchaseOrder::query(), $user)->whereIn('status', ['sent', 'partial'])->whereBetween('expected_on', [now()->startOfWeek()->toDateString(), now()->endOfWeek()->toDateString()])->count(),
+                'variance' => CycleCounting::varianceSince($since, $yards),
             ],
             'locations' => $locations,
             'categories' => Product::query()->whereNotNull('category')->where('kind', 'sale')->distinct()->orderBy('category')->pluck('category'),
@@ -119,9 +126,9 @@ class InventoryController extends Controller
                 'low' => $lowOnly,
             ],
             'products' => Product::query()->where('track_inventory', true)->where('kind', 'sale')->orderBy('name')->get(['id', 'sku', 'name', 'unit', 'track_lots']),
-            'lots' => StockLot::query()->where('on_hand', '>', 0)->get(['id', 'product_id', 'location_id', 'code', 'on_hand']),
-            'openCounts' => CycleCount::query()->where('status', 'open')->withCount('lines')->latest('id')->get(['id', 'name', 'location_id', 'created_at']),
-            'movements' => StockMovement::query()
+            'lots' => YardScope::apply(StockLot::query(), $user)->where('on_hand', '>', 0)->get(['id', 'product_id', 'location_id', 'code', 'on_hand']),
+            'openCounts' => YardScope::apply(CycleCount::query(), $user)->where('status', 'open')->withCount('lines')->latest('id')->get(['id', 'name', 'location_id', 'created_at']),
+            'movements' => YardScope::apply(StockMovement::query(), $user)
                 ->with(['product:id,sku,name,unit', 'user:id,name', 'location:id,name'])
                 ->when($locationId, fn ($q) => $q->where('location_id', $locationId))
                 ->latest('id')

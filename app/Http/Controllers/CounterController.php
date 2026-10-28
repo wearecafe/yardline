@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Access\YardScope;
 use App\Enums\OrderType;
 use App\Enums\PaymentTender;
 use App\Enums\ProductKind;
@@ -46,7 +47,7 @@ class CounterController extends Controller
 
         return Inertia::render('counter/index', [
             'yard' => ['id' => $location->id, 'name' => $location->name],
-            'yards' => Location::query()->orderByDesc('is_default')->orderBy('name')->get(['id', 'name']),
+            'yards' => YardScope::locations($request->user())->orderByDesc('is_default')->orderBy('name')->get(['id', 'name']),
             'products' => Product::query()
                 ->with('units')
                 ->where('kind', ProductKind::Sale->value)
@@ -107,7 +108,7 @@ class CounterController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'location_id' => ['required', TenantRule::exists('locations')],
+            'location_id' => ['required', YardScope::locationRule($request->user())],
             'organization_id' => ['nullable', TenantRule::exists('organizations')],
             'customer_id' => ['nullable', TenantRule::exists('customers')],
             'po_number' => ['nullable', 'string', 'max:255'],
@@ -201,9 +202,18 @@ class CounterController extends Controller
         ]);
     }
 
+    /**
+     * The yard the counter sells from: the one picked, if they work it,
+     * otherwise their default.
+     */
     private function yard(Request $request): Location
     {
-        return ($request->filled('yard') ? Location::query()->find($request->integer('yard')) : null)
-            ?? Location::query()->orderByDesc('is_default')->orderBy('id')->firstOrFail();
+        $user = $request->user();
+        $yard = ($request->filled('yard') ? YardScope::locations($user)->find($request->integer('yard')) : null)
+            ?? YardScope::defaultYard($user);
+
+        abort_if($yard === null, 403, 'You aren’t assigned to a yard yet. An owner or admin can add you to one under Settings → Users.');
+
+        return $yard;
     }
 }

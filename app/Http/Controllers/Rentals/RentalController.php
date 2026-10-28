@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Rentals;
 
 use App\Access\RefundApproval;
+use App\Access\YardScope;
 use App\Enums\FulfillmentMethod;
 use App\Enums\Permission;
 use App\Enums\ProductKind;
@@ -13,7 +14,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Presenters\RentalPresenter;
 use App\Models\Customer;
 use App\Models\DeliveryZone;
-use App\Models\Location;
 use App\Models\Organization;
 use App\Models\Product;
 use App\Models\Rental;
@@ -48,7 +48,7 @@ class RentalController extends Controller
     {
         $status = $request->string('status')->toString();
 
-        $rentals = Rental::query()
+        $rentals = YardScope::apply(Rental::query(), $request->user())
             ->with(['items.unit', 'organization:id,name', 'customer:id,first_name,last_name', 'agreement'])
             ->when($status === 'overdue', fn ($query) => $query
                 ->where('status', RentalStatus::Out->value)
@@ -254,7 +254,7 @@ class RentalController extends Controller
     {
         $data = $request->validate([
             'rental_item_id' => ['required', 'integer'],
-            'rental_unit_id' => ['required', TenantRule::exists('rental_units')],
+            'rental_unit_id' => ['required', YardScope::existsIn('rental_units', $request->user())],
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
         ]);
@@ -289,7 +289,7 @@ class RentalController extends Controller
         $data = $request->validate([
             'organization_id' => ['nullable', TenantRule::exists('organizations')],
             'customer_id' => ['nullable', TenantRule::exists('customers')],
-            'location_id' => ['required', TenantRule::exists('locations')],
+            'location_id' => ['required', YardScope::locationRule($request->user())],
             'starts_at' => ['required', 'date'],
             'ends_at' => ['required', 'date', 'after:starts_at'],
             'fulfillment' => ['required', Rule::enum(FulfillmentMethod::class)],
@@ -306,7 +306,7 @@ class RentalController extends Controller
             'notes' => ['nullable', 'string', 'max:5000'],
             'items' => ['required', 'array', 'min:1', 'max:20'],
             'items.*.product_id' => ['required', TenantRule::exists('products')],
-            'items.*.rental_unit_id' => ['nullable', TenantRule::exists('rental_units')],
+            'items.*.rental_unit_id' => ['nullable', YardScope::existsIn('rental_units', $request->user())],
         ]);
 
         $tz = $this->timezone();
@@ -334,6 +334,9 @@ class RentalController extends Controller
      */
     private function formOptions(?Rental $rental = null): array
     {
+        $user = request()->user();
+        $yards = YardScope::yards($user);
+
         return [
             'customers' => Customer::query()
                 ->with(['documents', 'organization:id,name'])
@@ -347,7 +350,8 @@ class RentalController extends Controller
             'products' => Product::query()
                 ->where('kind', ProductKind::Rental->value)
                 ->where('is_active', true)
-                ->with(['rentalUnits' => fn ($query) => $query->orderBy('serial')])
+                // Only units at the yards they work.
+                ->with(['rentalUnits' => fn ($query) => $query->when($yards !== null, fn ($q) => $q->whereIn('location_id', $yards))->orderBy('serial')])
                 ->orderBy('name')
                 ->get()
                 ->map(fn (Product $product) => [
@@ -364,7 +368,7 @@ class RentalController extends Controller
                         'service_due' => $unit->setRelation('product', $product)->serviceDue(),
                     ]),
                 ]),
-            'locations' => Location::query()->orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'is_default']),
+            'locations' => YardScope::locations($user)->orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'is_default']),
             'zones' => DeliveryZone::query()->orderBy('position')->get(['id', 'name', 'fee_cents']),
             'paymentMethods' => array_map(
                 fn (RentalPaymentMethod $method) => ['value' => $method->value, 'label' => $method->label()],

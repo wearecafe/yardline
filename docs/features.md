@@ -382,8 +382,19 @@ given to one person works whatever their role. The sidebar hides what a
 person can't reach (`auth.routes`, `reachableSections`).
 
 **Yards.** Everyone but Owner and Admin works only their yards
-(`location_user`, `User::yardIds()`/`worksAt()`); the pick queue, pick
-lists and checks are scoped to them. New people start with every yard.
+(`location_user`, `User::yardIds()`/`worksAt()`). New people start with
+every yard. Lists filter their queries with `YardScope`: the pick queue,
+orders and the dashboard, the counter (its yard and yard picker), the
+stock overview and its counts and movements, the dispatch board (stops
+for their yards' orders and rentals or on their yards' trucks, trucks
+based at their yards or nowhere, unassigned pallet pickups, ETA texts),
+rentals, the calendar, the fleet, maintenance and rental payments. Forms
+only offer and accept their yards (`YardScope::locationRule()`,
+`existsIn()`); a stock transfer can go to any yard but only come out of
+theirs. Single records are guarded by `RestrictByYard`: an order, rental,
+stop, stock level, cycle count, rental unit, truck or maintenance record
+(`HasYard`) from another yard is a 404. The driver app and shipment
+hand-over keep their own checks.
 
 **Permissions.** `Permission` lists the judgment calls: Set manual line
 prices, Discount exempt products (needs manual prices), Override credit
@@ -678,7 +689,6 @@ remove an item when it ships.
 | Feature                                      | Area            | What's missing                                                                                                                                                                                                                                 |
 | -------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Payment on delivery (COD)                    | Users and roles | The Collect payment on delivery permission exists, but not the flow: COD stops, the truck's Stripe reader (S710), external terminal, cash, driver report                                                                                       |
-| Yard scope on every screen                   | Users and roles | Only the pick queue, pick lists and quality checks follow a person's yards. The dispatch board, stock, orders, counter and rentals still show every yard                                                                                       |
 | Count-only receiving for Yard crew           | Users and roles | Yard crew should confirm received quantities and pallet returns without costs. The purchasing screens show costs, so Yard crew don't reach them yet                                                                                            |
 | PIN switching on drivers' and techs' devices | Users and roles | Yard crew, Drivers and Service techs can be switched to by PIN, but the switch is only on the pick queue, not the driver app or fleet screens                                                                                                  |
 | Rental rates hidden from Service techs       | Users and roles | The fleet screens show rental rates, which Service techs shouldn't see                                                                                                                                                                         |

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Rentals;
 
+use App\Access\YardScope;
 use App\Enums\RentalUnitStatus;
 use App\Http\Controllers\Controller;
 use App\Models\RentalUnit;
@@ -30,7 +31,7 @@ class CalendarController extends Controller
             : CarbonImmutable::now($tz)->startOfDay();
         $to = $from->addDays(self::DAYS);
 
-        $units = RentalUnit::query()
+        $units = YardScope::apply(RentalUnit::query(), $request->user())
             ->with('product')
             ->where('status', '!=', RentalUnitStatus::Retired->value)
             ->get()

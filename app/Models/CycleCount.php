@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Access\HasYard;
 use App\Tenancy\BelongsToTenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -24,7 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read User|null $starter
  */
 #[Fillable(['location_id', 'name', 'status', 'started_by'])]
-class CycleCount extends Model
+class CycleCount extends Model implements HasYard
 {
     use BelongsToTenant;
 
@@ -60,5 +61,11 @@ class CycleCount extends Model
     public function starter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'started_by');
+    }
+
+    /** @return list<int> */
+    public function yardIds(): array
+    {
+        return [(int) $this->location_id];
     }
 }

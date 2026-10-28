@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Rentals;
 
+use App\Access\YardScope;
 use App\Enums\RentalStatus;
 use App\Enums\RentalUnitStatus;
 use App\Http\Controllers\Controller;
-use App\Models\Location;
 use App\Models\Product;
 use App\Models\Rental;
 use App\Models\RentalItem;
@@ -27,12 +27,13 @@ use Inertia\Response;
  */
 class FleetController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $user = $request->user();
         $now = CarbonImmutable::now();
         $tz = CurrentTenant::get()->timezone ?? 'America/Toronto';
 
-        $units = RentalUnit::query()
+        $units = YardScope::apply(RentalUnit::query(), $user)
             ->with(['product', 'location:id,name'])
             ->where('status', '!=', RentalUnitStatus::Retired->value)
             ->get()
@@ -96,9 +97,9 @@ class FleetController extends Controller
                 'on_rent' => $rows->whereIn('status', ['on_rent', 'overdue'])->count(),
                 'in_shop' => $rows->where('status', 'in_shop')->count(),
                 'utilization' => $this->utilization($units),
-                'due_today' => Rental::query()->where('status', RentalStatus::Out->value)
+                'due_today' => YardScope::apply(Rental::query(), $user)->where('status', RentalStatus::Out->value)
                     ->whereBetween('ends_at', [$now, $todayEnd])->count(),
-                'overdue' => Rental::query()->where('status', RentalStatus::Out->value)->where('ends_at', '<', $now)->count(),
+                'overdue' => YardScope::apply(Rental::query(), $user)->where('status', RentalStatus::Out->value)->where('ends_at', '<', $now)->count(),
                 'service_soon' => $units->filter(fn (RentalUnit $unit) => ($left = $unit->hoursUntilService()) !== null && $left <= 10)->count(),
             ],
         ]);
@@ -234,7 +235,7 @@ class FleetController extends Controller
     {
         $data = $request->validate([
             'product_id' => ['required', TenantRule::exists('products')->where('kind', 'rental')],
-            'location_id' => ['required', TenantRule::exists('locations')],
+            'location_id' => ['required', YardScope::locationRule($request->user())],
             'serial' => ['required', 'string', 'max:40', TenantRule::unique('rental_units', 'serial', $unit?->id)],
             'status' => ['required', Rule::enum(RentalUnitStatus::class)],
             'hour_meter' => ['nullable', 'numeric', 'min:0', 'max:999999'],
@@ -261,7 +262,7 @@ class FleetController extends Controller
     {
         return [
             'products' => Product::query()->where('kind', 'rental')->orderBy('name')->get(['id', 'name', 'service_interval_hours', 'service_interval_days']),
-            'locations' => Location::query()->orderByDesc('is_default')->orderBy('name')->get(['id', 'name']),
+            'locations' => YardScope::locations(request()->user())->orderByDesc('is_default')->orderBy('name')->get(['id', 'name']),
         ];
     }
 }

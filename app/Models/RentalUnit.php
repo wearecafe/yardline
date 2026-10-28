@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Access\HasYard;
 use App\Enums\RentalStatus;
 use App\Enums\RentalUnitStatus;
 use App\Tenancy\BelongsToTenant;
@@ -39,7 +40,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'service_interval_hours', 'service_interval_days', 'last_service_hours',
     'last_service_on', 'purchased_on', 'purchase_cost_cents', 'photo_path', 'notes',
 ])]
-class RentalUnit extends Model
+class RentalUnit extends Model implements HasYard
 {
     /** @use HasFactory<RentalUnitFactory> */
     use BelongsToTenant, HasFactory;
@@ -166,5 +167,11 @@ class RentalUnit extends Model
             ->whereHas('items', fn ($query) => $query->where('rental_unit_id', $this->id))
             ->latest('starts_at')
             ->first();
+    }
+
+    /** @return list<int> */
+    public function yardIds(): array
+    {
+        return [(int) $this->location_id];
     }
 }

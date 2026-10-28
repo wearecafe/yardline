@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Access\HasYard;
 use App\Enums\StopStatus;
 use App\Tenancy\BelongsToTenant;
 use Carbon\CarbonImmutable;
@@ -33,7 +34,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property-read Shipment|Rental|Order|Organization $stoppable
  */
 #[Fillable(['stoppable_type', 'stoppable_id', 'kind', 'truck_id', 'date', 'starts_at', 'duration_minutes', 'status', 'eta_at', 'address', 'needs'])]
-class Stop extends Model
+class Stop extends Model implements HasYard
 {
     use BelongsToTenant;
 
@@ -82,5 +83,24 @@ class Stop extends Model
     public function addressLine(): string
     {
         return implode(', ', array_filter([$this->address['line1'] ?? null, $this->address['city'] ?? null]));
+    }
+
+    /**
+     * The yard of the order or rental it's for, and the yard of the truck
+     * it's on. A pallet pickup no truck has taken belongs to no yard yet.
+     *
+     * @return list<int>
+     */
+    public function yardIds(): array
+    {
+        $s = $this->stoppable;
+        $yard = match (true) {
+            $s instanceof Order, $s instanceof Rental => $s->location_id,
+            $s instanceof Shipment => $s->order->location_id,
+            default => null,
+        };
+        $truckYard = $this->truck?->location_id;
+
+        return array_values(array_unique(array_map('intval', array_filter([$yard, $truckYard], fn ($id) => $id !== null))));
     }
 }

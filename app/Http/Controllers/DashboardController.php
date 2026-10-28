@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Access\YardScope;
 use App\Enums\OrderStatus;
 use App\Enums\RentalStatus;
 use App\Models\Order;
@@ -20,6 +21,9 @@ class DashboardController extends Controller
     {
         $today = now()->startOfDay();
         $tenant = CurrentTenant::get();
+        $user = $request->user();
+        // Their yards' orders, rentals and stock.
+        $orders = fn () => YardScope::apply(Order::query(), $user);
 
         return Inertia::render('dashboard', [
             // What's left of setting up, for owners and admins (never in the demo yard).
@@ -27,21 +31,21 @@ class DashboardController extends Controller
                 ? Setup::for($tenant)->checklist()
                 : null,
             'stats' => [
-                'drafts' => Order::query()->where('status', OrderStatus::Draft->value)->count(),
-                'to_release' => Order::query()->where('status', OrderStatus::Confirmed->value)->count(),
-                'rentals_out' => Rental::query()->where('status', RentalStatus::Out->value)->count(),
-                'sales_today_cents' => (int) Order::query()
+                'drafts' => $orders()->where('status', OrderStatus::Draft->value)->count(),
+                'to_release' => $orders()->where('status', OrderStatus::Confirmed->value)->count(),
+                'rentals_out' => YardScope::apply(Rental::query(), $user)->where('status', RentalStatus::Out->value)->count(),
+                'sales_today_cents' => (int) $orders()
                     ->whereIn('status', [OrderStatus::Confirmed->value, OrderStatus::Fulfilled->value])
                     ->where('confirmed_at', '>=', $today)
                     ->sum('total_cents'),
             ],
-            'recentOrders' => Order::query()
+            'recentOrders' => $orders()
                 ->with(['organization:id,name', 'customer:id,first_name,last_name'])
                 ->latest('id')
                 ->limit(8)
                 ->get()
                 ->map(fn (Order $order) => OrderController::summary($order)),
-            'lowStock' => StockLevel::query()
+            'lowStock' => YardScope::apply(StockLevel::query(), $user)
                 ->with(['product:id,sku,name,unit', 'location:id,name'])
                 ->whereNotNull('reorder_point')
                 ->whereColumn('on_hand', '<=', 'reorder_point')
