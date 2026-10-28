@@ -152,15 +152,16 @@ minutes instead.
 
 ## Receivables
 
-| Feature                                       | Screens                       | Code                                |
-| --------------------------------------------- | ----------------------------- | ----------------------------------- |
-| Invoices issued at confirmation, due by terms | Receivables, invoice print    | `IssueInvoice`                      |
-| Aging and statements (print, PDF, email)      | Receivables                   | `Aging`, `Statement`                |
-| Returns with restocking fees, credit notes    | Returns                       | `ProcessReturn`, `UseCredit`        |
-| Pallet deposits out and back                  | Order page, organization page | `PalletLedger`                      |
-| Pallet usage fees                             | Order page, invoice, receipt  | `RecalculateOrder`, `ProcessReturn` |
-| Card payments and payment links               | Order page                    | `app/Payments` (Stripe)             |
-| Sales tax                                     | Order confirm                 | `app/Tax` (Stripe Tax or flat rate) |
+| Feature                                       | Screens                       | Code                                      |
+| --------------------------------------------- | ----------------------------- | ----------------------------------------- |
+| Invoices issued at confirmation, due by terms | Receivables, invoice print    | `IssueInvoice`                            |
+| Aging and statements (print, PDF, email)      | Receivables                   | `Aging`, `Statement`                      |
+| Returns with restocking fees, credit notes    | Returns                       | `ProcessReturn`, `UseCredit`              |
+| Pallet deposits out and back                  | Order page, organization page | `PalletLedger`                            |
+| Pallet usage fees                             | Order page, invoice, receipt  | `RecalculateOrder`, `ProcessReturn`       |
+| Card payments and payment links               | Order page                    | `app/Payments` (Stripe)                   |
+| Refunds, and refund and cancel                | Order page, credit note       | `app/Payments/Refunds`, `RefundAndCancel` |
+| Sales tax                                     | Order confirm                 | `app/Tax` (Stripe Tax or flat rate)       |
 
 **Pallet deposits and usage fees.** Two separate per-pallet charges, both
 under Settings → Delivery, Returns tab (`ReturnsSettings`): the tenant turns
@@ -175,6 +176,27 @@ sales account, and is never credited for an empty pallet. It's only
 credited, with its tax, when unused product comes back on full pallets
 (`ProcessReturn`, `credit_notes.pallet_fee_cents`). A line keeps the rate
 it was charged once its prices are fixed.
+
+**Refunds.** A payment goes back the way it came (`RefundPayments`):
+card payments to the card through Stripe on the yard's connected account
+(`StripeGateway::requestOptions()`, so refunds work while charges are
+paused; fees aren't returned, as with rental refunds),
+account credit back onto its credit note, and cash, cheque, e-Transfer
+or a terminal payment recorded as handed back the same way. Each is a
+`refunds` row; refunds of the order's own payments come off
+`orders.amount_paid_cents`, and `payments.refunded_cents` tracks what's
+left on each card. A credit note can also go back to a card the account
+paid with in the last year: the credit is spent and the card's order is
+left as it is. The Stripe call runs inside the transaction that records
+it, with the payment locked, so a refusal records nothing. Cancelling
+needs the order's payments refunded first; **Refund and cancel** does
+both, cards first, after one refund-limit check on the money going out
+(credit put back on a credit note isn't counted). The `charge.refunded`
+webhook settles refunds made here and records anything refunded in
+Stripe itself (by YardRunner staff; yards' embedded payments component
+has refunds off) as a refund off the order; `charge.refund.updated` undoes
+a card refund that fails later. Order refunds post to QuickBooks as a
+journal entry, like rental refunds.
 
 ## Profit and loss
 
@@ -375,8 +397,9 @@ prices (Purchasing edits products, not what they sell for).
 **Refund limits.** `AccessSettings` holds a limit per role in cents
 (null for none): Sales $250 on goods, Rental desk $250 on rentals,
 Owner/Admin/Accounts unlimited, others 0. A user gets their highest.
-`RefundApproval::check` runs before a credit-note refund and a rental
-cancellation that refunds; above the limit someone with Refund above
+`RefundApproval::check` runs before a credit-note refund, an order
+payment refund, Refund and cancel, and a rental cancellation that
+refunds; above the limit someone with Refund above
 limit approves with their password or time-clock PIN, and
 `RefundApproval::record` logs both names.
 

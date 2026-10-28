@@ -18,6 +18,7 @@ use App\Models\Order;
 use App\Models\Organization;
 use App\Models\Product;
 use App\Models\QuickBooksSync;
+use App\Models\Refund;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\FakeQuickBooks;
@@ -262,6 +263,29 @@ class QuickBooksSyncTest extends TestCase
         // Saving the credit again sends nothing twice.
         $before = count($this->qbo->writes);
         $credit->refresh()->save();
+        $this->assertCount($before, $this->qbo->writes);
+    }
+
+    public function test_refunds_on_order_payments_send_a_journal_entry(): void
+    {
+        $order = $this->order(['mortar' => 10], 'prepaid');
+        $this->post(route('orders.payments.store', $order), ['tender' => 'cash', 'amount' => '113.00'])->assertSessionHasNoErrors();
+        $payment = $order->payments()->sole();
+        $entries = count($this->qbo->created('JournalEntry'));
+
+        $this->post(route('orders.payments.refund', [$order, $payment]), ['amount' => '13.00'])->assertSessionHasNoErrors();
+
+        // Out of the account the cash went into, back onto the customer's balance.
+        $this->assertCount($entries + 1, $this->qbo->created('JournalEntry'));
+        $entry = $this->qbo->last('JournalEntry');
+        $this->assertSame(13.0, (float) $entry['Line'][0]['Amount']);
+        $this->assertSame('Debit', $entry['Line'][0]['JournalEntryLineDetail']['PostingType']);
+        $this->assertSame('9', $entry['Line'][1]['JournalEntryLineDetail']['AccountRef']['value']);
+        $this->assertStringContainsString($order->number, $entry['PrivateNote']);
+
+        // Saving it again sends nothing twice.
+        $before = count($this->qbo->writes);
+        Refund::query()->sole()->save();
         $this->assertCount($before, $this->qbo->writes);
     }
 

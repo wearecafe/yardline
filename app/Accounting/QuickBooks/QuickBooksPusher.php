@@ -20,6 +20,7 @@ use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\QuickBooksSync;
+use App\Models\Refund;
 use App\Models\Rental;
 use App\Models\RentalPayment;
 use App\Tenancy\CurrentTenant;
@@ -77,6 +78,7 @@ class QuickBooksPusher
             $model instanceof Invoice => $this->invoice($model),
             $model instanceof Payment => $this->payment($model),
             $model instanceof CreditNote => $this->creditNote($model),
+            $model instanceof Refund => $this->refund($model),
             $model instanceof Order => $this->order($model),
             $model instanceof Rental => $this->rental($model),
             $model instanceof RentalPayment => $this->rentalPayment($model),
@@ -253,6 +255,15 @@ class QuickBooksPusher
         $sent = (int) ($sync->meta['refunded_cents'] ?? 0);
         $owed = $credit->refunded_cents - $sent;
 
+        if ($owed < 0 && $sync !== null && ($sync->meta['short_cents'] ?? 0) !== -$owed) {
+            // A card refund failed after its journal entry went across.
+            $sync->forceFill([
+                'status' => 'failed',
+                'message' => 'A card refund of $'.number_format(-$owed / 100, 2).' failed after it was sent. Reverse its journal entry in QuickBooks.',
+                'meta' => [...($sync->meta ?? []), 'short_cents' => -$owed],
+            ])->save();
+        }
+
         if ($owed <= 0 || $sync === null) {
             return;
         }
@@ -271,6 +282,61 @@ class QuickBooksPusher
         ]);
 
         $sync->forceFill(['meta' => [...($sync->meta ?? []), 'refunded_cents' => $credit->refunded_cents]])->save();
+    }
+
+    /**
+     * Money paid back on an order payment: a journal entry from the account
+     * it was paid into back to the customer's balance, like a rental
+     * refund. Credit-note refunds go with their credit note; credit put
+     * back on a credit note moves no money.
+     */
+    public function refund(Refund $refund): void
+    {
+        $sync = QuickBooksSync::for($refund);
+
+        if ($refund->status === PaymentState::Failed) {
+            if ($sync?->qbo_id !== null && ! ($sync->meta['failed_noted'] ?? false)) {
+                $sync->forceFill([
+                    'status' => 'failed',
+                    'message' => "The card refund failed after it was sent. Delete journal entry {$sync->qbo_id} in QuickBooks.",
+                    'meta' => [...($sync->meta ?? []), 'failed_noted' => true],
+                ])->save();
+            }
+
+            return;
+        }
+
+        if ($refund->status !== PaymentState::Succeeded || $sync?->qbo_id !== null) {
+            return;
+        }
+
+        if ($refund->credit_note_id !== null) {
+            return; // sent with the credit note's refund
+        }
+
+        if ($refund->tender === PaymentTender::CreditNote) {
+            $this->mark($refund, 'skipped', 'Credit put back on '.($refund->payment->reference ?? 'the credit note').'; no money moved.');
+
+            return;
+        }
+
+        $order = $refund->order;
+
+        if ($order === null) {
+            $this->mark($refund, 'skipped', 'Its order is gone.');
+
+            return;
+        }
+
+        if ($this->beforeStart($refund->succeeded_at)) {
+            $this->mark($refund, 'skipped', 'Dated before the QuickBooks start date.');
+
+            return;
+        }
+
+        $customer = $this->customerFor($order->organization, $order->customer);
+        $entry = $this->refundEntry($customer, $refund->amount_cents, $refund->tender->value, "Refund on {$order->number}", $refund->succeeded_at);
+        $this->remember($refund, 'JournalEntry', ['Id' => $entry]);
     }
 
     public function creditMemo(CreditNote $credit): ?string
@@ -953,6 +1019,7 @@ class QuickBooksPusher
             $model instanceof Invoice => "Invoice {$model->number}",
             $model instanceof Payment => 'Payment of $'.number_format($model->amount_cents / 100, 2).' on '.($model->order->number ?? 'order'),
             $model instanceof CreditNote => "Credit note {$model->number}",
+            $model instanceof Refund => 'Refund of $'.number_format($model->amount_cents / 100, 2).' on '.($model->order->number ?? 'order'),
             $model instanceof Rental => "Rental {$model->number}",
             $model instanceof RentalPayment => 'Rental payment of $'.number_format($model->amount_cents / 100, 2).' on '.($model->rental->number ?? 'rental'),
             $model instanceof Organization => "Customer {$model->name}",

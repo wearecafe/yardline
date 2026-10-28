@@ -55,6 +55,8 @@ type Props = {
     };
     openOrders: { id: number; number: string; balance_cents: number }[];
     tenders: Option[];
+    /** Card payments on this account the credit can go back to. */
+    cards: { id: number; label: string; refundable_cents: number }[];
     refundLimitCents: number | null;
     approvers: { id: number; name: string }[];
 };
@@ -66,6 +68,7 @@ export default function CreditNotePage({
     credit,
     openOrders,
     tenders,
+    cards,
     refundLimitCents,
     approvers,
 }: Props) {
@@ -74,7 +77,8 @@ export default function CreditNotePage({
         amount: '',
     });
     const refund = useForm({
-        tender: 'card_terminal',
+        tender: cards.length > 0 ? 'stripe_checkout' : 'card_terminal',
+        payment_id: String(cards[0]?.id ?? ''),
         amount: '',
         approver_id: '',
         approver_secret: '',
@@ -364,6 +368,10 @@ export default function CreditNotePage({
                                         refund.transform((d) => ({
                                             ...d,
                                             amount: d.amount || null,
+                                            payment_id:
+                                                d.tender === 'stripe_checkout'
+                                                    ? d.payment_id
+                                                    : null,
                                             approver_id: d.approver_id || null,
                                             approver_secret:
                                                 d.approver_secret || null,
@@ -376,7 +384,11 @@ export default function CreditNotePage({
                                         );
                                     }}
                                 >
-                                    <Field label="How" htmlFor="refund_tender">
+                                    <Field
+                                        label="How"
+                                        htmlFor="refund_tender"
+                                        error={refund.errors.tender}
+                                    >
                                         <NativeSelect
                                             id="refund_tender"
                                             value={refund.data.tender}
@@ -387,6 +399,11 @@ export default function CreditNotePage({
                                                 )
                                             }
                                         >
+                                            {cards.length > 0 && (
+                                                <option value="stripe_checkout">
+                                                    Back to the card
+                                                </option>
+                                            )}
                                             {tenders.map((t) => (
                                                 <option
                                                     key={t.value}
@@ -397,6 +414,34 @@ export default function CreditNotePage({
                                             ))}
                                         </NativeSelect>
                                     </Field>
+                                    {refund.data.tender ===
+                                        'stripe_checkout' && (
+                                        <Field
+                                            label="Card payment"
+                                            htmlFor="refund_payment"
+                                            error={refund.errors.payment_id}
+                                        >
+                                            <NativeSelect
+                                                id="refund_payment"
+                                                value={refund.data.payment_id}
+                                                onChange={(e) =>
+                                                    refund.setData(
+                                                        'payment_id',
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            >
+                                                {cards.map((c) => (
+                                                    <option
+                                                        key={c.id}
+                                                        value={c.id}
+                                                    >
+                                                        {c.label}
+                                                    </option>
+                                                ))}
+                                            </NativeSelect>
+                                        </Field>
+                                    )}
                                     <Field
                                         label="Amount"
                                         htmlFor="refund_amount"
@@ -444,7 +489,10 @@ export default function CreditNotePage({
                                         variant="outline"
                                         disabled={refund.processing}
                                     >
-                                        Record refund
+                                        {refund.data.tender ===
+                                        'stripe_checkout'
+                                            ? 'Refund to card'
+                                            : 'Record refund'}
                                     </Button>
                                 </form>
                             </Section>

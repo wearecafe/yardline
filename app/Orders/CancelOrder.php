@@ -15,7 +15,7 @@ class CancelOrder
         }
 
         if ($order->amount_paid_cents > 0) {
-            OrderRules::fail('This order has payments. Refund them before cancelling.');
+            OrderRules::fail('This order has payments. Refund them first, or use Refund and cancel.');
         }
 
         // TODO: reverse the Stripe Tax transaction when one was committed.

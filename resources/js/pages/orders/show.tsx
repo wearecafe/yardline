@@ -27,6 +27,11 @@ import type {
     OrderHeaderData,
 } from '@/components/yard/order-header-fields';
 import { PageBody, PageHeader, Section } from '@/components/yard/page-header';
+import {
+    PaymentRefunds,
+    RefundAndCancelPanel,
+} from '@/components/yard/order-refunds';
+import type { Refunding } from '@/components/yard/order-refunds';
 import { checkFit, RoundingPrompt } from '@/components/yard/rounding-prompt';
 import type { FitResult } from '@/components/yard/rounding-prompt';
 import { OrderStatusBadge, PaymentBadge } from '@/components/yard/status-badge';
@@ -53,6 +58,8 @@ type Props = {
     products: OrderProduct[];
     tenders: Option[];
     can: { overrideCredit: boolean };
+    /** Payments that can go back and refunds made; null on drafts. */
+    refunding: Refunding | null;
     organizations: { id: number; name: string }[];
     customers: {
         id: number;
@@ -77,6 +84,7 @@ export default function ShowOrder(props: Props) {
     const isDraft = order.status === 'draft';
     const isRental = order.type === 'rental';
     const { errors } = usePage().props as { errors?: Record<string, string> };
+    const [cancelling, setCancelling] = useState(false);
 
     return (
         <>
@@ -93,7 +101,16 @@ export default function ShowOrder(props: Props) {
                         </span>
                     }
                     description={<OrderSubtitle order={order} />}
-                    actions={<HeaderActions order={order} />}
+                    actions={
+                        <HeaderActions
+                            order={order}
+                            onRefundAndCancel={
+                                props.refunding
+                                    ? () => setCancelling(true)
+                                    : undefined
+                            }
+                        />
+                    }
                 />
 
                 {errors?.order && (
@@ -123,6 +140,16 @@ export default function ShowOrder(props: Props) {
                     </div>
 
                     <aside className="grid content-start gap-8">
+                        {cancelling &&
+                            props.refunding &&
+                            order.status === 'confirmed' && (
+                                <RefundAndCancelPanel
+                                    orderId={order.id}
+                                    orderNumber={order.number}
+                                    refunding={props.refunding}
+                                    onClose={() => setCancelling(false)}
+                                />
+                            )}
                         <Totals order={order} />
                         {(order.credit_notes?.length ?? 0) > 0 && (
                             <Section title="Credits">
@@ -162,8 +189,19 @@ export default function ShowOrder(props: Props) {
                             <PaymentPanel
                                 order={order}
                                 tenders={props.tenders}
+                                refunding={props.refunding}
                             />
                         )}
+                        {order.status === 'cancelled' &&
+                            props.refunding &&
+                            props.refunding.refunds.length > 0 && (
+                                <Section title="Refunds">
+                                    <PaymentRefunds
+                                        orderId={order.id}
+                                        refunding={props.refunding}
+                                    />
+                                </Section>
+                            )}
                         <Section title="History">
                             <History events={props.history} />
                         </Section>
@@ -205,7 +243,13 @@ function post(url: string, data: Record<string, unknown> = {}) {
     router.post(url, data as never, { preserveScroll: true });
 }
 
-function HeaderActions({ order }: { order: Order }) {
+function HeaderActions({
+    order,
+    onRefundAndCancel,
+}: {
+    order: Order;
+    onRefundAndCancel?: () => void;
+}) {
     const actions = [];
 
     if (order.status === 'confirmed' && order.type !== 'rental') {
@@ -309,6 +353,22 @@ function HeaderActions({ order }: { order: Order }) {
                 }}
             >
                 Cancel order
+            </Button>,
+        );
+    }
+
+    if (
+        order.status === 'confirmed' &&
+        order.amount_paid_cents > 0 &&
+        onRefundAndCancel
+    ) {
+        actions.push(
+            <Button
+                key="refund-cancel"
+                variant="ghost"
+                onClick={onRefundAndCancel}
+            >
+                Refund and cancel
             </Button>,
         );
     }
@@ -955,7 +1015,15 @@ function ConfirmPanel({
     );
 }
 
-function PaymentPanel({ order, tenders }: { order: Order; tenders: Option[] }) {
+function PaymentPanel({
+    order,
+    tenders,
+    refunding,
+}: {
+    order: Order;
+    tenders: Option[];
+    refunding: Refunding | null;
+}) {
     const form = useForm({
         tender: tenders[0]?.value ?? 'cash',
         amount: (order.balance_cents / 100).toFixed(2),
@@ -1102,27 +1170,8 @@ function PaymentPanel({ order, tenders }: { order: Order; tenders: Option[] }) {
                 </div>
             )}
 
-            {order.payments.some((p) => p.status === 'succeeded') && (
-                <ul className="mt-4 grid gap-1 border-t border-border pt-3 text-sm">
-                    {order.payments
-                        .filter((p) => p.status === 'succeeded')
-                        .map((p) => (
-                            <li
-                                key={p.id}
-                                className="flex justify-between gap-3"
-                            >
-                                <span className="text-muted-foreground">
-                                    {tenders.find((t) => t.value === p.tender)
-                                        ?.label ?? 'Card (payment link)'}
-                                    , {formatDate(p.succeeded_at)}
-                                    {p.reference ? `, ${p.reference}` : ''}
-                                </span>
-                                <span className="tabular-nums">
-                                    {formatMoney(p.amount_cents)}
-                                </span>
-                            </li>
-                        ))}
-                </ul>
+            {refunding && (
+                <PaymentRefunds orderId={order.id} refunding={refunding} />
             )}
         </Section>
     );

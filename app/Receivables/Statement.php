@@ -56,14 +56,17 @@ class Statement
             ->where('succeeded_at', '>=', $since)
             ->latest('succeeded_at')
             ->get()
+            // Refunded payments show what's left of them; fully refunded ones drop off.
             ->map(fn (Payment $p) => [
                 'id' => $p->id,
                 'date' => $p->succeeded_at?->toDateString(),
                 'order_number' => $p->order->number,
                 'tender' => $p->tender->label(),
                 'reference' => $p->reference,
-                'amount_cents' => $p->amount_cents,
-            ])->values();
+                'amount_cents' => $p->netCents(),
+            ])
+            ->filter(fn (array $p) => $p['amount_cents'] > 0)
+            ->values();
 
         $credits = CreditNote::query()->where('organization_id', $organization->id)
             ->where(fn ($q) => $q->where('status', 'open')->orWhere('issued_on', '>=', $since->toDateString()))

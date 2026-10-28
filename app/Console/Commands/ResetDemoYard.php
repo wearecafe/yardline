@@ -42,6 +42,7 @@ class ResetDemoYard extends Command
         'purchase_order_lines',
         'purchase_orders',
         'pallet_movements',
+        'refunds',
         'credit_note_lines',
         'credit_notes',
         'invoices',
