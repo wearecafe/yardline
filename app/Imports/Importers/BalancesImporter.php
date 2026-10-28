@@ -97,8 +97,8 @@ class BalancesImporter implements Importer
             return Row::SKIP;
         }
 
-        $org = Organization::query()->findOrFail($data['organization_id']);
-        $yard = Location::query()->find($data['location_id']) ?? $context->defaultYard();
+        $org = Organization::query()->findOrFail((int) $data['organization_id']);
+        $yard = ($data['location_id'] !== null ? Location::query()->find((int) $data['location_id']) : null) ?? $context->defaultYard();
 
         if ($data['credit']) {
             CreditNote::query()->create([

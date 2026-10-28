@@ -242,7 +242,7 @@ enum ImportKind: string
     private function csv(array $rows): string
     {
         $keys = array_map(fn (Column $c) => $c->key, $this->columns());
-        $out = fopen('php://temp', 'r+');
+        $out = CsvFile::memory();
 
         fputcsv($out, $keys, escape: '');
 

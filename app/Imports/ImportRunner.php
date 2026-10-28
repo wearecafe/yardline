@@ -152,7 +152,7 @@ class ImportRunner
         }
 
         $keys = array_map(fn (Column $c) => $c->key, $import->kind->columns());
-        $out = fopen('php://temp', 'r+');
+        $out = CsvFile::memory();
         fputcsv($out, ['line', 'errors', ...$keys], escape: '');
 
         foreach ($file->problems as $problem) {

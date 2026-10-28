@@ -67,7 +67,7 @@ class ImportsTest extends TestCase
         return Import::query()->latest('id')->firstOrFail();
     }
 
-    private function run(Import $import, bool $leaveOutErrors = false): void
+    private function import(Import $import, bool $leaveOutErrors = false): void
     {
         $this->post(route('imports.run', $import), ['leave_out_errors' => $leaveOutErrors])->assertSessionHasNoErrors();
     }
@@ -104,7 +104,7 @@ class ImportsTest extends TestCase
         foreach (ImportKind::cases() as $kind) {
             $import = $this->upload($kind, $kind->sample());
             $this->assertSame(0, $import->error_rows, "{$kind->value}: ".json_encode($import->errors));
-            $this->run($import);
+            $this->import($import);
             $this->assertSame(Import::IMPORTED, $import->refresh()->status);
         }
 
@@ -137,7 +137,7 @@ class ImportsTest extends TestCase
             ->has('import.preview', 4)
             ->where('import.preview.1.action', 'create'));
 
-        $this->run($import);
+        $this->import($import);
 
         $poly = Product::query()->where('sku', 'POLY-30')->sole();
         $this->assertSame(['Polymeric sand 30 kg', Unit::Bag, 3_499, 2_150, 'Joint sand', true], [$poly->name, $poly->unit, $poly->price_cents, $poly->cost_cents, $poly->category, $poly->pallet_deposit]);
@@ -150,7 +150,7 @@ class ImportsTest extends TestCase
         // The same file again, with a new price: updated, not doubled.
         $again = $this->upload(ImportKind::Products, str_replace('34.99', '36.99', self::PRODUCTS));
         $this->assertSame([0, 4], [$again->created_count, $again->updated_count]);
-        $this->run($again);
+        $this->import($again);
         $this->assertSame(2, Product::query()->count());
         $this->assertSame(3_699, $poly->refresh()->price_cents);
         $this->assertSame(2, $poly->units()->count());
@@ -184,7 +184,7 @@ class ImportsTest extends TestCase
         $this->assertSame(0, Product::query()->count());
         $this->assertSame(Import::CHECKED, $import->refresh()->status);
 
-        $this->run($import, leaveOutErrors: true);
+        $this->import($import, leaveOutErrors: true);
         $this->assertSame(['GOOD-1'], Product::query()->pluck('sku')->all());
         $this->assertSame(Import::IMPORTED, $import->refresh()->status);
 
@@ -202,7 +202,7 @@ class ImportsTest extends TestCase
 
     public function test_price_lists_take_prices_breaks_and_category_discounts(): void
     {
-        $this->run($this->upload(ImportKind::Products, self::PRODUCTS));
+        $this->import($this->upload(ImportKind::Products, self::PRODUCTS));
 
         $import = $this->upload(ImportKind::PriceLists, <<<'CSV'
             price_list,sku,unit,price,min_quantity,category,discount_percent,discount_amount
@@ -214,7 +214,7 @@ class ImportsTest extends TestCase
             CSV);
 
         $this->assertSame(1, $import->error_rows);
-        $this->run($import, leaveOutErrors: true);
+        $this->import($import, leaveOutErrors: true);
 
         $contractor = PriceList::query()->where('name', 'Contractor')->sole();
         $this->assertSame(3, $contractor->items()->count());
@@ -238,7 +238,7 @@ class ImportsTest extends TestCase
 
         $this->assertSame([3, 1], [$import->total_rows, $import->error_rows]);
         $this->assertSame(1, $import->created_count);
-        $this->run($import, leaveOutErrors: true);
+        $this->import($import, leaveOutErrors: true);
 
         $org = Organization::query()->where('account_number', 'C-10021')->sole();
         $this->assertSame([PaymentTerms::Net30, 2_500_000, 'ap@brantwood.example'], [$org->payment_terms, $org->credit_limit_cents, $org->email]);
@@ -253,7 +253,7 @@ class ImportsTest extends TestCase
     {
         $org = Organization::factory()->create(['name' => 'Brantwood Landscaping', 'account_number' => 'C-10021']);
 
-        $this->run($this->upload(ImportKind::JobSites, <<<'CSV'
+        $this->import($this->upload(ImportKind::JobSites, <<<'CSV'
             account,name,address_line1,city,region,postal_code,yard,po_required,default
             C-10021,Maple Ridge phase 2,48 Orchard Cres,Waterdown,ON,L8B 0C2,WD,yes,yes
             Brantwood Landscaping,Shop,1 Industrial Rd,Hamilton,ON,L8E 2N1,,,
@@ -266,10 +266,10 @@ class ImportsTest extends TestCase
 
     public function test_opening_stock_sets_on_hand_and_cost_without_touching_profit(): void
     {
-        $this->run($this->upload(ImportKind::Products, self::PRODUCTS));
+        $this->import($this->upload(ImportKind::Products, self::PRODUCTS));
         $poly = Product::query()->where('sku', 'POLY-30')->sole();
 
-        $this->run($this->upload(ImportKind::Stock, <<<'CSV'
+        $this->import($this->upload(ImportKind::Stock, <<<'CSV'
             sku,yard,quantity,unit_cost,bin,reorder_point
             POLY-30,Waterdown,420,22.00,Row C,60
             SCR-A,wd,180.5,,,
@@ -280,7 +280,7 @@ class ImportsTest extends TestCase
         $this->assertSame(StockMovementType::Receipt, StockMovement::query()->where('product_id', $poly->id)->sole()->type);
 
         // Loading it again sets the count; it doesn't add.
-        $this->run($this->upload(ImportKind::Stock, "sku,yard,quantity\nPOLY-30,Waterdown,400\n"));
+        $this->import($this->upload(ImportKind::Stock, "sku,yard,quantity\nPOLY-30,Waterdown,400\n"));
         $this->assertSame('400.000', app(InventoryLedger::class)->onHand($poly, $this->yard));
     }
 
@@ -298,7 +298,7 @@ class ImportsTest extends TestCase
         $import = $this->upload(ImportKind::Balances, $csv);
         $this->assertSame(1, $import->error_rows);
         $this->assertStringContainsString('Use a date like', collect($import->errors)->pluck('message')->implode(' '));
-        $this->run($import, leaveOutErrors: true);
+        $this->import($import, leaveOutErrors: true);
 
         $invoice = Invoice::query()->where('number', 'OB-48812')->sole();
         $this->assertSame(now($tz)->subDays(15)->toDateString(), $invoice->due_on->toDateString());
@@ -319,7 +319,7 @@ class ImportsTest extends TestCase
         // Loading the same file again skips what's there.
         $again = $this->upload(ImportKind::Balances, $csv);
         $this->assertSame(2, $again->skipped_count);
-        $this->run($again, leaveOutErrors: true);
+        $this->import($again, leaveOutErrors: true);
         $this->assertSame(1, Order::query()->where('type', OrderType::OpeningBalance->value)->count());
     }
 

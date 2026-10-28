@@ -75,8 +75,8 @@ class StockImporter implements Importer
     public function apply(Row $row, ImportContext $context): string
     {
         $data = $row->data;
-        $product = Product::query()->findOrFail($data['product_id']);
-        $yard = Location::query()->findOrFail($data['location_id']);
+        $product = Product::query()->findOrFail((int) $data['product_id']);
+        $yard = Location::query()->findOrFail((int) $data['location_id']);
         $existed = StockLevel::query()->where('product_id', $product->id)->where('location_id', $yard->id)->exists();
 
         $level = StockLevel::query()->firstOrCreate(['product_id' => $product->id, 'location_id' => $yard->id]);

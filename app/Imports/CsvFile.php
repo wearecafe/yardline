@@ -2,6 +2,8 @@
 
 namespace App\Imports;
 
+use RuntimeException;
+
 /**
  * Reads an uploaded spreadsheet saved as CSV: comma, semicolon or tab
  * separated, with or without a byte-order mark, in UTF-8 or the Windows
@@ -45,7 +47,7 @@ final class CsvFile
             return;
         }
 
-        $stream = fopen('php://temp', 'r+');
+        $stream = self::memory();
         fwrite($stream, $contents);
         rewind($stream);
 
@@ -137,6 +139,22 @@ final class CsvFile
                 $this->problems[] = "The file needs a {$column->key} column.";
             }
         }
+    }
+
+    /**
+     * A scratch stream for building or reading CSV in memory.
+     *
+     * @return resource
+     */
+    public static function memory()
+    {
+        $stream = fopen('php://temp', 'r+');
+
+        if ($stream === false) {
+            throw new RuntimeException('Couldn’t open a temporary stream.');
+        }
+
+        return $stream;
     }
 
     public static function normalize(string $heading): string

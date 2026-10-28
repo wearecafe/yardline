@@ -65,7 +65,7 @@ class JobSitesImporter implements Importer
     public function apply(Row $row, ImportContext $context): string
     {
         $data = $row->data;
-        $org = Organization::query()->findOrFail($data['organization_id']);
+        $org = Organization::query()->findOrFail((int) $data['organization_id']);
         $site = $this->find($org, $data['name']);
         $action = $site === null ? Row::CREATE : Row::UPDATE;
 
