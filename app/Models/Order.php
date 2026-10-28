@@ -62,6 +62,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property int $amount_paid_cents
  * @property string|null $tax_calculation_ref
  * @property string|null $tax_transaction_ref
+ * @property string|null $tax_reversal_ref Stripe Tax reversal made when the order was cancelled
  * @property CarbonImmutable|null $rental_starts_at
  * @property CarbonImmutable|null $rental_ends_at
  * @property CarbonImmutable|null $returned_at

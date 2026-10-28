@@ -4,6 +4,7 @@ namespace App\Orders;
 
 use App\Accounting\QuickBooks\QuickBooks;
 use App\Enums\OrderStatus;
+use App\Jobs\ReverseTax;
 use App\Models\Order;
 
 class CancelOrder
@@ -18,7 +19,6 @@ class CancelOrder
             OrderRules::fail('This order has payments. Refund them first, or use Refund and cancel.');
         }
 
-        // TODO: reverse the Stripe Tax transaction when one was committed.
         $order->status = OrderStatus::Cancelled;
         $order->cancelled_at = now();
         $order->save();
@@ -26,6 +26,11 @@ class CancelOrder
         $order->stops()->whereNotIn('status', ['done', 'cancelled'])->update(['status' => 'cancelled']);
         $order->invoice()->update(['status' => 'void']);
         QuickBooks::queue($order);
+
+        // A sale already reported to Stripe Tax is taken back out of it.
+        if ($order->tax_transaction_ref !== null) {
+            ReverseTax::dispatch('order', $order->id)->afterCommit();
+        }
 
         return $order;
     }

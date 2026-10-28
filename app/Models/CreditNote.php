@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $subtotal_cents
  * @property int $restocking_fee_cents
  * @property int $tax_cents
+ * @property string|null $tax_reversal_ref Stripe Tax reversal of the credited part of the sale
  * @property int $deposit_cents
  * @property int $pallet_fee_cents pallet usage fees credited for unused product returned on full pallets, before tax
  * @property int $total_cents

@@ -202,6 +202,16 @@ has refunds off) as a refund off the order; `charge.refund.updated` undoes
 a card refund that fails later. Order refunds post to QuickBooks as a
 journal entry, like rental refunds.
 
+**Tax reversals.** A sale recorded with Stripe Tax is reversed when it's
+undone (`ReverseSalesTax`, queued as `ReverseTax`): in full when the order
+is cancelled (`orders.tax_reversal_ref`), and line by line when a return
+is credited (`credit_notes.tax_reversal_ref`), each line less its share of
+the restocking fee and its tax, plus any pallet usage fee credited with it
+(`credit_note_lines.pallet_fee_cents`). The references make each reversal
+happen once. Flat-rate tax records no sales, so it has nothing to reverse.
+Pallet and adjustment credits carry no tax from a sale and aren't
+reversed.
+
 ## Profit and loss
 
 Owners (and admins, if the owner ticks it under Settings → Users) see

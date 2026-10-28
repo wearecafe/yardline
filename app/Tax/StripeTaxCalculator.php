@@ -100,4 +100,63 @@ class StripeTaxCalculator implements TaxCalculator
 
         return $transaction->id;
     }
+
+    public function reverse(string $transactionReference, string $reversalReference, ?array $lines = null): ?string
+    {
+        try {
+            $client = $this->stripe->client();
+            $options = $this->stripe->requestOptions();
+
+            if ($lines === null) {
+                $reversal = $client->tax->transactions->createReversal([
+                    'mode' => 'full',
+                    'original_transaction' => $transactionReference,
+                    'reference' => $reversalReference,
+                ], $options);
+
+                return $reversal->id;
+            }
+
+            // The sale's own line item ids, by the references we gave them.
+            $ids = [];
+            foreach ($client->tax->transactions->allLineItems($transactionReference, ['limit' => 100], $options)->autoPagingIterator() as $item) {
+                $ids[(string) $item->reference] = $item->id;
+            }
+
+            $items = [];
+            foreach ($lines as $line) {
+                if (! isset($ids[$line->lineReference])) {
+                    throw new TaxCalculationFailed("Stripe Tax has no line {$line->lineReference} on {$transactionReference}.");
+                }
+
+                if ($line->amountCents <= 0 && $line->taxCents <= 0) {
+                    continue;
+                }
+
+                $items[] = [
+                    'original_line_item' => $ids[$line->lineReference],
+                    'reference' => $line->reference,
+                    'amount' => -$line->amountCents,
+                    'amount_tax' => -$line->taxCents,
+                ];
+            }
+
+            if ($items === []) {
+                return null;
+            }
+
+            $reversal = $client->tax->transactions->createReversal([
+                'mode' => 'partial',
+                'original_transaction' => $transactionReference,
+                'reference' => $reversalReference,
+                'line_items' => $items,
+            ], $options);
+        } catch (PaymentsNotSetUp $e) {
+            throw new TaxCalculationFailed(self::NOT_SET_UP, previous: $e);
+        } catch (ApiErrorException $e) {
+            throw new TaxCalculationFailed('Stripe Tax could not reverse this sale: '.$e->getMessage(), previous: $e);
+        }
+
+        return $reversal->id;
+    }
 }
