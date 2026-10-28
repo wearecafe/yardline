@@ -10,8 +10,10 @@ use Stripe\Exception\ApiErrorException;
 /**
  * Refunds on the yard's connected account. They use requestOptions(), not
  * chargeOptions(), so refunds keep working while Stripe has a yard's
- * charges paused. Like rental refunds, they don't return YardRunner's
- * application fee or Stripe's fee (the help centre says so).
+ * charges paused. The customer gets back the full amount refunded. Stripe
+ * keeps its processing fee, so that stays a cost to the yard; YardRunner's
+ * application fee is given back to the yard in proportion
+ * (refund_application_fee), so YardRunner doesn't earn on refunded sales.
  */
 class StripeCardRefunds implements CardRefunds
 {
@@ -27,6 +29,7 @@ class StripeCardRefunds implements CardRefunds
             $refund = $this->stripe->client()->refunds->create([
                 'payment_intent' => $payment->stripe_payment_intent_id,
                 'amount' => $cents,
+                'refund_application_fee' => true,
                 'metadata' => $metadata,
             ], [...$this->stripe->requestOptions(), 'idempotency_key' => $idempotencyKey]);
         } catch (PaymentsNotSetUp $e) {

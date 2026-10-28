@@ -27,7 +27,9 @@ If Stripe needs more details later, a banner at the top of the page says what's 
 
 ## Fees
 
-Each card payment pays the card processing fee and YardRunner's payment fee, shown on the Payments page. Both come off the payment before it's paid out to your bank, so your payouts are already net of fees. Refunds don't return the fees.
+Each card payment pays the card processing fee and YardRunner's payment fee, shown on the Payments page. Both come off the payment before it's paid out to your bank, so your payouts are already net of fees.
+
+When you refund a card payment, the customer gets back the full amount you refund. Stripe keeps its card processing fee, so that stays a cost to you. YardRunner's payment fee is given back to you, in proportion to what you refund, and the profit report's card fees go down by it.
 
 ## Your card terminal
 

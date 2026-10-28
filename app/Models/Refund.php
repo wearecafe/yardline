@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property PaymentState $status
  * @property string $source yardrunner | stripe (refunded in Stripe, recorded from its webhook)
  * @property int $amount_cents
+ * @property int $fee_returned_cents YardRunner's application fee given back to the yard with a card refund
  * @property string|null $reason
  * @property string|null $stripe_refund_id
  * @property string|null $failure_message
@@ -42,7 +43,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read User|null $refunder
  */
 #[Fillable([
-    'order_id', 'payment_id', 'credit_note_id', 'tender', 'status', 'source', 'amount_cents',
+    'order_id', 'payment_id', 'credit_note_id', 'tender', 'status', 'source', 'amount_cents', 'fee_returned_cents',
     'reason', 'stripe_refund_id', 'failure_message', 'refunded_by', 'approved_by', 'succeeded_at',
 ])]
 class Refund extends Model
@@ -67,6 +68,7 @@ class Refund extends Model
             'tender' => PaymentTender::class,
             'status' => PaymentState::class,
             'amount_cents' => 'integer',
+            'fee_returned_cents' => 'integer',
             'succeeded_at' => 'datetime',
         ];
     }

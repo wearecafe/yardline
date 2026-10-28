@@ -44,7 +44,12 @@ class StripeRentalGateway implements RentalGateway
 
     public function refund(string $reference, int $cents): void
     {
-        $this->stripe->client()->refunds->create(['payment_intent' => $reference, 'amount' => $cents], $this->stripe->requestOptions());
+        // YardRunner's fee goes back to the yard with the refund; Stripe keeps its own.
+        $this->stripe->client()->refunds->create([
+            'payment_intent' => $reference,
+            'amount' => $cents,
+            'refund_application_fee' => true,
+        ], $this->stripe->requestOptions());
     }
 
     public function paymentLink(RentalPayment $payment, string $description, string $returnUrl): CheckoutLink

@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Orders\OrderRules;
 use App\Payments\ApplyPayments;
 use App\Support\Money;
+use App\Support\StripeGateway;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -231,6 +232,7 @@ class RefundPayments
         }
 
         $refund->stripe_refund_id = $result->id;
+        $refund->fee_returned_cents = StripeGateway::applicationFeeReturned($payment->amount_cents, $refund->amount_cents);
 
         // Card refunds are nearly always immediate; a pending one still
         // counts, and the webhook settles it.

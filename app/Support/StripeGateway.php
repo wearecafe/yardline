@@ -81,6 +81,22 @@ class StripeGateway
         return max(0, min($fee, $cents));
     }
 
+    /**
+     * The part of YardRunner's application fee on a payment of $paidCents
+     * that's given back when $refundedCents of it is refunded: in
+     * proportion, as Stripe does with refund_application_fee.
+     */
+    public static function applicationFeeReturned(int $paidCents, int $refundedCents): int
+    {
+        if ($paidCents <= 0 || $refundedCents <= 0) {
+            return 0;
+        }
+
+        $fee = self::applicationFee($paidCents);
+
+        return min($fee, (int) round($fee * min($refundedCents, $paidCents) / $paidCents));
+    }
+
     private function tenant(): Tenant
     {
         $tenant = CurrentTenant::get();

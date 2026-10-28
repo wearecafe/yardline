@@ -180,7 +180,11 @@ it was charged once its prices are fixed.
 **Refunds.** A payment goes back the way it came (`RefundPayments`):
 card payments to the card through Stripe on the yard's connected account
 (`StripeGateway::requestOptions()`, so refunds work while charges are
-paused; fees aren't returned, as with rental refunds),
+paused). The customer gets the full amount back; Stripe keeps its fee,
+which stays the yard's cost; YardRunner's application fee goes back to
+the yard in proportion (`refund_application_fee`, also on rental
+refunds), recorded as `fee_returned_cents` and netted off the profit
+report's card fees,
 account credit back onto its credit note, and cash, cheque, e-Transfer
 or a terminal payment recorded as handed back the same way. Each is a
 `refunds` row; refunds of the order's own payments come off

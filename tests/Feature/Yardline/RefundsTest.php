@@ -7,23 +7,29 @@ use App\Enums\PaymentState;
 use App\Enums\PaymentStatus;
 use App\Enums\PaymentTender;
 use App\Enums\PaymentTerms;
+use App\Enums\RentalPaymentKind;
+use App\Enums\RentalTender;
 use App\Enums\StockMovementType;
 use App\Enums\Unit;
 use App\Enums\UserRole;
 use App\Inventory\InventoryLedger;
 use App\Models\AuditEvent;
 use App\Models\CreditNote;
+use App\Models\Customer;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\Organization;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Refund;
+use App\Models\Rental;
 use App\Models\User;
 use App\Models\WebhookDelivery;
 use App\Payments\Refunds\CardRefundFailed;
 use App\Payments\Refunds\CardRefundResult;
 use App\Payments\Refunds\CardRefunds;
+use App\Rentals\Payments\RentalPayments;
+use App\Support\StripeGateway;
 use App\Tenancy\CurrentTenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
@@ -62,6 +68,7 @@ class RefundsTest extends TestCase
             'yardline.tax.driver' => 'flat',
             'yardline.tax.flat_rate' => 0.13,
             'yardline.payments.driver' => 'fake',
+            'yardline.payments.application_fee' => ['percent' => 0.5, 'fixed_cents' => 0],
             'services.stripe.connect_webhook_secret' => self::CONNECT_SECRET,
         ]);
 
@@ -150,6 +157,8 @@ class RefundsTest extends TestCase
         $this->assertSame('re_test_1', $refund->stripe_refund_id);
         $this->assertSame($this->owner->id, $refund->refunded_by);
         $this->assertSame(5_000, $payment->refresh()->refunded_cents);
+        // YardRunner's 0.5% ($0.57 on $113) goes back to the yard in proportion.
+        $this->assertSame(25, $refund->fee_returned_cents);
 
         $order->refresh();
         $this->assertSame(6_300, $order->amount_paid_cents);
@@ -166,6 +175,49 @@ class RefundsTest extends TestCase
             ->where('refunding.refunds.0.label', 'To the card'));
 
         $this->assertTrue(AuditEvent::query()->where('event', 'refunded')->where('subject_id', $order->id)->exists());
+    }
+
+    public function test_yardrunners_fee_comes_off_card_fees_when_refunded(): void
+    {
+        $order = $this->order(10);
+        $payment = $this->payByCard($order);
+        // Stripe's fee plus YardRunner's $0.57, as Stripe reports it.
+        $payment->forceFill(['fee_cents' => 385, 'fee_checked_at' => now()])->saveQuietly();
+
+        $this->post(route('orders.payments.refund', [$order, $payment]))->assertSessionHasNoErrors();
+        $this->assertSame(57, Refund::query()->sole()->fee_returned_cents);
+
+        // Stripe's fee stays a cost to the yard; YardRunner's doesn't.
+        $range = ['period' => 'custom', 'from' => now()->subWeek()->toDateString(), 'to' => now()->addWeek()->toDateString(), 'compare' => 'none'];
+        $this->get(route('reports.profit', $range))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('summary.lines.card_fees', 328));
+    }
+
+    public function test_a_cancelled_rentals_card_refund_gives_yardrunners_fee_back(): void
+    {
+        $rental = Rental::factory()->create(['customer_id' => Customer::factory()->create()->id]);
+        $rental->payments()->create([
+            'kind' => RentalPaymentKind::Charge,
+            'tender' => RentalTender::CardOnFile,
+            'status' => PaymentState::Succeeded,
+            'amount_cents' => 20_000,
+            'stripe_payment_intent_id' => 'pi_fake_rental',
+            'succeeded_at' => now(),
+        ]);
+
+        app(RentalPayments::class)->refundAll($rental, $this->owner);
+
+        $refund = $rental->payments()->where('kind', RentalPaymentKind::Refund->value)->sole();
+        $this->assertSame(100, $refund->fee_returned_cents);
+    }
+
+    public function test_the_fee_given_back_is_in_proportion_to_the_refund(): void
+    {
+        $this->assertSame(57, StripeGateway::applicationFee(11_300));
+        $this->assertSame(25, StripeGateway::applicationFeeReturned(11_300, 5_000));
+        $this->assertSame(57, StripeGateway::applicationFeeReturned(11_300, 11_300));
+        $this->assertSame(57, StripeGateway::applicationFeeReturned(11_300, 99_999));
+        $this->assertSame(0, StripeGateway::applicationFeeReturned(11_300, 0));
     }
 
     public function test_other_payments_are_recorded_as_handed_back(): void
