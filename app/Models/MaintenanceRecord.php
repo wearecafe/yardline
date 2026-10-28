@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Access\HasYard;
 use App\Enums\MaintenanceKind;
 use App\Tenancy\BelongsToTenant;
 use Carbon\CarbonImmutable;
@@ -28,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'rental_unit_id', 'kind', 'status', 'description', 'hour_meter', 'cost_cents',
     'rental_id', 'user_id', 'opened_at', 'completed_at',
 ])]
-class MaintenanceRecord extends Model
+class MaintenanceRecord extends Model implements HasYard
 {
     use BelongsToTenant;
 
@@ -70,5 +71,13 @@ class MaintenanceRecord extends Model
     public function isOpen(): bool
     {
         return $this->status === 'open';
+    }
+
+    /** @return list<int> */
+    public function yardIds(): array
+    {
+        $yard = $this->unit?->location_id;
+
+        return $yard !== null ? [(int) $yard] : [];
     }
 }

@@ -50,6 +50,9 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
+    /** @var list<int>|null */
+    private ?array $yardIdsCache = null;
+
     /**
      * @var array<string, mixed>
      */
@@ -415,6 +418,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
      */
     public function setYards(array $locationIds): void
     {
+        $this->yardIdsCache = null;
         $this->yards()->sync(
             collect($locationIds)->mapWithKeys(fn (int $id) => [$id => ['tenant_id' => $this->tenant_id]])->all(),
         );
@@ -431,7 +435,8 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             return null;
         }
 
-        return array_values($this->yards()->pluck('locations.id')->map(fn ($id) => (int) $id)->all());
+        // Asked many times a request (lists, the yard guard), so kept.
+        return $this->yardIdsCache ??= array_values($this->yards()->pluck('locations.id')->map(fn ($id) => (int) $id)->all());
     }
 
     public function worksAt(?int $locationId): bool

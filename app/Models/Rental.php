@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Access\HasYard;
 use App\Accounting\QuickBooks\SendsToQuickBooks;
 use App\Enums\DepositStatus;
 use App\Enums\FulfillmentMethod;
@@ -78,7 +79,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'deposit_cents', 'payment_method', 'notes', 'created_by',
 ])]
 #[Hidden(['signing_token'])]
-class Rental extends Model
+class Rental extends Model implements HasYard
 {
     /** @use HasFactory<RentalFactory> */
     use BelongsToTenant, HasFactory, SendsToQuickBooks;
@@ -285,5 +286,11 @@ class Rental extends Model
                 $query->where('ends_at', '>', $from)
                     ->orWhere('status', RentalStatus::Out->value);
             });
+    }
+
+    /** @return list<int> */
+    public function yardIds(): array
+    {
+        return [(int) $this->location_id];
     }
 }

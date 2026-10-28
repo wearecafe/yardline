@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Access\HasYard;
 use App\Tenancy\BelongsToTenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -31,7 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Collection<int, TruckAssignment> $assignments
  */
 #[Fillable(['location_id', 'name', 'kind', 'capacities', 'has_boom', 'is_active', 'position'])]
-class Truck extends Model
+class Truck extends Model implements HasYard
 {
     use BelongsToTenant;
 
@@ -140,5 +141,15 @@ class Truck extends Model
         ]);
 
         return implode(' · ', $parts);
+    }
+
+    /**
+     * A truck based at a yard belongs to it; one based nowhere is shared.
+     *
+     * @return list<int>
+     */
+    public function yardIds(): array
+    {
+        return $this->location_id !== null ? [(int) $this->location_id] : [];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Access\YardScope;
 use App\Models\Location;
 use App\Purchasing\TransferStock;
 use App\Tenancy\TenantRule;
@@ -14,7 +15,8 @@ class StockTransferController extends Controller
     public function store(Request $request, TransferStock $transfer): RedirectResponse
     {
         $data = $request->validate([
-            'from_location_id' => ['required', TenantRule::exists('locations')],
+            // From a yard they work, to any of the business's yards.
+            'from_location_id' => ['required', YardScope::locationRule($request->user())],
             'to_location_id' => ['required', TenantRule::exists('locations')],
             'notes' => ['nullable', 'string', 'max:500'],
             'lines' => ['required', 'array', 'min:1'],

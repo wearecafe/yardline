@@ -12,6 +12,7 @@ use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\KeepStaffInBackOffice;
 use App\Http\Middleware\ProtectDemoAccounts;
 use App\Http\Middleware\RestrictByRole;
+use App\Http\Middleware\RestrictByYard;
 use App\Http\Middleware\TrackActivity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -43,6 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureSetUp::class,
             KeepStaffInBackOffice::class,
             RestrictByRole::class,
+            RestrictByYard::class,
             TrackActivity::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,

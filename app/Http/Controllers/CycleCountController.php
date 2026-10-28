@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Access\YardScope;
 use App\Models\CycleCount;
 use App\Models\Location;
 use App\Purchasing\CycleCounting;
-use App\Tenancy\TenantRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,7 +16,7 @@ class CycleCountController extends Controller
     public function store(Request $request, CycleCounting $counting): RedirectResponse
     {
         $data = $request->validate([
-            'location_id' => ['required', TenantRule::exists('locations')],
+            'location_id' => ['required', YardScope::locationRule($request->user())],
             'bin' => ['nullable', 'string', 'max:40'],
             'category' => ['nullable', 'string', 'max:100'],
         ]);

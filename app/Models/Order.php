@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Access\HasYard;
 use App\Audit\Audited;
 use App\Enums\FulfillmentMethod;
 use App\Enums\OrderStatus;
@@ -87,7 +88,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'fulfillment', 'delivery_address', 'requested_on', 'po_number', 'delivery_zone_id', 'delivery_km', 'needs_boom',
     'rental_starts_at', 'rental_ends_at', 'notes', 'created_by',
 ])]
-class Order extends Model
+class Order extends Model implements HasYard
 {
     /** @use HasFactory<OrderFactory> */
     use Audited, BelongsToTenant, HasFactory;
@@ -327,5 +328,11 @@ class Order extends Model
         $query->where('settlement', Settlement::Account->value)
             ->whereIn('status', [OrderStatus::Confirmed->value, OrderStatus::Fulfilled->value])
             ->where('payment_status', '!=', PaymentStatus::Paid->value);
+    }
+
+    /** @return list<int> */
+    public function yardIds(): array
+    {
+        return [(int) $this->location_id];
     }
 }

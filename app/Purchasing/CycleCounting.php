@@ -73,9 +73,14 @@ class CycleCounting
     /**
      * Net count difference as a share of what was expected.
      */
-    public static function varianceSince(CarbonImmutable $since): ?float
+    /**
+     * @param  list<int>|null  $yards  only counts at these yards; null for every yard
+     */
+    public static function varianceSince(CarbonImmutable $since, ?array $yards = null): ?float
     {
-        $counts = CycleCount::query()->with('lines')->where('status', 'completed')->where('completed_at', '>=', $since)->get();
+        $counts = CycleCount::query()->with('lines')->where('status', 'completed')->where('completed_at', '>=', $since)
+            ->when($yards !== null, fn ($q) => $q->whereIn('location_id', $yards))
+            ->get();
         $lines = $counts->flatMap->lines->whereNotNull('counted');
         $expected = (float) $lines->sum(fn ($l) => (float) $l->expected);
 

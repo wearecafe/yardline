@@ -2,6 +2,7 @@
 
 namespace App\Fulfillment;
 
+use App\Access\YardScope;
 use App\Alerts\StaffAlerts;
 use App\Enums\ShipmentStatus;
 use App\Enums\StopStatus;
@@ -10,6 +11,7 @@ use App\Models\Organization;
 use App\Models\Shipment;
 use App\Models\Stop;
 use App\Models\Truck;
+use App\Models\User;
 use App\Notifications\Channels\SmsChannel;
 use App\Notifications\EtaMessage;
 use App\Orders\OrderRules;
@@ -74,15 +76,16 @@ class Dispatch
     }
 
     /**
-     * Texts each customer with a stop on the day their window, once.
+     * Texts each customer with a stop on the day their window, once: every
+     * stop, or only those a person works when they send them from the board.
      *
      * @return int how many were sent
      */
-    public function sendEtas(CarbonImmutable $date): int
+    public function sendEtas(CarbonImmutable $date, ?User $user = null): int
     {
         $sent = 0;
 
-        $stops = Stop::query()
+        $stops = YardScope::stops(Stop::query(), $user)
             ->with('stoppable')
             ->whereDate('date', $date->toDateString())
             ->whereIn('status', [StopStatus::Scheduled->value, StopStatus::EnRoute->value])

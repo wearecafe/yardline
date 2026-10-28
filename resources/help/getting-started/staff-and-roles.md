@@ -26,7 +26,7 @@ Each role covers one job in the yard. Someone who does more than one job holds m
 
 ## Yards
 
-Owners and admins work every yard. Everyone else works only the yards ticked for them under **Settings → Users**, and only sees orders and pick lists at those yards.
+Owners and admins work every yard. Everyone else works only the yards ticked for them under **Settings → Users**. They only see and change orders, pick lists, the counter, stock, the dispatch board and rentals at those yards, and new orders, rentals, stock changes and fleet units can only be for those yards. A truck that isn't based at any yard shows on everyone's dispatch board.
 
 ## Permissions
 
