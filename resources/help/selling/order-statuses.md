@@ -37,4 +37,5 @@ Payment is tracked separately from the order's status: unpaid, partly paid or pa
 ## Deleting and cancelling
 
 - **Delete draft** removes a draft entirely.
-- **Cancel order** stops a draft or confirmed order. An order that has a payment recorded can't be cancelled.
+- **Cancel order** stops a draft or confirmed order that hasn't been paid.
+- **Refund and cancel** is for a confirmed order that has payments. It lists how each payment goes back (card payments to the card, account credit back on its credit note, anything else for you to hand back), then refunds them and cancels the order. If a card refund is refused, the order stays open.

@@ -10,7 +10,8 @@ use App\Orders\CommitOrderTax;
 use App\Receivables\IssueInvoice;
 
 /**
- * Re-totals an order's successful payments and updates its payment status.
+ * Re-totals an order's successful payments, less refunds, and updates its
+ * payment status.
  */
 class ApplyPayments
 {
@@ -18,7 +19,11 @@ class ApplyPayments
 
     public function handle(Order $order): Order
     {
-        $paid = (int) $order->payments()->where('status', PaymentState::Succeeded->value)->sum('amount_cents');
+        // Refunds of the order's own payments come off; refunds of credit
+        // notes paid back onto one of its cards don't.
+        $paid = (int) $order->payments()->where('status', PaymentState::Succeeded->value)->sum('amount_cents')
+            - (int) $order->refunds()->counting()->whereNull('credit_note_id')->sum('amount_cents');
+        $paid = max(0, $paid);
 
         $order->amount_paid_cents = $paid;
         $order->payment_status = match (true) {

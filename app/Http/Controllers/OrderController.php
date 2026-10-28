@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Access\RefundApproval;
+use App\Access\RouteAccess;
 use App\Credit\CreditCheck;
 use App\Enums\FulfillmentMethod;
 use App\Enums\OrderType;
+use App\Enums\PaymentState;
 use App\Enums\PaymentTender;
+use App\Enums\Permission;
 use App\Enums\ProductKind;
 use App\Enums\QuantityRounding;
 use App\Fulfillment\DeliverySettings;
@@ -15,9 +19,12 @@ use App\Models\Location;
 use App\Models\Order;
 use App\Models\Organization;
 use App\Models\OrganizationLocation;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductUnit;
+use App\Models\Refund;
 use App\Models\StockLevel;
+use App\Models\User;
 use App\Orders\CreateOrder;
 use App\Orders\OrderRules;
 use App\Orders\RecalculateOrder;
@@ -82,7 +89,7 @@ class OrderController extends Controller
         return to_route('orders.show', $order);
     }
 
-    public function show(Order $order, CreditCheck $credit): Response
+    public function show(Request $request, Order $order, CreditCheck $credit): Response
     {
         // Ordering lives here, not on the relations, so aggregates like
         // lines()->max() stay valid on Postgres.
@@ -115,6 +122,7 @@ class OrderController extends Controller
             'can' => [
                 'overrideCredit' => Gate::allows('override-credit'),
             ],
+            'refunding' => $order->isDraft() ? null : $this->refunding($order, $request->user()),
             'organizations' => $order->isDraft() ? Organization::query()->orderBy('name')->get(['id', 'name']) : [],
             'sites' => $order->isDraft() && $order->organization_id !== null
                 ? OrganizationLocation::query()->where('organization_id', $order->organization_id)->where('is_active', true)->orderByDesc('is_default')->orderBy('name')
@@ -179,6 +187,50 @@ class OrderController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => "Draft {$order->number} deleted."]);
 
         return to_route('orders.index');
+    }
+
+    /**
+     * What's been paid that can go back, what's gone back, and the refund
+     * limit for whoever's looking.
+     *
+     * @return array<string, mixed>
+     */
+    private function refunding(Order $order, ?User $user): array
+    {
+        $refunds = $order->refunds()->with('refunder:id,name')->latest('id')->get();
+
+        return [
+            'payments' => $order->payments
+                ->where('status', PaymentState::Succeeded)
+                ->map(fn (Payment $p) => [
+                    'id' => $p->id,
+                    'tender' => $p->tender->value,
+                    'label' => $p->tender->label(),
+                    'reference' => $p->reference,
+                    'succeeded_at' => $p->succeeded_at?->toIso8601String(),
+                    'amount_cents' => $p->amount_cents,
+                    'refundable_cents' => min($p->netCents(), $p->refundableCents()),
+                ])
+                ->values(),
+            'refunds' => $refunds
+                ->whereNull('credit_note_id')
+                ->map(fn (Refund $r) => [
+                    'id' => $r->id,
+                    'label' => $r->tender === PaymentTender::StripeCheckout ? 'To the card' : ($r->tender === PaymentTender::CreditNote ? 'Back on credit' : $r->tender->label()),
+                    'amount_cents' => $r->amount_cents,
+                    'status' => $r->status->value,
+                    'from_stripe' => $r->source === Refund::SOURCE_STRIPE,
+                    'reason' => $r->reason,
+                    'failure_message' => $r->failure_message,
+                    'by' => $r->refunder?->name,
+                    'at' => $r->created_at->toIso8601String(),
+                ])
+                ->values(),
+            'can_refund' => $user !== null && RouteAccess::allowsRoute($user, 'orders.payments.refund', false),
+            'can_refund_and_cancel' => $user !== null && RouteAccess::allowsRoute($user, 'orders.refund-and-cancel', false),
+            'limit_cents' => $user === null || $user->hasPermission(Permission::RefundAboveLimit) ? null : $user->refundLimit('goods'),
+            'approvers' => $user !== null ? RefundApproval::approvers($user) : [],
+        ];
     }
 
     /**

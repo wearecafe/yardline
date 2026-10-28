@@ -25,6 +25,7 @@ Your return window (30 days unless you change it) is set in the same place.
 A credit note sits on the account until it's used. Open it from **Returns** and:
 
 - **Apply credit** to one of the account's orders or invoices, or
-- **Record refund** if you gave the money back, choosing how (cash, cheque, e-Transfer or card) and the amount.
+- **Refund to card** to send it back to a card the account paid with by payment link in the last year. Choose the card payment, and the money goes back to that card.
+- **Record refund** if you gave the money back another way, choosing how (cash, cheque, e-Transfer or card on your terminal) and the amount.
 
 Unused credits show on [receivables](/help/money/receivables-and-statements) and reduce what the account owes.

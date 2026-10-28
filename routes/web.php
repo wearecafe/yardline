@@ -88,6 +88,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('fulfill', 'fulfill')->name('fulfill');
         Route::post('return', 'returnRental')->name('return');
         Route::post('cancel', 'cancel')->name('cancel');
+        Route::post('refund-and-cancel', 'refundAndCancel')->name('refund-and-cancel');
+        Route::post('payments/{payment}/refund', 'refundPayment')->name('payments.refund');
         Route::post('payments', 'recordPayment')->name('payments.store');
         Route::post('payment-link', 'paymentLink')->name('payment-link');
         Route::post('quote', [QuoteController::class, 'send'])->name('quote');

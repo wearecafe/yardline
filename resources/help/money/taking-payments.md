@@ -18,6 +18,16 @@ Open the order and find **Payment**.
 
 You can take more than one payment on an order, for example a deposit now and the rest at pickup. The order shows what's **Paid** and the **Balance**.
 
+## Refunding a payment
+
+Under **Payment**, each payment has **Refund**. Enter the amount (it starts at what's left on the payment) and a reason if you like, then select **Refund**.
+
+- **Card by payment link**: the money goes straight back to the customer's card.
+- **Cash, cheque, e-Transfer or card on your terminal**: YardRunner records it. Hand the money back the same way, or refund it on your terminal.
+- **Account credit**: the credit goes back on its credit note.
+
+The order's **Balance** goes up by what you refund. Refunds above your role's limit need someone who can refund above the limit to approve them on the spot.
+
 ## Orders paid up front
 
 An order confirmed with payment up front can't be loaded or handed over until its balance is paid. See [Confirming an order](/help/selling/confirming-orders).

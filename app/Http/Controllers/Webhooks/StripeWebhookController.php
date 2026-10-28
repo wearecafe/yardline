@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Webhooks;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\Refund;
 use App\Models\RentalPayment;
 use App\Models\Tenant;
 use App\Models\WebhookDelivery;
 use App\Payments\CompleteCheckout;
 use App\Payments\Connect\AccountSync;
+use App\Payments\Refunds\ReconcileStripeRefunds;
 use App\Rentals\Payments\RentalPayments;
 use App\Support\StripeGateway;
 use App\Tenancy\CurrentTenant;
@@ -27,8 +29,9 @@ use UnexpectedValueException;
  * Card payments on yards' connected accounts. Point Stripe's Connect
  * endpoint (events on connected accounts, STRIPE_CONNECT_WEBHOOK_SECRET)
  * at POST /webhooks/stripe with checkout.session.completed,
- * checkout.session.async_payment_succeeded and account.updated. A
- * platform endpoint signed with STRIPE_WEBHOOK_SECRET is accepted too.
+ * checkout.session.async_payment_succeeded, charge.refunded,
+ * charge.refund.updated and account.updated. A platform endpoint signed
+ * with STRIPE_WEBHOOK_SECRET is accepted too.
  */
 class StripeWebhookController extends Controller
 {
@@ -47,6 +50,14 @@ class StripeWebhookController extends Controller
 
         if ($type === 'account.updated') {
             return $this->accountUpdated($event, $account);
+        }
+
+        if ($type === 'charge.refunded') {
+            return $this->chargeRefunded($event, $account);
+        }
+
+        if ($type === 'charge.refund.updated') {
+            return $this->refundUpdated($event, $account);
         }
 
         if (! in_array($type, ['checkout.session.completed', 'checkout.session.async_payment_succeeded'], true)) {
@@ -173,6 +184,90 @@ class StripeWebhookController extends Controller
         }
 
         $this->process('account.updated', $tenant->id, fn () => AccountSync::apply($tenant, $object));
+
+        return response('OK', 200);
+    }
+
+    /**
+     * A card payment was refunded, here or in Stripe. Order payments are
+     * reconciled; rental refunds are recorded when they're made.
+     */
+    private function chargeRefunded(Event $event, ?string $account): Response
+    {
+        $type = 'charge.refunded';
+        /** @var array<string, mixed> $charge */
+        $charge = $event->data->object->toArray();
+        $intent = is_string($charge['payment_intent'] ?? null) ? $charge['payment_intent'] : null;
+
+        $payment = $intent === null ? null : Payment::query()
+            ->withoutGlobalScope(TenantScope::class)
+            ->where('stripe_payment_intent_id', $intent)
+            ->first();
+
+        if ($payment === null) {
+            $rental = $intent !== null && RentalPayment::query()->withoutGlobalScope(TenantScope::class)->where('stripe_payment_intent_id', $intent)->exists();
+            WebhookDelivery::record('stripe', $type, WebhookDelivery::IGNORED, detail: $rental ? 'Rental payment' : 'Unknown payment');
+
+            return response('Ignored', 200);
+        }
+
+        if (! $this->fromTenantAccount($payment->tenant_id, $account)) {
+            WebhookDelivery::record('stripe', $type, WebhookDelivery::IGNORED, $payment->tenant_id, 'Different connected account');
+
+            return response('Different account', 200);
+        }
+
+        $refunds = array_values(array_filter(array_map(
+            fn ($r) => is_array($r) && is_string($r['id'] ?? null) ? [
+                'id' => $r['id'],
+                'amount' => (int) ($r['amount'] ?? 0),
+                'status' => (string) ($r['status'] ?? ''),
+                'failure_reason' => is_string($r['failure_reason'] ?? null) ? $r['failure_reason'] : null,
+            ] : null,
+            (array) ($charge['refunds']['data'] ?? []),
+        )));
+
+        $this->process($type, $payment->tenant_id, function () use ($payment, $charge, $refunds) {
+            app(ReconcileStripeRefunds::class)->charge($payment, (int) ($charge['amount_refunded'] ?? 0), $refunds);
+        });
+
+        return response('OK', 200);
+    }
+
+    /**
+     * A refund settled or failed after Stripe accepted it.
+     */
+    private function refundUpdated(Event $event, ?string $account): Response
+    {
+        $type = 'charge.refund.updated';
+        /** @var array<string, mixed> $object */
+        $object = $event->data->object->toArray();
+        $id = is_string($object['id'] ?? null) ? $object['id'] : null;
+
+        $refund = $id === null ? null : Refund::query()
+            ->withoutGlobalScope(TenantScope::class)
+            ->where('stripe_refund_id', $id)
+            ->first();
+
+        if ($refund === null) {
+            WebhookDelivery::record('stripe', $type, WebhookDelivery::IGNORED, detail: 'Unknown refund');
+
+            return response('Ignored', 200);
+        }
+
+        if (! $this->fromTenantAccount($refund->tenant_id, $account)) {
+            WebhookDelivery::record('stripe', $type, WebhookDelivery::IGNORED, $refund->tenant_id, 'Different connected account');
+
+            return response('Different account', 200);
+        }
+
+        $this->process($type, $refund->tenant_id, function () use ($id, $object) {
+            app(ReconcileStripeRefunds::class)->refund(
+                (string) $id,
+                (string) ($object['status'] ?? ''),
+                is_string($object['failure_reason'] ?? null) ? $object['failure_reason'] : null,
+            );
+        });
 
         return response('OK', 200);
     }

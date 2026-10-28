@@ -11,6 +11,7 @@ use App\Models\Rental;
 use App\Models\RentalPayment;
 use App\Models\User;
 use App\Rentals\RentalRules;
+use App\Support\StripeGateway;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -215,7 +216,12 @@ class RentalPayments
                 $this->gateway->refund($charge->stripe_payment_intent_id, $charge->amount_cents);
             }
 
-            $this->recordSucceeded($rental, RentalPaymentKind::Refund, $charge->tender, $charge->amount_cents, $user, stripeIntent: $charge->stripe_payment_intent_id);
+            $refund = $this->recordSucceeded($rental, RentalPaymentKind::Refund, $charge->tender, $charge->amount_cents, $user, stripeIntent: $charge->stripe_payment_intent_id);
+
+            // YardRunner's fee came back to the yard with the card refund.
+            if ($charge->stripe_payment_intent_id !== null) {
+                $refund->forceFill(['fee_returned_cents' => StripeGateway::applicationFeeReturned($charge->amount_cents, $charge->amount_cents)])->saveQuietly();
+            }
         }
 
         if ($rental->deposit_status === DepositStatus::Held) {

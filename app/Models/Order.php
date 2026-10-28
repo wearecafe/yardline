@@ -278,6 +278,14 @@ class Order extends Model
     }
 
     /**
+     * @return HasMany<Refund, $this>
+     */
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class);
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function creditOverrideUser(): BelongsTo

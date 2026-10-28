@@ -99,7 +99,8 @@ shows them in place.
 (calculation at confirmation, transaction when the sale completes) and a
 flat-rate driver. `CheckoutLinks` creates Stripe Checkout payment links;
 the Stripe webhook marks them paid. Counter payments are recorded by
-hand. Every yard takes cards on a connected account YardRunner creates
+hand. Refunds go back the way the money came: card payments to the card
+through Stripe, the rest recorded as handed back (`app/Payments/Refunds`). Every yard takes cards on a connected account YardRunner creates
 (Stripe Connect, no Stripe dashboard), set up under Settings → Payments
 with Stripe's embedded components. `StripeGateway::requestOptions()`
 sends requests to it and never falls back to YardRunner's own account;
@@ -114,4 +115,4 @@ controllers from `@/actions/...` (generated at build time, not committed).
 
 - QuickBooks: vendors, purchase orders and bills (left out pending a decision)
 - Inviting staff into an existing business (sign-up creates a new one)
-- Refunds and Stripe Tax reversals on cancellation
+- Stripe Tax reversals on cancellation and credit notes

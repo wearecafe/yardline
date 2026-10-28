@@ -32,6 +32,7 @@ use App\Models\PriceListItem;
 use App\Models\Product;
 use App\Models\ProductUnit;
 use App\Models\PurchaseOrder;
+use App\Models\Refund;
 use App\Models\Rental;
 use App\Models\RentalPayment;
 use App\Models\RentalUnit;
@@ -49,6 +50,9 @@ use App\Payments\FakeCheckoutLinks;
 use App\Payments\Fees\CardFees;
 use App\Payments\Fees\EstimatedCardFees;
 use App\Payments\Fees\StripeCardFees;
+use App\Payments\Refunds\CardRefunds;
+use App\Payments\Refunds\FakeCardRefunds;
+use App\Payments\Refunds\StripeCardRefunds;
 use App\Payments\StripeCheckoutLinks;
 use App\Rentals\Payments\FakeRentalGateway;
 use App\Rentals\Payments\RentalGateway;
@@ -144,6 +148,12 @@ class AppServiceProvider extends ServiceProvider
                 default => throw new RuntimeException("Unknown YARDLINE_PAYMENTS_DRIVER: {$driver}"),
             };
         });
+
+        // Refunds back to the card. The demo yard and local development
+        // refund on the spot.
+        $this->app->bind(CardRefunds::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardline.payments.driver') === 'stripe'
+            ? $app->make(StripeCardRefunds::class)
+            : new FakeCardRefunds);
 
         // What tenants pay YardRunner: Stripe Billing, or subscribed on the spot locally.
         $this->app->bind(BillingGateway::class, function (Application $app) {
@@ -242,6 +252,7 @@ class AppServiceProvider extends ServiceProvider
             'product' => Product::class,
             'product_unit' => ProductUnit::class,
             'purchase_order' => PurchaseOrder::class,
+            'refund' => Refund::class,
             'stock_transfer' => StockTransfer::class,
             'tenant' => Tenant::class,
             'cycle_count' => CycleCount::class,

@@ -11,7 +11,9 @@ use App\Models\Customer;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\Organization;
+use App\Models\Payment;
 use App\Models\User;
+use App\Payments\Refunds\RefundPayments;
 use App\Receivables\PalletLedger;
 use App\Receivables\ProcessReturn;
 use App\Receivables\ReturnsSettings;
@@ -135,6 +137,8 @@ class ReturnController extends Controller
             ],
             'openOrders' => $openOrders,
             'tenders' => PaymentTender::manualOptions(),
+            // Card payments on this account the credit can go back to.
+            'cards' => $creditNote->remainingCents() > 0 ? RefundPayments::cardsFor($creditNote) : [],
             // Refunds above the user's limit need someone to approve them.
             'refundLimitCents' => $request->user()?->hasPermission(Permission::RefundAboveLimit) ? null : $request->user()?->refundLimit('goods'),
             'approvers' => $request->user() ? RefundApproval::approvers($request->user()) : [],
@@ -156,24 +160,36 @@ class ReturnController extends Controller
         return back();
     }
 
-    public function refund(Request $request, CreditNote $creditNote, UseCredit $use): RedirectResponse
+    public function refund(Request $request, CreditNote $creditNote, UseCredit $use, RefundPayments $refunds): RedirectResponse
     {
         $data = $request->validate([
-            'tender' => ['required', Rule::enum(PaymentTender::class)->only([PaymentTender::CardTerminal, PaymentTender::Cash, PaymentTender::Cheque, PaymentTender::ETransfer])],
+            'tender' => ['required', Rule::enum(PaymentTender::class)->only([PaymentTender::StripeCheckout, PaymentTender::CardTerminal, PaymentTender::Cash, PaymentTender::Cheque, PaymentTender::ETransfer])],
+            'payment_id' => ['nullable', 'required_if:tender,'.PaymentTender::StripeCheckout->value, TenantRule::exists('payments')],
             'amount' => ['nullable', 'numeric', 'min:0.01', 'max:9999999'],
             'approver_id' => ['nullable', 'integer'],
             'approver_secret' => ['nullable', 'string', 'max:255'],
+        ], [
+            'payment_id.required_if' => 'Choose the card payment to refund to.',
         ]);
 
         /** @var User $user */
         $user = $request->user();
+        $tender = PaymentTender::from($data['tender']);
         $cents = isset($data['amount']) ? (int) Money::parse($data['amount']) : $creditNote->remainingCents();
         $approver = RefundApproval::check($user, $cents, 'goods', $data);
 
-        $use->refund($creditNote, PaymentTender::from($data['tender']), $user, $cents);
+        if ($tender === PaymentTender::StripeCheckout) {
+            $payment = Payment::query()->findOrFail((int) $data['payment_id']);
+            $refunds->creditToCard($creditNote, $payment, $cents, $user, $approver);
+            $message = Money::format($cents).' refunded to the card.';
+        } else {
+            $use->refund($creditNote, $tender, $user, $cents);
+            $message = 'Refund recorded.';
+        }
+
         RefundApproval::record($creditNote, $user, $approver, $cents);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Refund recorded.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => $message]);
 
         return back();
     }

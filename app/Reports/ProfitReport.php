@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\OrderLine;
 use App\Models\PalletMovement;
 use App\Models\Payment;
+use App\Models\Refund;
 use App\Models\Rental;
 use App\Models\RentalItem;
 use App\Models\RentalPayment;
@@ -96,7 +97,9 @@ class ProfitReport
             $lines['returns'] = -$credits['returned'];
             $lines['restocking_fees'] = $credits['fees'];
             $lines['returned_to_stock'] = -$this->sums($this->restocked($f), ['cost' => 'SUM(ROUND(credit_note_lines.base_quantity * credit_note_lines.unit_cost_cents))'])['cost'];
-            $goodsFees = $this->sums($this->goodsPayments($f), ['fees' => 'SUM(payments.fee_cents)'])['fees'];
+            // Card fees, less YardRunner's fee given back with card refunds.
+            $goodsFees = $this->sums($this->goodsPayments($f), ['fees' => 'SUM(payments.fee_cents)'])['fees']
+                - $this->sums($this->goodsRefunds($f), ['fees' => 'SUM(refunds.fee_returned_cents)'])['fees'];
 
             // Stock adjustments aren't from any one sales channel.
             if ($f->channel === null) {
@@ -117,7 +120,8 @@ class ProfitReport
             $lines['rental_delivery'] = $rentals['delivery'];
             $lines['rental_extras'] = $rentals['extras'];
             $lines['maintenance'] = $this->sums($this->maintenance($f), ['cost' => 'SUM(maintenance_records.cost_cents)'])['cost'];
-            $rentalFees = $this->sums($this->rentalPayments($f), ['fees' => 'SUM(rental_payments.fee_cents)'])['fees'];
+            $rentalFees = $this->sums($this->rentalPayments($f), ['fees' => 'SUM(rental_payments.fee_cents)'])['fees']
+                - $this->sums($this->rentalRefunds($f), ['fees' => 'SUM(rental_payments.fee_returned_cents)'])['fees'];
         }
 
         $lines['card_fees'] = $goodsFees + $rentalFees;
@@ -520,6 +524,42 @@ class ProfitReport
     }
 
     /**
+     * Card refunds on goods orders that gave YardRunner's fee back, by when
+     * they were made.
+     *
+     * @return Builder<Refund>
+     */
+    private function goodsRefunds(ProfitFilters $f): Builder
+    {
+        return Refund::query()
+            ->join('orders', 'orders.id', '=', 'refunds.order_id')
+            ->where('orders.type', 'sale')
+            ->where('refunds.status', 'succeeded')
+            ->where('refunds.fee_returned_cents', '>', 0)
+            ->where('refunds.succeeded_at', '>=', $f->startsAt())
+            ->where('refunds.succeeded_at', '<', $f->endsBefore())
+            ->when($f->locationId, fn ($q, $id) => $q->where('orders.location_id', $id))
+            ->when($f->channel, fn ($q, $channel) => $q->where('orders.source', $channel));
+    }
+
+    /**
+     * Card refunds on rentals that gave YardRunner's fee back.
+     *
+     * @return Builder<RentalPayment>
+     */
+    private function rentalRefunds(ProfitFilters $f): Builder
+    {
+        return RentalPayment::query()
+            ->join('rentals', 'rentals.id', '=', 'rental_payments.rental_id')
+            ->where('rental_payments.kind', 'refund')
+            ->where('rental_payments.status', 'succeeded')
+            ->where('rental_payments.fee_returned_cents', '>', 0)
+            ->where('rental_payments.succeeded_at', '>=', $f->startsAt())
+            ->where('rental_payments.succeeded_at', '<', $f->endsBefore())
+            ->when($f->locationId, fn ($q, $id) => $q->where('rentals.location_id', $id));
+    }
+
+    /**
      * @return Builder<RentalPayment>
      */
     private function rentalPayments(ProfitFilters $f): Builder
@@ -752,6 +792,32 @@ class ProfitReport
                     'description' => $payment->tender->label().' of '.number_format($payment->amount_cents / 100, 2),
                     'amount' => (int) $payment->fee_cents,
                     'href' => route('orders.show', $payment->order_id),
+                ];
+            }
+        }
+
+        if ($f->includesGoods()) {
+            foreach ($this->goodsRefunds($f)->select('refunds.*', 'orders.number as order_number')->latest('refunds.succeeded_at')->limit($limit)->get() as $refund) {
+                $rows[] = [
+                    'date' => $refund->succeeded_at?->setTimezone($f->timezone)->toDateString() ?? '',
+                    'reference' => (string) $refund->getAttribute('order_number'),
+                    'who' => null,
+                    'description' => 'YardRunner fee returned on a refund of '.number_format($refund->amount_cents / 100, 2),
+                    'amount' => -$refund->fee_returned_cents,
+                    'href' => $refund->order_id !== null ? route('orders.show', $refund->order_id) : null,
+                ];
+            }
+        }
+
+        if ($f->includesRentals()) {
+            foreach ($this->rentalRefunds($f)->select('rental_payments.*', 'rentals.number as rental_number')->latest('rental_payments.succeeded_at')->limit($limit)->get() as $payment) {
+                $rows[] = [
+                    'date' => $payment->succeeded_at?->setTimezone($f->timezone)->toDateString() ?? '',
+                    'reference' => (string) $payment->getAttribute('rental_number'),
+                    'who' => null,
+                    'description' => 'YardRunner fee returned on a refund of '.number_format($payment->amount_cents / 100, 2),
+                    'amount' => -$payment->fee_returned_cents,
+                    'href' => route('rentals.show', $payment->rental_id),
                 ];
             }
         }
