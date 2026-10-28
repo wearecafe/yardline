@@ -5,6 +5,7 @@ use App\Http\Controllers\Settings\BillingController;
 use App\Http\Controllers\Settings\BrandingController;
 use App\Http\Controllers\Settings\BusinessController;
 use App\Http\Controllers\Settings\DriverAccountsController;
+use App\Http\Controllers\Settings\ImportController;
 use App\Http\Controllers\Settings\OrderPickingController;
 use App\Http\Controllers\Settings\PaymentsController;
 use App\Http\Controllers\Settings\ProfileController;
@@ -62,6 +63,16 @@ Route::middleware(['auth', 'verified', 'can:manage-business'])->group(function (
     Route::post('settings/sending-domain/check', [SendingDomainController::class, 'check'])->middleware('throttle:12,1')->name('sending-domain.check');
     Route::post('settings/sending-domain/records', [SendingDomainController::class, 'sendRecords'])->middleware('throttle:6,1')->name('sending-domain.records');
     Route::delete('settings/sending-domain', [SendingDomainController::class, 'destroy'])->name('sending-domain.destroy');
+
+    // Loading a yard's existing data from spreadsheets.
+    Route::get('settings/import', [ImportController::class, 'index'])->name('imports.index');
+    Route::get('settings/import/templates/{kind}', [ImportController::class, 'template'])->name('imports.template');
+    Route::get('settings/import/samples/{kind}', [ImportController::class, 'sample'])->name('imports.sample');
+    Route::post('settings/import', [ImportController::class, 'store'])->middleware('throttle:30,1')->name('imports.store');
+    Route::get('settings/import/{import}', [ImportController::class, 'show'])->name('imports.show');
+    Route::post('settings/import/{import}/run', [ImportController::class, 'run'])->middleware('throttle:30,1')->name('imports.run');
+    Route::get('settings/import/{import}/errors', [ImportController::class, 'errors'])->name('imports.errors');
+    Route::delete('settings/import/{import}', [ImportController::class, 'destroy'])->name('imports.destroy');
 
     Route::get('settings/drivers', [DriverAccountsController::class, 'index'])->name('drivers.index');
     Route::post('settings/drivers', [DriverAccountsController::class, 'store'])->name('drivers.store');

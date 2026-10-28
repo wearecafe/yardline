@@ -4,6 +4,7 @@ namespace App\Accounting\QuickBooks;
 
 use App\Enums\FulfillmentMethod;
 use App\Enums\OrderStatus;
+use App\Enums\OrderType;
 use App\Enums\PaymentState;
 use App\Enums\PaymentTender;
 use App\Enums\RentalPaymentKind;
@@ -107,6 +108,13 @@ class QuickBooksPusher
             return null;
         }
 
+        // Carried over from the old system, which QuickBooks already has.
+        if ($order->type === OrderType::OpeningBalance) {
+            $this->mark($invoice, 'skipped', 'An opening balance from your old system. QuickBooks already has the original invoice.');
+
+            return null;
+        }
+
         if ($this->beforeStart($invoice->issued_on->toDateString())) {
             $this->mark($invoice, 'skipped', 'Dated before the QuickBooks start date.');
 
@@ -195,7 +203,9 @@ class QuickBooksPusher
         $invoiceId = $invoice !== null ? $this->invoice($invoice) : null;
 
         if ($invoiceId === null) {
-            $this->mark($payment, 'skipped', 'Its invoice isn’t in QuickBooks.');
+            $this->mark($payment, 'skipped', $order->type === OrderType::OpeningBalance
+                ? 'A payment on an opening balance. Record it against the original invoice in QuickBooks.'
+                : 'Its invoice isn’t in QuickBooks.');
 
             return;
         }
@@ -346,6 +356,12 @@ class QuickBooksPusher
         }
 
         if ($credit->total_cents <= 0) {
+            return null;
+        }
+
+        if ($credit->kind === 'opening') {
+            $this->mark($credit, 'skipped', 'An opening credit from your old system. QuickBooks already has it.');
+
             return null;
         }
 

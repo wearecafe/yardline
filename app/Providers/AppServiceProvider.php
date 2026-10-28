@@ -19,6 +19,7 @@ use App\Models\CreditNote;
 use App\Models\Customer;
 use App\Models\CycleCount;
 use App\Models\Employee;
+use App\Models\Import;
 use App\Models\Invoice;
 use App\Models\Location;
 use App\Models\Order;
@@ -239,6 +240,7 @@ class AppServiceProvider extends ServiceProvider
             'credit_note' => CreditNote::class,
             'customer' => Customer::class,
             'employee' => Employee::class,
+            'import' => Import::class,
             'invoice' => Invoice::class,
             'location' => Location::class,
             'order' => Order::class,

@@ -29,7 +29,7 @@ on a desktop and a progress bar on a phone or tablet.
 | 1   | Your business         | Yes      | Business name, time zone (guessed from the browser), email customers reply to, tax numbers for invoices       | `tenants`, `settings.reply_to_email`, `settings.branding` |
 | 2   | Your yards            | Yes      | The first yard's name, code and full address (pickup tax and delivery distance start here); add more yards    | `locations`                                               |
 | 3   | How you work          | No       | We deliver with our own trucks · We sell to contractors on account · We rent equipment · We track staff hours | `settings.onboarding.answers`, Rentals and Time add-ons   |
-| 4   | Your products         | No       | How selling units work; add a product, or send us your price list and we'll load it                           | (links out)                                               |
+| 4   | Your products         | No       | How selling units work; add a product, or import a spreadsheet (Settings → Import data)                       | (links out)                                               |
 | 5   | Your team             | No       | Invite people by name, email and role (not drivers or time-only: they need trucks and PINs first)             | `users`, invite email                                     |
 | 6   | Logo and colour       | No       | Logo upload and a primary colour for customer emails                                                          | `settings.branding`                                       |
 | 7   | Card payments and tax | No       | Status, and a button to Settings → Payments (cards, payouts and sales tax registrations)                      | (links out)                                               |
@@ -80,7 +80,7 @@ on its own once everything is done.
 
 ## Not in this version
 
-- Importing a product catalogue or price list from a spreadsheet (the
-  products step offers to load it for them by email).
-- Opening stock in Setup.
+- Opening stock as its own Setup step (it's in Settings → Import data,
+  linked from the products step, with products, price lists, accounts,
+  job sites and opening balances).
 - Per-step emails nudging owners who stall.
