@@ -328,7 +328,7 @@ Code: `App\Onboarding\Setup`, `SetupController`, `EnsureSetUp`,
 | Your business         | Yes      | Name, time zone, reply-to email, tax numbers (`branding.tax_numbers`)    |
 | Your yards            | Yes      | Each yard with a full address; sets `tenants.onboarded_at`               |
 | How you work          | No       | Delivers / sells on account (`settings.onboarding.answers`), the add-ons |
-| Your products         | No       | Nothing: links to the product editor, or emails support the price list   |
+| Your products         | No       | Nothing: links to the product editor and to Import data (products)       |
 | Your team             | No       | Invites, through `UserAccounts::create` (not drivers or time-only)       |
 | Logo and colour       | No       | Logo (the branding upload) and primary colour                            |
 | Card payments and tax | No       | Nothing: shows the payments status and links to Settings → Payments      |
@@ -352,6 +352,47 @@ Code: `App\Onboarding\Setup`, `SetupController`, `EnsureSetUp`,
 - **Back office.** The tenant page says when the business was set up or
   which step it's on; Needs attention lists businesses that signed up two
   days ago or more and haven't finished the required steps.
+
+## Importing a yard's data
+
+Settings → Import data (`Settings\ImportController`, `app/Imports`,
+`pages/settings/imports.tsx`, `pages/settings/import.tsx`), for owners and
+admins, and linked from Setup's products step. Six kinds, in order
+(`ImportKind`): products and units, price lists (prices, unit prices,
+volume breaks, category discounts), accounts and contacts, job sites,
+opening stock per yard, opening AR. Each kind has a blank template and a
+sample; the six samples chain (same SKUs, accounts and a yard called Main
+yard).
+
+- **Upload and check.** A CSV (comma, semicolon or tab; BOM and
+  Windows-1252 handled; up to 5,000 rows) is stored (`imports`, Files
+  disk) and checked row by row without saving (`ImportRunner::check`,
+  `ImportContext` with `preview: true` remembers what earlier rows will
+  create). Headings match the kind's columns and aliases in any case
+  (`CsvFile`). The preview keeps counts, the first 50 rows with what each
+  will do (new, update, skip) and up to 2,000 errors (line, column,
+  message). The error report is a CSV of just the failing rows with their
+  errors.
+- **Import.** `ImportRunner::import` checks each row again as it loads it
+  (so a unit row finds the product its own row just created), inside one
+  transaction: any failing row rolls back everything, unless the person
+  ticks leaving out the rows with errors. An upload imports once.
+- **Matching.** Products by SKU, units by name, price list items by list,
+  product, unit, minimum and start date, category rules by list and
+  category, accounts by account number then name, contacts by email then
+  name, job sites by account and name, yards by name or code. Blank cells
+  keep what's there; the base unit of an existing product can't change.
+- **Opening stock** sets on-hand (per colour run with `lot`) through the
+  ledger: stock in is a Receipt at the file's cost (or the product's), so
+  it sets the average cost and stays off the P&L's adjustments; a lower
+  quantity on a re-import is an Adjustment.
+- **Opening AR** becomes an `OrderType::OpeningBalance` order, fulfilled
+  and on account, with one line and an invoice numbered `OB-` plus the old
+  number, issued and due as given (or by the account's terms). Aging,
+  statements, credit checks and payments treat it like any invoice; the
+  profit report (sales only) and QuickBooks (skipped with a note; its
+  payments too) leave it out. A negative amount is a credit note, kind
+  `opening`, numbered `OC-`. An invoice number already in is skipped.
 
 ## Audit log
 
@@ -705,5 +746,4 @@ remove an item when it ships.
 | Email log and bounces                        | Emails          | Which emails went to whom, delivered or bounced, on each order and rental; flagging a customer's address when it bounces                                                                                                                       |
 | Line items in emails                         | Emails          | Order and invoice emails show key facts and a link, not the full line items, pallet charges and totals                                                                                                                                         |
 | Branding changes in the yard's audit log     | Emails          | Branding and sending-domain changes are recorded against the tenant, which the yard's own audit page leaves out; staff see them in the back office                                                                                             |
-| Catalogue import                             | Setup           | Loading products and price lists from a spreadsheet. Setup's products step offers to load them by email instead                                                                                                                                |
 | French emails                                | Emails          | Every email is in English                                                                                                                                                                                                                      |

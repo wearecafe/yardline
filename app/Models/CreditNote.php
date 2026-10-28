@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id
  * @property int $tenant_id
  * @property string $number
- * @property string $kind return | pallets | adjustment
+ * @property string $kind return | pallets | adjustment | opening (a credit carried over by an import)
  * @property int|null $organization_id
  * @property int|null $customer_id
  * @property int|null $order_id

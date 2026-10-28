@@ -136,7 +136,7 @@ export type Location = {
     is_default: boolean;
 };
 
-export type OrderType = 'sale' | 'rental';
+export type OrderType = 'sale' | 'rental' | 'opening_balance';
 export type OrderStatus =
     | 'draft'
     | 'confirmed'

@@ -6,6 +6,7 @@ import BusinessController from '@/actions/App/Http/Controllers/Settings/Business
 import AuditController from '@/actions/App/Http/Controllers/Settings/AuditController';
 import DeliverySettingsController from '@/actions/App/Http/Controllers/Settings/DeliverySettingsController';
 import DriverAccountsController from '@/actions/App/Http/Controllers/Settings/DriverAccountsController';
+import ImportController from '@/actions/App/Http/Controllers/Settings/ImportController';
 import OrderPickingController from '@/actions/App/Http/Controllers/Settings/OrderPickingController';
 import PaymentsController from '@/actions/App/Http/Controllers/Settings/PaymentsController';
 import QuickBooksController from '@/actions/App/Http/Controllers/Settings/QuickBooksController';
@@ -71,6 +72,11 @@ const businessNavItems: NavItem[] = [
     {
         title: 'Business',
         href: BusinessController.edit(),
+        icon: null,
+    },
+    {
+        title: 'Import data',
+        href: ImportController.index(),
         icon: null,
     },
     {

@@ -25,7 +25,7 @@ Enter every yard you keep stock and sell from, with its full address. Pickup ord
 Setup then asks:
 
 - **How you work**: whether you deliver with your own trucks, sell to contractors on account, rent equipment or track staff hours. Renting and tracking hours switch on the Rentals and Time & attendance add-ons, free for the rest of your trial.
-- **Your products**: add your first products, or send us your price list and we'll load it.
+- **Your products**: add your first products, or import your product list from a spreadsheet. See [Importing your existing data](/help/getting-started/importing-data).
 - **Your team**: invite people with the role for their job. They get an email to choose a password. Add drivers under **Settings → Drivers** once your trucks are in. See [Staff and roles](/help/getting-started/staff-and-roles).
 - **Logo and colour**: for quotes, invoices and every customer email.
 - **Card payments and tax**: set up card payments and your sales tax registrations under **Settings → Payments**.
@@ -42,7 +42,7 @@ Under **Settings → Delivery**, choose how you charge for delivery, add your tr
 
 ## 6. Add your products
 
-Add what you sell, with a base unit and the selling units you sell it in. See [Adding products](/help/products-pricing/add-a-product) and [Selling units](/help/products-pricing/selling-units).
+Add what you sell, with a base unit and the selling units you sell it in, or import them. See [Adding products](/help/products-pricing/add-a-product), [Selling units](/help/products-pricing/selling-units) and [Importing your existing data](/help/getting-started/importing-data).
 
 ## 7. Set up trade pricing
 
@@ -50,11 +50,11 @@ Create price lists (for example Contractor and Builder) and give them to your ac
 
 ## 8. Enter opening stock
 
-On **Stock**, use **Update stock → Receive** or a cycle count to put your current quantities in each yard. See [Adjusting stock](/help/inventory/adjusting-stock).
+Import your opening stock, or on **Stock** use **Update stock → Receive** or a cycle count to put your current quantities in each yard. See [Importing your existing data](/help/getting-started/importing-data) and [Adjusting stock](/help/inventory/adjusting-stock).
 
 ## 9. Add your accounts
 
-Add your contractor and builder accounts as organizations, with their contacts, job sites, terms and credit limits. See [Organizations](/help/accounts/organizations).
+Add your contractor and builder accounts as organizations, with their contacts, job sites, terms and credit limits, or import them with what they owe you today. See [Organizations](/help/accounts/organizations) and [Importing your existing data](/help/getting-started/importing-data).
 
 ## 10. Add your rental fleet
 

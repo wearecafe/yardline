@@ -1,7 +1,8 @@
 import { Link, router } from '@inertiajs/react';
-import { Mail, PackagePlus } from 'lucide-react';
+import { FileSpreadsheet, PackagePlus } from 'lucide-react';
 import SetupController from '@/actions/App/Http/Controllers/SetupController';
 import ProductController from '@/actions/App/Http/Controllers/ProductController';
+import ImportController from '@/actions/App/Http/Controllers/Settings/ImportController';
 import { StepActions, StepHeader } from '@/components/setup/step';
 import { Notice } from '@/components/yard/page-header';
 import { Button } from '@/components/ui/button';
@@ -82,33 +83,43 @@ export default function SetupProducts({ productCount, supportEmail }: Props) {
                             </Link>
                         </Button>
                     </div>
-                    {supportEmail && (
-                        <div className="flex flex-col gap-3 rounded-[10px] border border-border bg-card p-5">
-                            <Mail className="size-5 text-primary" />
-                            <div>
-                                <p className="font-semibold">
-                                    Send us your price list
-                                </p>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    A spreadsheet, a PDF or an export from your
-                                    old system. We’ll load it for you, free in
-                                    your trial.
-                                </p>
-                            </div>
-                            <Button
-                                variant="outline"
-                                className="mt-auto"
-                                asChild
-                            >
-                                <a
-                                    href={`mailto:${supportEmail}?subject=${encodeURIComponent('Please load our price list')}`}
-                                >
-                                    Email it to us
-                                </a>
-                            </Button>
+                    <div className="flex flex-col gap-3 rounded-[10px] border border-border bg-card p-5">
+                        <FileSpreadsheet className="size-5 text-primary" />
+                        <div>
+                            <p className="font-semibold">
+                                Import a spreadsheet
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Your product list as CSV, with its units and
+                                prices. Then price lists, accounts, job sites,
+                                opening stock and balances the same way.
+                            </p>
                         </div>
-                    )}
+                        <Button variant="outline" className="mt-auto" asChild>
+                            <Link
+                                href={ImportController.index.url({
+                                    query: { kind: 'products', setup: 1 },
+                                })}
+                            >
+                                Import products
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
+
+                {supportEmail && (
+                    <p className="text-sm text-muted-foreground">
+                        Only have a PDF or an export that won’t open as a
+                        spreadsheet?{' '}
+                        <a
+                            href={`mailto:${supportEmail}?subject=${encodeURIComponent('Please load our price list')}`}
+                            className="font-medium text-foreground underline underline-offset-4"
+                        >
+                            Email it to us
+                        </a>{' '}
+                        and we’ll load it, free in your trial.
+                    </p>
+                )}
 
                 <p className="text-sm text-muted-foreground">
                     Not ready? It stays on your checklist on{' '}
