@@ -138,7 +138,7 @@ minutes instead.
 | Service intervals that lock units out                       | Maintenance     | `Maintenance`                       |
 | Deposits and payments                                       | Rental payments | `app/Rentals/Payments`              |
 | Online booking                                              | `/book/{yard}`  | `Rentals/BookingController`         |
-| Reminder texts and emails                                   | (scheduled)     | `yardrunner:rentals:remind`           |
+| Reminder texts and emails                                   | (scheduled)     | `yardrunner:rentals:remind`         |
 
 ## Inventory and purchasing
 
@@ -220,12 +220,12 @@ direct costs, down to gross profit. Operating expenses and net profit stay
 in QuickBooks. Gate `view-profit`, settings in `tenants.settings['reports']`
 (`ReportSettings`).
 
-| Feature                                                            | Screens                   | Code                                        |
-| ------------------------------------------------------------------ | ------------------------- | ------------------------------------------- |
-| Statement, comparison, trend, by category/product/customer/unit    | Reports → Profit and loss | `App\Reports\ProfitReport`, `ProfitFilters` |
-| Drill-down to the records behind any amount; CSV and PDF           | Profit and loss           | `ProfitReportController`                    |
-| Average cost per product per yard                                  | (Purchasing, transfers)   | `InventoryLedger`                           |
-| Cost and list price fixed on each goods line at confirmation       | Order confirm             | `RecordLineCosts`                           |
+| Feature                                                              | Screens                   | Code                                        |
+| -------------------------------------------------------------------- | ------------------------- | ------------------------------------------- |
+| Statement, comparison, trend, by category/product/customer/unit      | Reports → Profit and loss | `App\Reports\ProfitReport`, `ProfitFilters` |
+| Drill-down to the records behind any amount; CSV and PDF             | Profit and loss           | `ProfitReportController`                    |
+| Average cost per product per yard                                    | (Purchasing, transfers)   | `InventoryLedger`                           |
+| Cost and list price fixed on each goods line at confirmation         | Order confirm             | `RecordLineCosts`                           |
 | Card processor fees on payments (hourly, `yardrunner:payments:fees`) | (scheduled)               | `app/Payments/Fees`                         |
 
 Rules:
