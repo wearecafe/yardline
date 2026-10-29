@@ -128,7 +128,7 @@ class Tenant extends Model
             return null;
         }
 
-        $label = config("yardline.back_office.plans.{$this->plan}");
+        $label = config("yardrunner.back_office.plans.{$this->plan}");
 
         return is_string($label) ? $label : $this->plan;
     }

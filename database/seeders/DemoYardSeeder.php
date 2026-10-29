@@ -81,7 +81,7 @@ use Illuminate\Support\Str;
  * landscape supply business used for demos, including in production.
  *
  * Idempotent: skipped if the demo yard already exists, so it's safe to run on
- * every deploy. `php artisan yardline:demo:reset` rebuilds it. Dates are
+ * every deploy. `php artisan yardrunner:demo:reset` rebuilds it. Dates are
  * relative to the day it runs, so "Today" always has work in every state.
  *
  * Demo accounts have random passwords and can only be entered through /demo.
@@ -134,7 +134,7 @@ class DemoYardSeeder extends Seeder
 
     /**
      * Truck 2's way from the Waterdown yard to Brantwood's Hamilton St
-     * site. yardline:demo:drive moves the truck along it so the board and
+     * site. yardrunner:demo:drive moves the truck along it so the board and
      * the portal always have a fresh position.
      *
      * @var list<array{float, float}>

@@ -46,8 +46,8 @@ class RentalModuleTest extends TestCase
     {
         parent::setUp();
 
-        config(['yardline.tax.driver' => 'flat', 'yardline.tax.flat_rate' => 0.13, 'yardline.payments.driver' => 'fake']);
-        Storage::fake(config('yardline.files_disk'));
+        config(['yardrunner.tax.driver' => 'flat', 'yardrunner.tax.flat_rate' => 0.13, 'yardrunner.payments.driver' => 'fake']);
+        Storage::fake(config('yardrunner.files_disk'));
         // A Monday.
         $this->travelTo(CarbonImmutable::parse('2026-11-02 09:00', self::TZ));
 

@@ -90,7 +90,7 @@ class HandleInertiaRequests extends Middleware
             'shareLocation' => function () use ($request): bool {
                 $user = $request->user();
 
-                // The demo driver's position is simulated (yardline:demo:drive),
+                // The demo driver's position is simulated (yardrunner:demo:drive),
                 // so visitors' real locations are never asked for or kept.
                 return $user !== null && $user->isDriver() && ! Demo::isDemoUser($user)
                     && $user->truckAssignments()->where('date', app(DriverRun::class)->today()->toDateString())->exists();
@@ -129,7 +129,7 @@ class HandleInertiaRequests extends Middleware
                     return null;
                 }
 
-                return ['key' => (string) config('yardline.push.public_key'), 'alerts' => StaffAlerts::for($user) !== []];
+                return ['key' => (string) config('yardrunner.push.public_key'), 'alerts' => StaffAlerts::for($user) !== []];
             },
             'portal_flash' => fn () => $request->hasSession() ? $request->session()->get('portal_flash') : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

@@ -39,8 +39,8 @@ class PaymentsController extends Controller
             'demo' => Demo::isCurrentTenant(),
             'publishable_key' => $accounts instanceof FakeConnectAccounts ? null : config('services.stripe.key'),
             'fee' => [
-                'percent' => (float) config('yardline.payments.application_fee.percent', 0),
-                'fixed_cents' => (int) config('yardline.payments.application_fee.fixed_cents', 0),
+                'percent' => (float) config('yardrunner.payments.application_fee.percent', 0),
+                'fixed_cents' => (int) config('yardrunner.payments.application_fee.fixed_cents', 0),
             ],
         ]);
     }

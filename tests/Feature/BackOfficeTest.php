@@ -86,7 +86,7 @@ class BackOfficeTest extends TestCase
 
     public function test_staff_must_turn_on_two_factor_first(): void
     {
-        config(['yardline.back_office.require_two_factor' => true]);
+        config(['yardrunner.back_office.require_two_factor' => true]);
         $this->signInAsStaff(twoFactor: false);
 
         $this->get('/admin')->assertRedirect(route('security.edit'));
@@ -348,17 +348,17 @@ class BackOfficeTest extends TestCase
 
     public function test_the_staff_command_adds_and_removes_staff(): void
     {
-        $this->artisan('yardline:staff:add', ['email' => 'jon@example.com', '--name' => 'Jon'])->assertSuccessful();
+        $this->artisan('yardrunner:staff:add', ['email' => 'jon@example.com', '--name' => 'Jon'])->assertSuccessful();
 
         $staff = User::query()->where('email', 'jon@example.com')->firstOrFail();
         $this->assertTrue($staff->isPlatformStaff());
         $this->assertNull($staff->tenant_id);
 
-        $this->artisan('yardline:staff:add', ['email' => 'jon@example.com', '--remove' => true])->assertSuccessful();
+        $this->artisan('yardrunner:staff:add', ['email' => 'jon@example.com', '--remove' => true])->assertSuccessful();
         $this->assertFalse($staff->fresh()?->isPlatformStaff());
 
         // Someone who signs in to a yard can't also be staff.
         $tenantUser = User::factory()->create();
-        $this->artisan('yardline:staff:add', ['email' => $tenantUser->email])->assertFailed();
+        $this->artisan('yardrunner:staff:add', ['email' => $tenantUser->email])->assertFailed();
     }
 }

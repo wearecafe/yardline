@@ -44,7 +44,7 @@ class ProfitReportTest extends TestCase
     {
         parent::setUp();
 
-        config(['yardline.tax.driver' => 'flat', 'yardline.tax.flat_rate' => 0.13, 'yardline.payments.driver' => 'fake']);
+        config(['yardrunner.tax.driver' => 'flat', 'yardrunner.tax.flat_rate' => 0.13, 'yardrunner.payments.driver' => 'fake']);
 
         $this->owner = $this->signInToNewTenant();
         $this->yard = Location::query()->firstOrFail();
@@ -239,7 +239,7 @@ class ProfitReportTest extends TestCase
         $card = Payment::query()->create(['order_id' => $order->id, 'tender' => 'stripe_checkout', 'status' => 'succeeded', 'amount_cents' => 10_000, 'succeeded_at' => now()]);
         $cash = Payment::query()->create(['order_id' => $order->id, 'tender' => 'cash', 'status' => 'succeeded', 'amount_cents' => 1_300, 'succeeded_at' => now()]);
 
-        $this->artisan('yardline:payments:fees')->assertSuccessful();
+        $this->artisan('yardrunner:payments:fees')->assertSuccessful();
 
         // Estimated without a card processor: 2.9% + 30¢.
         $this->assertSame(320, $card->refresh()->fee_cents);

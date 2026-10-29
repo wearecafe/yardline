@@ -286,8 +286,8 @@ class RentalPayments
     private function metadata(Rental $rental): array
     {
         return [
-            'yardline_tenant_id' => (string) $rental->tenant_id,
-            'yardline_rental_id' => (string) $rental->id,
+            'yardrunner_tenant_id' => (string) $rental->tenant_id,
+            'yardrunner_rental_id' => (string) $rental->id,
         ];
     }
 }

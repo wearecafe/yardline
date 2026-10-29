@@ -16,10 +16,13 @@ use Illuminate\Support\Str;
  */
 class AddStaff extends Command
 {
-    protected $signature = 'yardline:staff:add
+    protected $signature = 'yardrunner:staff:add
         {email : Their email address}
         {--name= : Their name (for a new account)}
         {--remove : Take back-office access away instead}';
+
+    /** The name it had before the rename, kept so old habits and docs still work. */
+    protected $aliases = ['yardline:staff:add'];
 
     protected $description = 'Add (or remove) a YardRunner staff account for the back office';
 
@@ -78,7 +81,7 @@ class AddStaff extends Command
         $this->line('Send them this link to choose a password (it expires in 60 minutes):');
         $this->line($url);
 
-        if (config('yardline.back_office.require_two_factor')) {
+        if (config('yardrunner.back_office.require_two_factor')) {
             $this->line('They’ll be asked to turn on two-factor authentication before the back office opens.');
         }
 

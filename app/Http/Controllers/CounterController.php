@@ -80,7 +80,7 @@ class CounterController extends Controller
             'organizations' => Organization::query()->orderBy('name')->get(['id', 'name', 'account_number', 'credit_hold']),
             'customers' => Customer::query()->orderBy('first_name')->get(['id', 'organization_id', 'first_name', 'last_name', 'phone']),
             'tenders' => PaymentTender::manualOptions(),
-            'taxRate' => config('yardline.tax.driver') === 'flat' || Demo::isCurrentTenant() ? (float) config('yardline.tax.flat_rate', 0.13) : null,
+            'taxRate' => config('yardrunner.tax.driver') === 'flat' || Demo::isCurrentTenant() ? (float) config('yardrunner.tax.flat_rate', 0.13) : null,
         ]);
     }
 

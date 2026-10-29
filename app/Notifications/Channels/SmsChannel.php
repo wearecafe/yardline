@@ -23,20 +23,20 @@ class SmsChannel
         /** @var SmsMessage $message */
         $message = $notification->toSms($notifiable);
 
-        if (config('yardline.sms.driver') !== 'twilio') {
+        if (config('yardrunner.sms.driver') !== 'twilio') {
             Log::info('SMS (not sent: log driver)', ['to' => $to, 'body' => $message->body]);
 
             return;
         }
 
-        $sid = (string) config('yardline.sms.twilio.sid');
+        $sid = (string) config('yardrunner.sms.twilio.sid');
 
         Http::asForm()
-            ->withBasicAuth($sid, (string) config('yardline.sms.twilio.token'))
+            ->withBasicAuth($sid, (string) config('yardrunner.sms.twilio.token'))
             ->timeout(10)
             ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
                 'To' => self::e164((string) $to),
-                'From' => (string) config('yardline.sms.twilio.from'),
+                'From' => (string) config('yardrunner.sms.twilio.from'),
                 'Body' => $message->body,
             ])
             ->throw();

@@ -81,7 +81,7 @@ final readonly class Plan
         return $total;
     }
 
-    /** For back office reporting: see yardline.back_office.plans. */
+    /** For back office reporting: see yardrunner.back_office.plans. */
     public function key(): string
     {
         return $this->rentals ? 'yard_rentals' : 'yard';
@@ -125,36 +125,36 @@ final readonly class Plan
     {
         $items = [];
 
-        foreach (array_keys((array) config('yardline.billing.items')) as $key) {
+        foreach (array_keys((array) config('yardrunner.billing.items')) as $key) {
             $key = (string) $key;
             $items[] = ['key' => $key, 'name' => self::name($key), 'amount_cents' => self::amount($key), 'per_user' => self::perUser($key)];
         }
 
         return [
-            'currency' => strtoupper((string) config('yardline.billing.currency', 'cad')),
-            'trial_days' => (int) config('yardline.billing.trial_days', 14),
+            'currency' => strtoupper((string) config('yardrunner.billing.currency', 'cad')),
+            'trial_days' => (int) config('yardrunner.billing.trial_days', 14),
             'items' => $items,
         ];
     }
 
     public static function amount(string $key): int
     {
-        return (int) config("yardline.billing.items.{$key}.amount_cents");
+        return (int) config("yardrunner.billing.items.{$key}.amount_cents");
     }
 
     public static function name(string $key): string
     {
-        return (string) config("yardline.billing.items.{$key}.name");
+        return (string) config("yardrunner.billing.items.{$key}.name");
     }
 
     public static function lookupKey(string $key): string
     {
-        return (string) config("yardline.billing.items.{$key}.lookup_key");
+        return (string) config("yardrunner.billing.items.{$key}.lookup_key");
     }
 
     public static function perUser(string $key): bool
     {
-        return (bool) config("yardline.billing.items.{$key}.per_user", false);
+        return (bool) config("yardrunner.billing.items.{$key}.per_user", false);
     }
 
     /**
@@ -162,7 +162,7 @@ final readonly class Plan
      */
     public static function keyForLookup(?string $lookupKey): ?string
     {
-        foreach (array_keys((array) config('yardline.billing.items')) as $key) {
+        foreach (array_keys((array) config('yardrunner.billing.items')) as $key) {
             if ($lookupKey !== null && self::lookupKey((string) $key) === $lookupKey) {
                 return (string) $key;
             }

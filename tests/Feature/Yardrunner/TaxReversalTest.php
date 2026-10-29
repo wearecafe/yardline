@@ -44,7 +44,7 @@ class TaxReversalTest extends TestCase
     {
         parent::setUp();
 
-        config(['yardline.tax.driver' => 'flat', 'yardline.tax.flat_rate' => 0.13, 'yardline.payments.driver' => 'fake']);
+        config(['yardrunner.tax.driver' => 'flat', 'yardrunner.tax.flat_rate' => 0.13, 'yardrunner.payments.driver' => 'fake']);
 
         $this->signInToNewTenant();
         $this->yard = Location::query()->firstOrFail();

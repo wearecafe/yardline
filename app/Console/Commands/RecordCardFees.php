@@ -10,7 +10,10 @@ use Throwable;
 
 class RecordCardFees extends Command
 {
-    protected $signature = 'yardline:payments:fees';
+    protected $signature = 'yardrunner:payments:fees';
+
+    /** The name it had before the rename, kept so old habits and docs still work. */
+    protected $aliases = ['yardline:payments:fees'];
 
     protected $description = 'Record what the card processor kept from each card payment, for the profit report';
 

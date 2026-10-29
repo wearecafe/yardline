@@ -385,7 +385,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     /**
      * YardRunner staff: no tenant of their own, and they use the back office
      * (/admin) instead of a yard. Never set from a request; see the
-     * yardline:staff:add command.
+     * yardrunner:staff:add command.
      */
     public function isPlatformStaff(): bool
     {

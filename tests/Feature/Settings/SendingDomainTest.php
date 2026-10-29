@@ -48,7 +48,7 @@ class SendingDomainTest extends TestCase
 
     public function test_connecting_shows_cnames_pointing_at_yardrunner_only(): void
     {
-        config(['yardline.email.dns_zone' => 'dns.yardrunner.test']);
+        config(['yardrunner.email.dns_zone' => 'dns.yardrunner.test']);
         $this->signInToNewTenant();
         $tenant = CurrentTenant::get();
 
@@ -130,10 +130,10 @@ class SendingDomainTest extends TestCase
         $this->patch(route('sending-domain.update'), ['mailboxes' => ['main' => 'hello'], 'sending_enabled' => true]);
 
         DnsLookup::fake([]);
-        $this->artisan('yardline:email:domains')->assertSuccessful();
+        $this->artisan('yardrunner:email:domains')->assertSuccessful();
         // Verified domains are checked hourly.
         $this->travel(61)->minutes();
-        $this->artisan('yardline:email:domains')->assertSuccessful();
+        $this->artisan('yardrunner:email:domains')->assertSuccessful();
 
         $this->assertSame(SendingDomain::FAILING, $domain->refresh()->status);
         $this->assertNotSame('hello@stoneworks.test', YardMail::for($tenant)->from[0]);
@@ -163,7 +163,7 @@ class SendingDomainTest extends TestCase
         $domain = $this->connect();
 
         $this->travel(73)->hours();
-        $this->artisan('yardline:email:domains')->assertSuccessful();
+        $this->artisan('yardrunner:email:domains')->assertSuccessful();
 
         $this->assertSame(SendingDomain::EXPIRED, $domain->refresh()->status);
 

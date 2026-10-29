@@ -41,14 +41,14 @@ class BusinessReplyToTest extends TestCase
 
     public function test_customer_mail_uses_yard_name_and_reply_to(): void
     {
-        config(['mail.from.address' => 'mail@yardline.test']);
+        config(['mail.from.address' => 'mail@yardrunner.test']);
         $this->signInToNewTenant();
         $tenant = CurrentTenant::get();
         $tenant->update(['name' => 'Stone Yard', 'settings' => ['reply_to_email' => 'sales@stoneyard.test']]);
 
         $mail = YardMail::for($tenant);
 
-        $this->assertSame(['mail@yardline.test', 'Stone Yard'], $mail->from);
+        $this->assertSame(['mail@yardrunner.test', 'Stone Yard'], $mail->from);
         $this->assertSame([['sales@stoneyard.test', 'Stone Yard']], $mail->replyTo);
     }
 

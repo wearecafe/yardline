@@ -29,12 +29,12 @@ queue and dispatch board, invoices across every aging bucket, returns,
 pallet deposits, a portal reorder waiting to be confirmed and an audit
 trail, all dated relative to today. The contractor portal is at
 http://localhost:8000/portal/escarpment-stone. `php artisan
-yardline:demo:reset` rebuilds it.
+yardrunner:demo:reset` rebuilds it.
 
 The back office for YardRunner staff is at http://localhost:8000/admin. Give
-yourself access with `php artisan yardline:staff:add you@example.com`, open
+yourself access with `php artisan yardrunner:staff:add you@example.com`, open
 the link it prints to choose a password, then turn on two-factor
-authentication (or set `YARDLINE_ADMIN_REQUIRE_2FA=false` locally). See
+authentication (or set `YARDRUNNER_ADMIN_REQUIRE_2FA=false` locally). See
 [docs/features.md](docs/features.md#back-office).
 
 Locally, tax is a flat 13% and card payment links are fake: opening one

@@ -18,7 +18,10 @@ use Illuminate\Console\Command;
  */
 class SendRentalReminders extends Command
 {
-    protected $signature = 'yardline:rentals:remind';
+    protected $signature = 'yardrunner:rentals:remind';
+
+    /** The name it had before the rename, kept so old habits and docs still work. */
+    protected $aliases = ['yardline:rentals:remind'];
 
     protected $description = 'Send rental pickup, return and overdue reminders';
 

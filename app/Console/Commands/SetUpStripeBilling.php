@@ -15,7 +15,7 @@ use Throwable;
 
 /**
  * Creates YardRunner's subscription products and prices in Stripe from
- * yardline.billing.items, found again later by their lookup keys. Safe to
+ * yardrunner.billing.items, found again later by their lookup keys. Safe to
  * run again: it only adds what's missing, and when an amount in config
  * has changed it adds a new price and moves the lookup key to it.
  *
@@ -24,8 +24,11 @@ use Throwable;
  */
 class SetUpStripeBilling extends Command
 {
-    protected $signature = 'yardline:billing:stripe-setup
+    protected $signature = 'yardrunner:billing:stripe-setup
         {--webhook= : Also create the billing webhook at this URL (https://<your-domain>/webhooks/stripe/billing)}';
+
+    /** The name it had before the rename, kept so old habits and docs still work. */
+    protected $aliases = ['yardline:billing:stripe-setup'];
 
     protected $description = 'Create the subscription products, prices (and optionally the webhook) in Stripe';
 
@@ -42,13 +45,13 @@ class SetUpStripeBilling extends Command
             return self::FAILURE;
         }
 
-        $currency = (string) config('yardline.billing.currency', 'cad');
+        $currency = (string) config('yardrunner.billing.currency', 'cad');
         $mode = str_starts_with((string) config('services.stripe.secret'), 'sk_live_') ? 'LIVE' : 'test';
         $this->line("Stripe account: {$mode} mode");
 
         $products = $this->products($stripe);
 
-        foreach (array_keys((array) config('yardline.billing.items')) as $key) {
+        foreach (array_keys((array) config('yardrunner.billing.items')) as $key) {
             $key = (string) $key;
             $lookup = Plan::lookupKey($key);
             $amount = Plan::amount($key);

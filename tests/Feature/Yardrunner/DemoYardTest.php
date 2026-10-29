@@ -40,7 +40,7 @@ class DemoYardTest extends TestCase
 
     public function test_demo_pages_are_hidden_unless_turned_on(): void
     {
-        config(['yardline.demo' => false]);
+        config(['yardrunner.demo' => false]);
 
         $this->get('/demo')->assertNotFound();
         $this->post('/demo', ['email' => self::OWNER])->assertNotFound();
@@ -50,7 +50,7 @@ class DemoYardTest extends TestCase
 
     public function test_visitors_can_sign_in_as_any_demo_account(): void
     {
-        config(['yardline.demo' => true]);
+        config(['yardrunner.demo' => true]);
 
         $this->get('/demo')
             ->assertOk()
@@ -69,7 +69,7 @@ class DemoYardTest extends TestCase
 
     public function test_demo_accounts_cannot_sign_in_with_a_password(): void
     {
-        config(['yardline.demo' => true]);
+        config(['yardrunner.demo' => true]);
 
         $owner = User::query()->where('email', self::OWNER)->firstOrFail();
         $owner->forceFill(['password' => 'password'])->save();
@@ -81,7 +81,7 @@ class DemoYardTest extends TestCase
 
     public function test_demo_sign_in_cannot_reach_real_accounts(): void
     {
-        config(['yardline.demo' => true]);
+        config(['yardrunner.demo' => true]);
 
         $real = User::factory()->create(['email' => 'real@example.com']);
         CurrentTenant::set(null);
@@ -95,7 +95,7 @@ class DemoYardTest extends TestCase
 
     public function test_demo_accounts_cannot_change_account_or_business_settings(): void
     {
-        config(['yardline.demo' => true]);
+        config(['yardrunner.demo' => true]);
         $this->post('/demo', ['email' => self::OWNER]);
 
         $this->from(route('profile.edit'))
@@ -115,8 +115,8 @@ class DemoYardTest extends TestCase
     public function test_the_demo_yard_never_uses_stripe(): void
     {
         config([
-            'yardline.tax.driver' => 'stripe',
-            'yardline.payments.driver' => 'stripe',
+            'yardrunner.tax.driver' => 'stripe',
+            'yardrunner.payments.driver' => 'stripe',
         ]);
 
         CurrentTenant::set(Demo::tenantId());
@@ -138,7 +138,7 @@ class DemoYardTest extends TestCase
         $realProduct = CurrentTenant::run($other, fn () => Product::factory()->create());
         $oldDemoId = Demo::tenantId();
 
-        $this->artisan('yardline:demo:reset', ['--force' => true])->assertSuccessful();
+        $this->artisan('yardrunner:demo:reset', ['--force' => true])->assertSuccessful();
 
         $newDemoId = Demo::tenantId();
         $this->assertNotNull($newDemoId);
@@ -156,7 +156,7 @@ class DemoYardTest extends TestCase
 
     public function test_visitors_can_try_the_contractor_portal(): void
     {
-        config(['yardline.demo' => true]);
+        config(['yardrunner.demo' => true]);
 
         $this->get(route('portal.login', DemoYardSeeder::SLUG))->assertOk()->assertInertia(fn (Assert $page) => $page->whereNot('demo', null));
         $this->post(route('portal.demo', DemoYardSeeder::SLUG))->assertRedirect(route('portal.home'));
@@ -180,7 +180,7 @@ class DemoYardTest extends TestCase
 
     public function test_every_demo_page_renders(): void
     {
-        config(['yardline.demo' => true]);
+        config(['yardrunner.demo' => true]);
         $this->post('/demo', ['email' => self::OWNER]);
 
         foreach (['dashboard', 'orders.index', 'orders.queue', 'dispatch.board', 'counter.show', 'inventory.index', 'purchasing.index', 'returns.index', 'receivables.index', 'products.index', 'organizations.index', 'customers.index', 'price-lists.index', 'fleet.index', 'rentals.calendar', 'rentals.index', 'maintenance.index', 'rental-payments.index', 'audit.index', 'delivery-settings.edit', 'rental-settings.edit', 'time.board', 'time.timesheets.index', 'time.employees.index', 'time.kiosk', 'time.self.show', 'time-settings.edit', 'reports.profit'] as $name) {
@@ -194,7 +194,7 @@ class DemoYardTest extends TestCase
      */
     public function test_the_demo_profit_report_opens(): void
     {
-        config(['yardline.demo' => true]);
+        config(['yardrunner.demo' => true]);
         $this->post('/demo', ['email' => self::OWNER]);
 
         $filters = [
@@ -227,7 +227,7 @@ class DemoYardTest extends TestCase
 
     public function test_visitors_can_try_the_driver_app(): void
     {
-        config(['yardline.demo' => true]);
+        config(['yardrunner.demo' => true]);
 
         $this->post('/demo', ['email' => DemoYardSeeder::DEMO_DRIVER])->assertRedirect(route('driver.today'));
 
@@ -253,14 +253,14 @@ class DemoYardTest extends TestCase
         // The scheduler moves the demo truck instead.
         $truck = CurrentTenant::run($tenant, fn () => Truck::query()->where('name', 'Truck 2 · boom')->firstOrFail());
         CurrentTenant::run($tenant, fn () => $truck->forceFill(['last_located_at' => now()->subHour()])->save());
-        $this->artisan('yardline:demo:drive')->assertSuccessful();
+        $this->artisan('yardrunner:demo:drive')->assertSuccessful();
         CurrentTenant::run($tenant, fn () => $truck->refresh());
         $this->assertTrue($truck->last_located_at?->greaterThan(now()->subMinute()));
     }
 
     public function test_the_demo_portal_shows_the_truck_coming(): void
     {
-        config(['yardline.demo' => true]);
+        config(['yardrunner.demo' => true]);
 
         $this->post(route('portal.demo', DemoYardSeeder::SLUG))->assertRedirect(route('portal.home'));
 

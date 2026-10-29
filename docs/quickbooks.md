@@ -31,7 +31,7 @@ stock and movements, suppliers and purchase orders, pallet movements,
 deposit holds and releases, fulfilment, Stripe fees and payouts.
 
 Payments entered in QuickBooks against invoices YardRunner sent are pulled
-back every 15 minutes (`yardline:quickbooks:pull`, QuickBooks' change feed).
+back every 15 minutes (`yardrunner:quickbooks:pull`, QuickBooks' change feed).
 
 ## How it works
 
@@ -48,7 +48,7 @@ back every 15 minutes (`yardline:quickbooks:pull`, QuickBooks' change feed).
   overrides QuickBooks' own calculation.
 - Nothing dated before the start date chosen in Settings is sent.
 - Failures retry for about a day, then owners get one email a day. The
-  nightly `yardline:quickbooks:check` re-sends anything waiting or failed
+  nightly `yardrunner:quickbooks:check` re-sends anything waiting or failed
   and compares recent invoice and credit memo totals.
 - The demo yard never connects.
 

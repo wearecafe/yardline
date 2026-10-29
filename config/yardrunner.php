@@ -1,5 +1,11 @@
 <?php
 
+/*
+| Settings read YARDRUNNER_* variables. The old YARDLINE_* names still work
+| as a fallback until every environment has been renamed; then drop them.
+*/
+$env = static fn (string $key, mixed $default = null): mixed => env('YARDRUNNER_'.$key, env('YARDLINE_'.$key, $default));
+
 return [
 
     /*
@@ -14,7 +20,7 @@ return [
     |
     */
 
-    'demo' => (bool) env('YARDLINE_DEMO', false),
+    'demo' => (bool) $env('DEMO', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -27,8 +33,8 @@ return [
     */
 
     'tax' => [
-        'driver' => env('YARDLINE_TAX_DRIVER', 'flat'),
-        'flat_rate' => (float) env('YARDLINE_FLAT_TAX_RATE', 0.13),
+        'driver' => $env('TAX_DRIVER', 'flat'),
+        'flat_rate' => (float) $env('FLAT_TAX_RATE', 0.13),
     ],
 
     /*
@@ -49,30 +55,30 @@ return [
     */
 
     'payments' => [
-        'driver' => env('YARDLINE_PAYMENTS_DRIVER', 'fake'),
+        'driver' => $env('PAYMENTS_DRIVER', 'fake'),
 
         // YardRunner's cut of each card payment, on top of Stripe's fees.
         'application_fee' => [
-            'percent' => (float) env('YARDLINE_APPLICATION_FEE_PERCENT', 0.5),
-            'fixed_cents' => (int) env('YARDLINE_APPLICATION_FEE_FIXED_CENTS', 0),
+            'percent' => (float) $env('APPLICATION_FEE_PERCENT', 0.5),
+            'fixed_cents' => (int) $env('APPLICATION_FEE_FIXED_CENTS', 0),
         ],
 
         // Country new connected accounts are created in.
-        'country' => env('YARDLINE_CONNECT_COUNTRY', 'CA'),
+        'country' => $env('CONNECT_COUNTRY', 'CA'),
     ],
 
     /*
     | Private files: inspection photos, signatures, ID and insurance scans,
     | agreement PDFs. On Laravel Cloud, attach a bucket and this follows it.
     */
-    'files_disk' => env('YARDLINE_FILES_DISK', env('FILESYSTEM_DISK', 'local')),
+    'files_disk' => $env('FILES_DISK', env('FILESYSTEM_DISK', 'local')),
 
     /*
     | Text messages for rental reminders and signing links. "log" writes them
     | to the log; "twilio" sends them.
     */
     'sms' => [
-        'driver' => env('YARDLINE_SMS_DRIVER', 'log'),
+        'driver' => $env('SMS_DRIVER', 'log'),
         'twilio' => [
             'sid' => env('TWILIO_SID'),
             'token' => env('TWILIO_TOKEN'),
@@ -82,7 +88,7 @@ return [
 
     /*
     | Web push alerts on staff phones and tablets (the installed app). Make a
-    | key pair with `php artisan yardline:push:keys`. With no keys, alerts are
+    | key pair with `php artisan yardrunner:push:keys`. With no keys, alerts are
     | logged instead of sent.
     */
     'push' => [
@@ -95,7 +101,7 @@ return [
     | Where the public help center (/help) sends people who need more help.
     | Leave blank to hide the contact links.
     */
-    'support_email' => env('YARDLINE_SUPPORT_EMAIL'),
+    'support_email' => $env('SUPPORT_EMAIL'),
 
     /*
     |--------------------------------------------------------------------------
@@ -116,14 +122,14 @@ return [
     */
 
     'email' => [
-        'tenant_from_domain' => env('YARDLINE_EMAIL_TENANT_FROM_DOMAIN', ''),
-        'postal_address' => env('YARDLINE_EMAIL_POSTAL_ADDRESS', 'Burlington, Ontario'),
-        'domains_driver' => env('YARDLINE_EMAIL_DOMAINS_DRIVER', 'fake'),
-        'dns_driver' => env('YARDLINE_EMAIL_DNS_DRIVER', 'local'),
-        'dns_zone' => env('YARDLINE_EMAIL_DNS_ZONE', 'dns.yardrunner.ca'),
+        'tenant_from_domain' => $env('EMAIL_TENANT_FROM_DOMAIN', ''),
+        'postal_address' => $env('EMAIL_POSTAL_ADDRESS', 'Burlington, Ontario'),
+        'domains_driver' => $env('EMAIL_DOMAINS_DRIVER', 'fake'),
+        'dns_driver' => $env('EMAIL_DNS_DRIVER', 'local'),
+        'dns_zone' => $env('EMAIL_DNS_ZONE', 'dns.yardrunner.ca'),
         'cloudflare' => [
-            'token' => env('YARDLINE_DNS_CLOUDFLARE_TOKEN'),
-            'zone_id' => env('YARDLINE_DNS_CLOUDFLARE_ZONE'),
+            'token' => $env('DNS_CLOUDFLARE_TOKEN'),
+            'zone_id' => $env('DNS_CLOUDFLARE_ZONE'),
         ],
         // Largest logo upload, in kilobytes.
         'logo_max_kb' => 2048,
@@ -135,7 +141,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Where YardRunner staff look after tenants. Staff accounts are added with
-    | `php artisan yardline:staff:add`. Staff must turn on two-factor
+    | `php artisan yardrunner:staff:add`. Staff must turn on two-factor
     | authentication before they can open it, unless this is switched off
     | (for local development only).
     |
@@ -145,7 +151,7 @@ return [
     */
 
     'back_office' => [
-        'require_two_factor' => (bool) env('YARDLINE_ADMIN_REQUIRE_2FA', true),
+        'require_two_factor' => (bool) $env('ADMIN_REQUIRE_2FA', true),
 
         // Worked out from the tenant's subscription (see App\Billing\Plan).
         'plans' => [
@@ -165,14 +171,14 @@ return [
     | the spot without Stripe (non-production only).
     |
     | Prices are found in Stripe by lookup key. `php artisan
-    | yardline:billing:stripe-setup` creates the products and prices from
+    | yardrunner:billing:stripe-setup` creates the products and prices from
     | the amounts below. Change an amount here and run it again to add a
     | new price; existing subscriptions move to it on their next change.
     |
     */
 
     'billing' => [
-        'driver' => env('YARDLINE_BILLING_DRIVER', 'fake'),
+        'driver' => $env('BILLING_DRIVER', 'fake'),
         'trial_days' => 14,
         'currency' => 'cad',
 
@@ -183,7 +189,7 @@ return [
         ],
 
         // Stripe Tax on the subscription (HST/GST/QST). Needs Stripe Tax on.
-        'automatic_tax' => (bool) env('YARDLINE_BILLING_AUTOMATIC_TAX', true),
+        'automatic_tax' => (bool) $env('BILLING_AUTOMATIC_TAX', true),
         'webhook_secret' => env('STRIPE_BILLING_WEBHOOK_SECRET'),
         // Optional: a customer portal configuration (bpc_...); the default is used otherwise.
         'portal_configuration' => env('STRIPE_BILLING_PORTAL_CONFIGURATION'),

@@ -65,7 +65,7 @@ Route::controller(HelpController::class)->prefix('help')->name('help.')->group(f
     Route::get('{category}/{article}', 'article')->where(['category' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->name('article');
 });
 
-// One-click sign-in to the demo yard (404 unless YARDLINE_DEMO=true).
+// One-click sign-in to the demo yard (404 unless YARDRUNNER_DEMO=true).
 Route::middleware('guest')->group(function () {
     Route::get('demo', [DemoLoginController::class, 'show'])->name('demo');
     Route::post('demo', [DemoLoginController::class, 'login'])->middleware('throttle:20,1')->name('demo.login');

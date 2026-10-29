@@ -87,10 +87,10 @@ class AppServiceProvider extends ServiceProvider
 
         // The demo yard never talks to Stripe: flat tax and fake payment links,
         // whatever the configured drivers are.
-        $this->app->bind(TaxCalculator::class, fn (Application $app) => match (Demo::isCurrentTenant() ? 'flat' : config('yardline.tax.driver')) {
+        $this->app->bind(TaxCalculator::class, fn (Application $app) => match (Demo::isCurrentTenant() ? 'flat' : config('yardrunner.tax.driver')) {
             'stripe' => $app->make(StripeTaxCalculator::class),
-            'flat' => new FlatRateTaxCalculator((float) config('yardline.tax.flat_rate')),
-            default => throw new RuntimeException('Unknown YARDLINE_TAX_DRIVER: '.config('yardline.tax.driver')),
+            'flat' => new FlatRateTaxCalculator((float) config('yardrunner.tax.flat_rate')),
+            default => throw new RuntimeException('Unknown YARDRUNNER_TAX_DRIVER: '.config('yardrunner.tax.driver')),
         });
 
         $this->app->bind(RentalGateway::class, function (Application $app) {
@@ -98,7 +98,7 @@ class AppServiceProvider extends ServiceProvider
                 return new FakeRentalGateway;
             }
 
-            $driver = config('yardline.payments.driver');
+            $driver = config('yardrunner.payments.driver');
 
             if ($driver === 'fake' && $app->isProduction()) {
                 throw new RuntimeException('The fake payments driver cannot be used in production.');
@@ -109,22 +109,22 @@ class AppServiceProvider extends ServiceProvider
 
         // Each yard's connected account (Stripe Connect). The demo yard and
         // local development simulate it.
-        $this->app->bind(ConnectAccounts::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardline.payments.driver') === 'stripe'
+        $this->app->bind(ConnectAccounts::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardrunner.payments.driver') === 'stripe'
             ? $app->make(StripeConnectAccounts::class)
             : new FakeConnectAccounts);
 
         // Card fees for the profit report: read from Stripe, or estimated
         // where there's no processor (local development, the demo yard).
-        $this->app->bind(CardFees::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardline.payments.driver') === 'stripe'
+        $this->app->bind(CardFees::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardrunner.payments.driver') === 'stripe'
             ? $app->make(StripeCardFees::class)
             : new EstimatedCardFees);
 
         // Yards' own sending domains: the email service and YardRunner's DNS
         // zone. The demo yard and local development simulate both.
-        $this->app->bind(DomainProvider::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardline.email.domains_driver') === 'resend'
+        $this->app->bind(DomainProvider::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardrunner.email.domains_driver') === 'resend'
             ? $app->make(ResendDomainProvider::class)
             : new FakeDomainProvider);
-        $this->app->bind(DnsZone::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardline.email.dns_driver') === 'cloudflare'
+        $this->app->bind(DnsZone::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardrunner.email.dns_driver') === 'cloudflare'
             ? $app->make(CloudflareDnsZone::class)
             : new LocalDnsZone);
 
@@ -136,7 +136,7 @@ class AppServiceProvider extends ServiceProvider
                 return new FakeCheckoutLinks;
             }
 
-            $driver = config('yardline.payments.driver');
+            $driver = config('yardrunner.payments.driver');
 
             if ($driver === 'fake' && $app->isProduction()) {
                 throw new RuntimeException('The fake payments driver cannot be used in production.');
@@ -145,19 +145,19 @@ class AppServiceProvider extends ServiceProvider
             return match ($driver) {
                 'stripe' => $app->make(StripeCheckoutLinks::class),
                 'fake' => new FakeCheckoutLinks,
-                default => throw new RuntimeException("Unknown YARDLINE_PAYMENTS_DRIVER: {$driver}"),
+                default => throw new RuntimeException("Unknown YARDRUNNER_PAYMENTS_DRIVER: {$driver}"),
             };
         });
 
         // Refunds back to the card. The demo yard and local development
         // refund on the spot.
-        $this->app->bind(CardRefunds::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardline.payments.driver') === 'stripe'
+        $this->app->bind(CardRefunds::class, fn (Application $app) => ! Demo::isCurrentTenant() && config('yardrunner.payments.driver') === 'stripe'
             ? $app->make(StripeCardRefunds::class)
             : new FakeCardRefunds);
 
         // What tenants pay YardRunner: Stripe Billing, or subscribed on the spot locally.
         $this->app->bind(BillingGateway::class, function (Application $app) {
-            $driver = config('yardline.billing.driver');
+            $driver = config('yardrunner.billing.driver');
 
             if ($driver === 'fake' && $app->isProduction()) {
                 throw new RuntimeException('The fake billing driver cannot be used in production.');
@@ -166,7 +166,7 @@ class AppServiceProvider extends ServiceProvider
             return match ($driver) {
                 'stripe' => $app->make(StripeBillingGateway::class),
                 'fake' => new FakeBillingGateway,
-                default => throw new RuntimeException("Unknown YARDLINE_BILLING_DRIVER: {$driver}"),
+                default => throw new RuntimeException("Unknown YARDRUNNER_BILLING_DRIVER: {$driver}"),
             };
         });
     }

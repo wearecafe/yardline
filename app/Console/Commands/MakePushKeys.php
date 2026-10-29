@@ -12,7 +12,10 @@ use Minishlink\WebPush\VAPID;
  */
 class MakePushKeys extends Command
 {
-    protected $signature = 'yardline:push:keys';
+    protected $signature = 'yardrunner:push:keys';
+
+    /** The name it had before the rename, kept so old habits and docs still work. */
+    protected $aliases = ['yardline:push:keys'];
 
     protected $description = 'Make a VAPID key pair for web push alerts';
 
@@ -26,7 +29,7 @@ class MakePushKeys extends Command
         $this->line("VAPID_PRIVATE_KEY={$keys['privateKey']}");
         $this->line('VAPID_SUBJECT=mailto:support@yardrunner.ca');
 
-        if (filled(config('yardline.push.public_key'))) {
+        if (filled(config('yardrunner.push.public_key'))) {
             $this->newLine();
             $this->warn('Keys are already set here. Replacing them stops alerts on every device until each one opens the app again.');
         }

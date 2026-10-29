@@ -57,9 +57,9 @@ class StripeRentalGateway implements RentalGateway
         $rental = $payment->rental;
         $customer = $rental->customer;
         $metadata = [
-            'yardline_tenant_id' => (string) $payment->tenant_id,
-            'yardline_rental_id' => (string) $rental->id,
-            'yardline_rental_payment_id' => (string) $payment->id,
+            'yardrunner_tenant_id' => (string) $payment->tenant_id,
+            'yardrunner_rental_id' => (string) $rental->id,
+            'yardrunner_rental_payment_id' => (string) $payment->id,
         ];
 
         $params = [
@@ -148,7 +148,7 @@ class StripeRentalGateway implements RentalGateway
             'name' => $customer->full_name,
             'email' => $customer->email,
             'phone' => $customer->phone,
-            'metadata' => ['yardline_customer_id' => (string) $customer->id],
+            'metadata' => ['yardrunner_customer_id' => (string) $customer->id],
         ]), $this->stripe->requestOptions());
 
         $customer->forceFill(['stripe_customer_id' => $created->id])->saveQuietly();

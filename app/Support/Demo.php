@@ -15,7 +15,7 @@ final class Demo
 {
     public static function enabled(): bool
     {
-        return (bool) config('yardline.demo');
+        return (bool) config('yardrunner.demo');
     }
 
     public static function tenant(): ?Tenant
@@ -54,7 +54,7 @@ final class Demo
             return $tenant;
         }
 
-        Cache::lock('yardline:demo:seed', 120)->block(60, function () {
+        Cache::lock('yardrunner:demo:seed', 120)->block(60, function () {
             if (self::tenantId() === null) {
                 $previous = CurrentTenant::get();
                 CurrentTenant::set(null);

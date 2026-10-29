@@ -101,7 +101,7 @@ class BrandingSettingsTest extends TestCase
 
     public function test_the_logo_is_stored_and_served_publicly(): void
     {
-        Storage::fake((string) config('yardline.files_disk'));
+        Storage::fake((string) config('yardrunner.files_disk'));
         $this->signInToNewTenant();
         $tenant = CurrentTenant::get();
 
@@ -111,7 +111,7 @@ class BrandingSettingsTest extends TestCase
 
         $brand = BrandSettings::for($tenant->refresh());
         $this->assertNotNull($brand->logoPath);
-        Storage::disk((string) config('yardline.files_disk'))->assertExists($brand->logoPath);
+        Storage::disk((string) config('yardrunner.files_disk'))->assertExists($brand->logoPath);
 
         auth()->logout();
         $this->get(route('brand.logo', ['tenant' => $tenant->slug, 'v' => $brand->logoVersion]))

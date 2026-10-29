@@ -60,7 +60,7 @@ class StripeBillingGateway implements BillingGateway
             'cancel_url' => $cancelUrl,
         ];
 
-        if (config('yardline.billing.automatic_tax')) {
+        if (config('yardrunner.billing.automatic_tax')) {
             $params['automatic_tax'] = ['enabled' => true];
         }
 
@@ -77,7 +77,7 @@ class StripeBillingGateway implements BillingGateway
 
         $params = ['customer' => $tenant->stripe_customer_id, 'return_url' => $returnUrl];
 
-        if (filled($configuration = config('yardline.billing.portal_configuration'))) {
+        if (filled($configuration = config('yardrunner.billing.portal_configuration'))) {
             $params['configuration'] = $configuration;
         }
 
@@ -177,7 +177,7 @@ class StripeBillingGateway implements BillingGateway
             $missing = array_diff_key($keys, $found);
 
             if ($missing !== []) {
-                throw new RuntimeException('Stripe has no active price for '.implode(', ', $missing).'. Run php artisan yardline:billing:stripe-setup.');
+                throw new RuntimeException('Stripe has no active price for '.implode(', ', $missing).'. Run php artisan yardrunner:billing:stripe-setup.');
             }
 
             return $found;
@@ -188,7 +188,7 @@ class StripeBillingGateway implements BillingGateway
 
     public static function pricesCacheKey(): string
     {
-        return 'yardline:billing:prices:'.md5(implode(',', self::lookupKeys()));
+        return 'yardrunner:billing:prices:'.md5(implode(',', self::lookupKeys()));
     }
 
     /**
@@ -198,7 +198,7 @@ class StripeBillingGateway implements BillingGateway
     {
         $keys = [];
 
-        foreach (array_keys((array) config('yardline.billing.items')) as $key) {
+        foreach (array_keys((array) config('yardrunner.billing.items')) as $key) {
             $keys[(string) $key] = Plan::lookupKey((string) $key);
         }
 

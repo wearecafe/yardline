@@ -55,13 +55,13 @@ class PushAlertsTest extends TestCase
         parent::setUp();
 
         config([
-            'yardline.tax.driver' => 'flat',
-            'yardline.tax.flat_rate' => 0.13,
-            'yardline.payments.driver' => 'fake',
-            'yardline.push.public_key' => 'BPublicKeyForTests',
-            'yardline.push.private_key' => 'private-key-for-tests',
+            'yardrunner.tax.driver' => 'flat',
+            'yardrunner.tax.flat_rate' => 0.13,
+            'yardrunner.payments.driver' => 'fake',
+            'yardrunner.push.public_key' => 'BPublicKeyForTests',
+            'yardrunner.push.private_key' => 'private-key-for-tests',
         ]);
-        Storage::fake(config('yardline.files_disk'));
+        Storage::fake(config('yardrunner.files_disk'));
 
         $this->owner = $this->signInToNewTenant();
         $this->tenant = CurrentTenant::get() ?? Tenant::factory()->create();
@@ -351,8 +351,8 @@ class PushAlertsTest extends TestCase
         ]);
 
         CurrentTenant::set(null);
-        $this->artisan('yardline:rentals:remind')->assertSuccessful();
-        $this->artisan('yardline:rentals:remind')->assertSuccessful();
+        $this->artisan('yardrunner:rentals:remind')->assertSuccessful();
+        $this->artisan('yardrunner:rentals:remind')->assertSuccessful();
 
         Notification::assertSentToTimes($desk, StaffAlert::class, 1);
         Notification::assertSentTo($desk, StaffAlert::class, fn (StaffAlert $alert) => $alert->kind === 'rental_overdue'
@@ -362,7 +362,7 @@ class PushAlertsTest extends TestCase
 
     public function test_without_keys_an_alert_is_logged_not_sent(): void
     {
-        config(['yardline.push.public_key' => null, 'yardline.push.private_key' => null]);
+        config(['yardrunner.push.public_key' => null, 'yardrunner.push.private_key' => null]);
         $this->assertFalse(WebPushChannel::configured());
 
         Log::spy();

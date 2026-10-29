@@ -62,7 +62,7 @@ final readonly class EmailTheme
     {
         $footer = array_values(array_filter([
             $why,
-            'YardRunner · '.config('yardline.email.postal_address').' · yardrunner.ca',
+            'YardRunner · '.config('yardrunner.email.postal_address').' · yardrunner.ca',
         ]));
 
         return new self(

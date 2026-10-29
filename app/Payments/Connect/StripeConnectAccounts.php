@@ -34,7 +34,7 @@ class StripeConnectAccounts implements ConnectAccounts
             }
 
             $account = $this->stripe->client()->accounts->create(array_filter([
-                'country' => (string) config('yardline.payments.country', 'CA'),
+                'country' => (string) config('yardrunner.payments.country', 'CA'),
                 'email' => $email,
                 'default_currency' => strtolower($tenant->currency),
                 'controller' => [

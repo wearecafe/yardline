@@ -3,7 +3,7 @@
 namespace App\Email\Domains;
 
 /**
- * YardRunner's own DNS zone for sending domains (yardline.email.dns_zone).
+ * YardRunner's own DNS zone for sending domains (yardrunner.email.dns_zone).
  * The yard's records are CNAMEs pointing at names here, and the email
  * service's real records live under those names, so the yard's DNS never
  * names the service and the service can change without the yard's help.

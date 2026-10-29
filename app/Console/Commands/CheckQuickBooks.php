@@ -20,7 +20,10 @@ use Throwable;
  */
 class CheckQuickBooks extends Command
 {
-    protected $signature = 'yardline:quickbooks:check {--days=3}';
+    protected $signature = 'yardrunner:quickbooks:check {--days=3}';
+
+    /** The name it had before the rename, kept so old habits and docs still work. */
+    protected $aliases = ['yardline:quickbooks:check'];
 
     protected $description = 'Re-send failed QuickBooks records and compare recent totals';
 

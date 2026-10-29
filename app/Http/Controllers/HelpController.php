@@ -130,7 +130,7 @@ class HelpController extends Controller
             $nav[] = ['slug' => $slug, 'title' => $category['title']];
         }
 
-        $email = config('yardline.support_email');
+        $email = config('yardrunner.support_email');
 
         return [
             'nav' => $nav,

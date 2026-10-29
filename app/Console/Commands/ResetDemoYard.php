@@ -15,7 +15,10 @@ use Illuminate\Support\Facades\DB;
  */
 class ResetDemoYard extends Command
 {
-    protected $signature = 'yardline:demo:reset {--force : Run without confirmation (for the scheduler)}';
+    protected $signature = 'yardrunner:demo:reset {--force : Run without confirmation (for the scheduler)}';
+
+    /** The name it had before the rename, kept so old habits and docs still work. */
+    protected $aliases = ['yardline:demo:reset'];
 
     protected $description = 'Rebuild the Escarpment Stone demo yard with fresh data dated today';
 
@@ -97,7 +100,7 @@ class ResetDemoYard extends Command
 
         // The same lock /demo takes when it builds a missing demo yard, so a
         // visitor arriving mid-reset waits instead of building a second one.
-        Cache::lock('yardline:demo:seed', 600)->block(120, function () use ($tenant) {
+        Cache::lock('yardrunner:demo:seed', 600)->block(120, function () use ($tenant) {
             if ($tenant !== null) {
                 DB::transaction(function () use ($tenant) {
                     foreach (self::TABLES as $table) {

@@ -13,9 +13,9 @@ class StripeCheckoutLinks implements CheckoutLinks
     {
         $order = $payment->order;
         $metadata = [
-            'yardline_tenant_id' => (string) $payment->tenant_id,
-            'yardline_order_id' => (string) $order->id,
-            'yardline_payment_id' => (string) $payment->id,
+            'yardrunner_tenant_id' => (string) $payment->tenant_id,
+            'yardrunner_order_id' => (string) $order->id,
+            'yardrunner_payment_id' => (string) $payment->id,
         ];
 
         $session = $this->stripe->client()->checkout->sessions->create([
