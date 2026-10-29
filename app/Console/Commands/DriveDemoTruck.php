@@ -16,7 +16,10 @@ use Illuminate\Console\Command;
  */
 class DriveDemoTruck extends Command
 {
-    protected $signature = 'yardline:demo:drive';
+    protected $signature = 'yardrunner:demo:drive';
+
+    /** The name it had before the rename, kept so old habits and docs still work. */
+    protected $aliases = ['yardline:demo:drive'];
 
     protected $description = 'Move the demo yard truck along its route, as if the driver phone were sharing its location';
 

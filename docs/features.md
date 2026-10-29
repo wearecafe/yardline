@@ -124,7 +124,7 @@ share location while the page is on screen. The portal shows
 `DeliveryTracking` when the yard turns it on in Settings → Delivery; the
 truck's position shows only once the contractor's stop is next and on
 its way. The demo driver never shares a visitor's real position:
-`yardline:demo:drive` moves Truck 2 along a fixed route every five
+`yardrunner:demo:drive` moves Truck 2 along a fixed route every five
 minutes instead.
 
 ## Rentals
@@ -138,7 +138,7 @@ minutes instead.
 | Service intervals that lock units out                       | Maintenance     | `Maintenance`                       |
 | Deposits and payments                                       | Rental payments | `app/Rentals/Payments`              |
 | Online booking                                              | `/book/{yard}`  | `Rentals/BookingController`         |
-| Reminder texts and emails                                   | (scheduled)     | `yardline:rentals:remind`           |
+| Reminder texts and emails                                   | (scheduled)     | `yardrunner:rentals:remind`         |
 
 ## Inventory and purchasing
 
@@ -220,13 +220,13 @@ direct costs, down to gross profit. Operating expenses and net profit stay
 in QuickBooks. Gate `view-profit`, settings in `tenants.settings['reports']`
 (`ReportSettings`).
 
-| Feature                                                            | Screens                   | Code                                        |
-| ------------------------------------------------------------------ | ------------------------- | ------------------------------------------- |
-| Statement, comparison, trend, by category/product/customer/unit    | Reports → Profit and loss | `App\Reports\ProfitReport`, `ProfitFilters` |
-| Drill-down to the records behind any amount; CSV and PDF           | Profit and loss           | `ProfitReportController`                    |
-| Average cost per product per yard                                  | (Purchasing, transfers)   | `InventoryLedger`                           |
-| Cost and list price fixed on each goods line at confirmation       | Order confirm             | `RecordLineCosts`                           |
-| Card processor fees on payments (hourly, `yardline:payments:fees`) | (scheduled)               | `app/Payments/Fees`                         |
+| Feature                                                              | Screens                   | Code                                        |
+| -------------------------------------------------------------------- | ------------------------- | ------------------------------------------- |
+| Statement, comparison, trend, by category/product/customer/unit      | Reports → Profit and loss | `App\Reports\ProfitReport`, `ProfitFilters` |
+| Drill-down to the records behind any amount; CSV and PDF             | Profit and loss           | `ProfitReportController`                    |
+| Average cost per product per yard                                    | (Purchasing, transfers)   | `InventoryLedger`                           |
+| Cost and list price fixed on each goods line at confirmation         | Order confirm             | `RecordLineCosts`                           |
+| Card processor fees on payments (hourly, `yardrunner:payments:fees`) | (scheduled)               | `app/Payments/Fees`                         |
 
 Rules:
 
@@ -540,7 +540,7 @@ flow: nothing a yard sees names the email service.
    `yr`), publishes the service's real records on YardRunner's zone
    (`dkim-{tenant}.dns.yardrunner.ca`, `bounce-{tenant}…`) and gives the
    yard CNAMEs pointing there, plus an optional DMARC record.
-3. `yardline:email:domains` runs every 10 minutes: domains still waiting
+3. `yardrunner:email:domains` runs every 10 minutes: domains still waiting
    are checked for 72 hours (then "expired" until **Check now**), verified
    ones hourly. Verified means every required CNAME resolves and the
    service passes the domain.
@@ -551,8 +551,8 @@ flow: nothing a yard sees names the email service.
    owners and admins are emailed (`SendingDomainMessage`). Sending resumes
    when the records are back.
 
-Drivers: `yardline.email.domains_driver` (`resend` or `fake`) and
-`yardline.email.dns_driver` (`cloudflare` or `local`). The demo yard and
+Drivers: `yardrunner.email.domains_driver` (`resend` or `fake`) and
+`yardrunner.email.dns_driver` (`cloudflare` or `local`). The demo yard and
 local development use the fakes. Tests answer DNS with
 `DnsLookup::fake()`.
 
@@ -566,7 +566,7 @@ local development use the fakes. Tests answer DNS with
   registrations, documents. The `account.updated` webhook keeps
   `tenants.stripe_charges_enabled` and friends current. Card payments are
   refused until charges are on; each one carries YardRunner's application
-  fee (`yardline.payments.application_fee`), set at capture for deposit
+  fee (`yardrunner.payments.application_fee`), set at capture for deposit
   holds. Local development and the demo yard simulate setup
   (`FakeConnectAccounts`). See [laravel-cloud.md](laravel-cloud.md).
 - **QuickBooks Online** receives invoices, payments, credit memos, refunds
@@ -577,10 +577,10 @@ local development use the fakes. Tests answer DNS with
 
 `/admin`, for YardRunner staff. Staff are users with no tenant and
 `is_platform_staff` set; add or remove them with
-`php artisan yardline:staff:add you@example.com --name="Your Name"`
+`php artisan yardrunner:staff:add you@example.com --name="Your Name"`
 (`--remove` takes access away). There's no screen for it on purpose.
 Staff must turn on two-factor authentication before `/admin` opens
-(`YARDLINE_ADMIN_REQUIRE_2FA=false` switches that off locally). Tenant
+(`YARDRUNNER_ADMIN_REQUIRE_2FA=false` switches that off locally). Tenant
 users get a 404 there, and staff are sent back to `/admin` from the yard
 screens (`KeepStaffInBackOffice`).
 
@@ -622,7 +622,7 @@ would return nothing). Health and churn risk are in `TenantHealth`.
 What tenants pay YardRunner: a base subscription ($749 CAD a month),
 Rentals ($199 a month) and Time and attendance ($5 per person tracked a
 month), plus tax. Amounts and Stripe lookup keys are in
-`config/yardline.php` (`billing`); the marketing home page's pricing table
+`config/yardrunner.php` (`billing`); the marketing home page's pricing table
 reads them too. Billed through Stripe Billing on YardRunner's own Stripe
 account, never on a yard's connected account. Code is in `app/Billing`.
 
@@ -653,20 +653,20 @@ account, never on a yard's connected account. Code is in `app/Billing`.
   subscribing in the last two days of their trial gets the difference
   free; the trial end Stripe sends back becomes `trial_ends_at`.
 - **Prices** are found in Stripe by lookup key. `php artisan
-  yardline:billing:stripe-setup` creates the products and prices (and,
+  yardrunner:billing:stripe-setup` creates the products and prices (and,
   with `--webhook=<url>`, the webhook). Change an amount in config and
   run it again: it adds a new price and moves the lookup key, and each
   subscription moves to it on its next change.
-- `php artisan yardline:billing:refresh` runs nightly to update the
+- `php artisan yardrunner:billing:refresh` runs nightly to update the
   status shown in the back office (Trial → Trial ended).
-- Locally `YARDLINE_BILLING_DRIVER=fake` subscribes on the spot with no
+- Locally `YARDRUNNER_BILLING_DRIVER=fake` subscribes on the spot with no
   Stripe. The demo yard is never billed.
 
 ## Demo yard
 
 `Database\Seeders\DemoYardSeeder` builds Escarpment Stone & Landscape
 Supply with data for every module, dated relative to today.
-`yardline:demo:reset` rebuilds it nightly. When adding a tenant table, add
+`yardrunner:demo:reset` rebuilds it nightly. When adding a tenant table, add
 it to `ResetDemoYard::TABLES` (children before parents).
 
 ## Help center
@@ -678,7 +678,7 @@ matter. Categories are listed in `App\Help\HelpCenter::CATEGORIES`. Link
 between articles with `/help/{category}/{slug}`; `HelpCenterTest` fails on
 a broken link. A blockquote starting with **Tip**, **Note** or **Heads up**
 renders as a callout. When a screen or rule changes, update its article.
-Set `YARDLINE_SUPPORT_EMAIL` to show contact links.
+Set `YARDRUNNER_SUPPORT_EMAIL` to show contact links.
 
 ## Not built yet
 

@@ -365,12 +365,12 @@ class SetupController extends Controller
                 'prices' => [
                     'rentals_cents' => Plan::amount(Plan::RENTALS),
                     'time_cents' => Plan::amount(Plan::TIME),
-                    'trial_days' => (int) config('yardline.billing.trial_days', 14),
+                    'trial_days' => (int) config('yardrunner.billing.trial_days', 14),
                 ],
             ],
             'products' => [
                 'productCount' => Product::query()->count(),
-                'supportEmail' => config('yardline.support_email'),
+                'supportEmail' => config('yardrunner.support_email'),
             ],
             'team' => [
                 'people' => User::query()
@@ -397,7 +397,7 @@ class SetupController extends Controller
                         'logo_url' => $brand->logoPath !== null ? route('brand.logo', ['tenant' => $tenant->slug, 'v' => $brand->logoVersion]) : null,
                     ],
                     'swatches' => self::SWATCHES,
-                    'logoMaxKb' => (int) config('yardline.email.logo_max_kb'),
+                    'logoMaxKb' => (int) config('yardrunner.email.logo_max_kb'),
                 ];
             })(),
             'payments' => [

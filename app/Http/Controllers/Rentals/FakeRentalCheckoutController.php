@@ -26,7 +26,7 @@ class FakeRentalCheckoutController extends Controller
         CurrentTenant::set($payment->tenant_id);
 
         $allowed = Demo::isCurrentTenant()
-            || (! app()->isProduction() && config('yardline.payments.driver') === 'fake');
+            || (! app()->isProduction() && config('yardrunner.payments.driver') === 'fake');
         abort_unless($allowed, 404);
 
         $payments->completeLink($payment->fresh() ?? $payment, 'pi_fake_'.$payment->id, [

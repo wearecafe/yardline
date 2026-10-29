@@ -13,7 +13,10 @@ use Illuminate\Console\Command;
  */
 class RefreshBillingStatus extends Command
 {
-    protected $signature = 'yardline:billing:refresh';
+    protected $signature = 'yardrunner:billing:refresh';
+
+    /** The name it had before the rename, kept so old habits and docs still work. */
+    protected $aliases = ['yardline:billing:refresh'];
 
     protected $description = 'Bring every tenant’s plan, price and billing status up to date';
 

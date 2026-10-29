@@ -39,7 +39,7 @@ final readonly class ProfitFilters
     /** orders.source => label */
     public const CHANNELS = [
         'counter' => 'Counter',
-        'yardline' => 'Staff-entered',
+        'staff' => 'Staff-entered',
         'portal' => 'Contractor portal',
     ];
 

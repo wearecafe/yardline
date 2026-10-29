@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Yardline;
+namespace Tests\Feature\Yardrunner;
 
 use App\Enums\UserRole;
 use App\Models\Tenant;
@@ -31,8 +31,8 @@ class StripeConnectTest extends TestCase
         parent::setUp();
 
         config([
-            'yardline.payments.driver' => 'fake',
-            'yardline.payments.application_fee' => ['percent' => 0.5, 'fixed_cents' => 0],
+            'yardrunner.payments.driver' => 'fake',
+            'yardrunner.payments.application_fee' => ['percent' => 0.5, 'fixed_cents' => 0],
             'services.stripe.connect_webhook_secret' => self::CONNECT_SECRET,
             'services.stripe.webhook_secret' => 'whsec_test_platform',
         ]);
@@ -86,7 +86,7 @@ class StripeConnectTest extends TestCase
     public function test_simulating_setup_is_only_for_local_development(): void
     {
         $this->signInToNewTenant();
-        config(['yardline.payments.driver' => 'stripe', 'services.stripe.secret' => 'sk_test_123']);
+        config(['yardrunner.payments.driver' => 'stripe', 'services.stripe.secret' => 'sk_test_123']);
 
         $this->post(route('payments.simulate'))->assertNotFound();
     }
@@ -138,7 +138,7 @@ class StripeConnectTest extends TestCase
         $this->assertSame(0, StripeGateway::applicationFee(0));
         $this->assertSame(1, StripeGateway::applicationFee(150)); // 0.75¢ rounds to 1
 
-        config(['yardline.payments.application_fee' => ['percent' => 1, 'fixed_cents' => 25]]);
+        config(['yardrunner.payments.application_fee' => ['percent' => 1, 'fixed_cents' => 25]]);
         $this->assertSame(125, StripeGateway::applicationFee(10_000));
         $this->assertSame(20, StripeGateway::applicationFee(20)); // never more than the payment
     }

@@ -74,8 +74,8 @@ class StripeGateway
             return 0;
         }
 
-        $percent = (float) config('yardline.payments.application_fee.percent', 0);
-        $fixed = (int) config('yardline.payments.application_fee.fixed_cents', 0);
+        $percent = (float) config('yardrunner.payments.application_fee.percent', 0);
+        $fixed = (int) config('yardrunner.payments.application_fee.fixed_cents', 0);
         $fee = (int) round($cents * $percent / 100) + $fixed;
 
         return max(0, min($fee, $cents));

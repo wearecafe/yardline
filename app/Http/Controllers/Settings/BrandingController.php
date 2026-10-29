@@ -118,7 +118,7 @@ class BrandingController extends Controller
 
         $request->validate([
             // SVG and transparent PNGs don't show reliably in email apps.
-            'logo' => ['required', 'file', 'mimes:png,jpg,jpeg', 'max:'.(int) config('yardline.email.logo_max_kb'), 'dimensions:min_height=40,max_width=4000,max_height=4000'],
+            'logo' => ['required', 'file', 'mimes:png,jpg,jpeg', 'max:'.(int) config('yardrunner.email.logo_max_kb'), 'dimensions:min_height=40,max_width=4000,max_height=4000'],
         ]);
 
         $brand = BrandSettings::for($tenant);

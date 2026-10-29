@@ -29,7 +29,7 @@ class AlertsController extends Controller
         $user = $this->user($request);
 
         return Inertia::render('settings/alerts', [
-            'publicKey' => WebPushChannel::configured() ? (string) config('yardline.push.public_key') : null,
+            'publicKey' => WebPushChannel::configured() ? (string) config('yardrunner.push.public_key') : null,
             'demo' => Demo::isCurrentTenant(),
             'alerts' => StaffAlerts::for($user),
             'devices' => $user->pushSubscriptions()

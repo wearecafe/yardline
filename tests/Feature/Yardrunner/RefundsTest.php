@@ -65,10 +65,10 @@ class RefundsTest extends TestCase
         parent::setUp();
 
         config([
-            'yardline.tax.driver' => 'flat',
-            'yardline.tax.flat_rate' => 0.13,
-            'yardline.payments.driver' => 'fake',
-            'yardline.payments.application_fee' => ['percent' => 0.5, 'fixed_cents' => 0],
+            'yardrunner.tax.driver' => 'flat',
+            'yardrunner.tax.flat_rate' => 0.13,
+            'yardrunner.payments.driver' => 'fake',
+            'yardrunner.payments.application_fee' => ['percent' => 0.5, 'fixed_cents' => 0],
             'services.stripe.connect_webhook_secret' => self::CONNECT_SECRET,
         ]);
 
@@ -149,7 +149,7 @@ class RefundsTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertSame([['payment' => $payment->id, 'cents' => 5_000]], array_map(fn ($r) => ['payment' => $r['payment'], 'cents' => $r['cents']], $this->cardRefunds));
-        $this->assertSame((string) $order->id, $this->cardRefunds[0]['metadata']['yardline_order_id']);
+        $this->assertSame((string) $order->id, $this->cardRefunds[0]['metadata']['yardrunner_order_id']);
 
         $refund = Refund::query()->sole();
         $this->assertSame(PaymentTender::StripeCheckout, $refund->tender);
@@ -362,7 +362,7 @@ class RefundsTest extends TestCase
         $this->assertSame('stripe_checkout', $credit->refund_tender);
         $this->assertSame('used', $credit->status);
         $this->assertSame([5_650], array_column($this->cardRefunds, 'cents'));
-        $this->assertSame((string) $credit->id, $this->cardRefunds[0]['metadata']['yardline_credit_note_id']);
+        $this->assertSame((string) $credit->id, $this->cardRefunds[0]['metadata']['yardrunner_credit_note_id']);
 
         // The card has less left to refund, but the order is still paid.
         $this->assertSame(5_650, $card->refresh()->refunded_cents);

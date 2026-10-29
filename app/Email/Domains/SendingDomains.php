@@ -49,7 +49,7 @@ final class SendingDomains
 
         $records = [];
         $providerRecords = [];
-        $zone = (string) config('yardline.email.dns_zone');
+        $zone = (string) config('yardrunner.email.dns_zone');
 
         foreach ($byHost as $host => $hostRecords) {
             $signing = str_contains($host, '_domainkey');

@@ -21,7 +21,7 @@ class WebPushChannel
 {
     public static function configured(): bool
     {
-        return filled(config('yardline.push.public_key')) && filled(config('yardline.push.private_key'));
+        return filled(config('yardrunner.push.public_key')) && filled(config('yardrunner.push.private_key'));
     }
 
     public function send(object $notifiable, Notification $notification): void
@@ -47,9 +47,9 @@ class WebPushChannel
 
         $push = new WebPush([
             'VAPID' => [
-                'subject' => (string) config('yardline.push.subject'),
-                'publicKey' => (string) config('yardline.push.public_key'),
-                'privateKey' => (string) config('yardline.push.private_key'),
+                'subject' => (string) config('yardrunner.push.subject'),
+                'publicKey' => (string) config('yardrunner.push.public_key'),
+                'privateKey' => (string) config('yardrunner.push.private_key'),
             ],
         ], [
             'TTL' => $message->ttl,

@@ -47,7 +47,7 @@ class BillingController extends Controller
             ],
             'lines' => $plan->lines(),
             'total_cents' => $plan->monthlyCents(),
-            'currency' => strtoupper((string) config('yardline.billing.currency', 'cad')),
+            'currency' => strtoupper((string) config('yardrunner.billing.currency', 'cad')),
             'tracked' => $plan->seats,
         ]);
     }

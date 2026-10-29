@@ -13,7 +13,10 @@ use Throwable;
 
 class PullQuickBooksPayments extends Command
 {
-    protected $signature = 'yardline:quickbooks:pull';
+    protected $signature = 'yardrunner:quickbooks:pull';
+
+    /** The name it had before the rename, kept so old habits and docs still work. */
+    protected $aliases = ['yardline:quickbooks:pull'];
 
     protected $description = 'Bring payments entered in QuickBooks against YardRunner invoices into YardRunner';
 

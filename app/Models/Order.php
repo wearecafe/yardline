@@ -102,7 +102,7 @@ class Order extends Model implements HasYard
     protected $attributes = [
         'type' => 'sale',
         'status' => 'draft',
-        'source' => 'yardline',
+        'source' => 'staff',
         'fulfillment' => 'pickup',
         'payment_status' => 'unpaid',
         'subtotal_cents' => 0,

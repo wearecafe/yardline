@@ -38,7 +38,7 @@ final readonly class Sender
      */
     public static function fallbackAddress(Tenant $tenant): string
     {
-        $shared = (string) config('yardline.email.tenant_from_domain');
+        $shared = (string) config('yardrunner.email.tenant_from_domain');
 
         return $shared !== '' ? "{$tenant->slug}@{$shared}" : (string) config('mail.from.address');
     }

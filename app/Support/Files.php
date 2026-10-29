@@ -17,7 +17,7 @@ final class Files
 {
     public static function disk(): Filesystem
     {
-        return Storage::disk((string) config('yardline.files_disk'));
+        return Storage::disk((string) config('yardrunner.files_disk'));
     }
 
     public static function directory(string $folder): string

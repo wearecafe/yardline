@@ -85,13 +85,13 @@ class BrandedEmailTest extends TestCase
 
     public function test_customer_emails_use_yardrunners_address_until_the_yard_sends_from_its_own(): void
     {
-        config(['mail.from.address' => 'mail@yardline.test', 'yardline.email.tenant_from_domain' => '']);
+        config(['mail.from.address' => 'mail@yardrunner.test', 'yardrunner.email.tenant_from_domain' => '']);
         $this->signInToNewTenant();
         $tenant = CurrentTenant::get();
 
-        $this->assertSame(['mail@yardline.test', $tenant->name], YardMail::for($tenant)->from);
+        $this->assertSame(['mail@yardrunner.test', $tenant->name], YardMail::for($tenant)->from);
 
-        config(['yardline.email.tenant_from_domain' => 'mail.yardrunner.test']);
+        config(['yardrunner.email.tenant_from_domain' => 'mail.yardrunner.test']);
         $this->assertSame(["{$tenant->slug}@mail.yardrunner.test", $tenant->name], YardMail::for($tenant)->from);
 
         $domain = SendingDomain::query()->create([

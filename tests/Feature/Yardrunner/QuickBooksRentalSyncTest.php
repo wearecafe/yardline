@@ -32,8 +32,8 @@ class QuickBooksRentalSyncTest extends TestCase
 
     public function test_a_rental_is_invoiced_at_check_out_and_updated_at_return(): void
     {
-        config(['yardline.tax.driver' => 'flat', 'yardline.tax.flat_rate' => 0.13, 'yardline.payments.driver' => 'fake']);
-        Storage::fake(config('yardline.files_disk'));
+        config(['yardrunner.tax.driver' => 'flat', 'yardrunner.tax.flat_rate' => 0.13, 'yardrunner.payments.driver' => 'fake']);
+        Storage::fake(config('yardrunner.files_disk'));
         $this->travelTo(CarbonImmutable::parse('2026-11-02 09:00', self::TZ));
         $qbo = (new FakeQuickBooks)->install();
 

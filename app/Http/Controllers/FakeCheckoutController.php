@@ -23,7 +23,7 @@ class FakeCheckoutController extends Controller
         // Allowed for the demo yard anywhere; for real yards, only off production
         // with the fake driver configured.
         $allowed = Demo::isCurrentTenant()
-            || (! app()->isProduction() && config('yardline.payments.driver') === 'fake');
+            || (! app()->isProduction() && config('yardrunner.payments.driver') === 'fake');
         abort_unless($allowed, 404);
 
         $complete->handle($payment, 'pi_fake_'.$payment->id);

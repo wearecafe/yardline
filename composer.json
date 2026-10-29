@@ -1,10 +1,10 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "wearecafe/yardline",
+    "name": "wearecafe/yardrunner",
     "type": "project",
     "description": "Inventory, pricing and order management for masonry and landscape supply yards.",
     "keywords": [
-        "yardline",
+        "yardrunner",
         "erp",
         "inventory"
     ],

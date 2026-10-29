@@ -16,7 +16,10 @@ use Throwable;
  */
 class CheckSendingDomains extends Command
 {
-    protected $signature = 'yardline:email:domains';
+    protected $signature = 'yardrunner:email:domains';
+
+    /** The name it had before the rename, kept so old habits and docs still work. */
+    protected $aliases = ['yardline:email:domains'];
 
     protected $description = 'Check yards’ sending domains for their DNS records';
 

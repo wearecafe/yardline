@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Yardline;
+namespace Tests\Feature\Yardrunner;
 
 use App\Access\UserAccounts;
 use App\Billing\BillingState;
@@ -38,7 +38,7 @@ class BillingTest extends TestCase
     {
         parent::setUp();
 
-        config(['yardline.billing.driver' => 'fake', 'yardline.billing.webhook_secret' => self::SECRET]);
+        config(['yardrunner.billing.driver' => 'fake', 'yardrunner.billing.webhook_secret' => self::SECRET]);
     }
 
     private function tenant(): Tenant
@@ -313,7 +313,7 @@ class BillingTest extends TestCase
     {
         $tenant = Tenant::factory()->trialEnded()->create(['status' => TenantStatus::Trial]);
 
-        $this->artisan('yardline:billing:refresh')->assertSuccessful();
+        $this->artisan('yardrunner:billing:refresh')->assertSuccessful();
 
         $this->assertSame(TenantStatus::Expired, $tenant->fresh()?->status);
     }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import MyTimeController from '@/actions/App/Http/Controllers/Time/MyTimeController';
 import { postJson } from '@/lib/json';
+import { moveStorageKey } from '@/lib/storage';
 import { cn } from '@/lib/utils';
 import type { ClockInfo, PunchKind } from '@/types/time';
 
@@ -15,9 +16,13 @@ type QueuedPunch = {
     accuracy?: number;
 };
 
-const QUEUE_KEY = 'yardline.time.queue';
+const QUEUE_KEY = 'yardrunner.time.queue';
+const OLD_QUEUE_KEY = 'yardline.time.queue';
 
 function readQueue(): QueuedPunch[] {
+    // Punches queued offline before the rename still get sent.
+    moveStorageKey(OLD_QUEUE_KEY, QUEUE_KEY);
+
     try {
         const raw = window.localStorage.getItem(QUEUE_KEY);
 

@@ -548,7 +548,7 @@ class TenantController extends Controller
     private function planLabels(): array
     {
         /** @var array<string, string> $plans */
-        $plans = config('yardline.back_office.plans', []);
+        $plans = config('yardrunner.back_office.plans', []);
 
         return $plans;
     }

@@ -177,11 +177,11 @@ class HelpCenterTest extends TestCase
 
     public function test_support_email_is_shared_when_set(): void
     {
-        config(['yardline.support_email' => 'help@example.com']);
+        config(['yardrunner.support_email' => 'help@example.com']);
 
         $this->get('/help')->assertInertia(fn (Assert $page) => $page->where('supportEmail', 'help@example.com'));
 
-        config(['yardline.support_email' => null]);
+        config(['yardrunner.support_email' => null]);
 
         $this->get('/help')->assertInertia(fn (Assert $page) => $page->where('supportEmail', null));
     }

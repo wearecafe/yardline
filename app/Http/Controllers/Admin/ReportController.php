@@ -26,7 +26,7 @@ class ReportController extends Controller
     public function __invoke(Request $request, TenantMetrics $metrics): Response
     {
         /** @var array<string, string> $plans */
-        $plans = config('yardline.back_office.plans', []);
+        $plans = config('yardrunner.back_office.plans', []);
 
         $filters = $request->validate([
             'plan' => ['nullable', Rule::in(array_keys($plans))],

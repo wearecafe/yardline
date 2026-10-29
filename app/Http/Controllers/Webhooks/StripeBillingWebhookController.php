@@ -42,7 +42,7 @@ class StripeBillingWebhookController extends Controller
             $event = Webhook::constructEvent(
                 $request->getContent(),
                 (string) $request->header('Stripe-Signature'),
-                (string) config('yardline.billing.webhook_secret'),
+                (string) config('yardrunner.billing.webhook_secret'),
             );
         } catch (SignatureVerificationException|UnexpectedValueException) {
             WebhookDelivery::record(self::PROVIDER, null, WebhookDelivery::REJECTED, detail: 'Invalid signature');

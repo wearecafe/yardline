@@ -77,7 +77,7 @@ class RefundPayments
             ]);
 
             if ($locked->tender === PaymentTender::StripeCheckout) {
-                $this->toCard($refund, $locked, ['yardline_order_id' => (string) $order->id]);
+                $this->toCard($refund, $locked, ['yardrunner_order_id' => (string) $order->id]);
             } else {
                 $refund->status = PaymentState::Succeeded;
                 $refund->succeeded_at = now();
@@ -140,7 +140,7 @@ class RefundPayments
                 'approved_by' => $approver?->id,
             ]);
 
-            $this->toCard($refund, $locked, ['yardline_credit_note_id' => (string) $lockedCredit->id]);
+            $this->toCard($refund, $locked, ['yardrunner_credit_note_id' => (string) $lockedCredit->id]);
 
             $locked->refunded_cents += $cents;
             $locked->save();
@@ -218,9 +218,9 @@ class RefundPayments
 
         try {
             $result = $this->cards->refund($payment, $refund->amount_cents, "yardrunner-refund-{$refund->id}-".Str::uuid(), [
-                'yardline_tenant_id' => (string) $refund->tenant_id,
-                'yardline_refund_id' => (string) $refund->id,
-                'yardline_payment_id' => (string) $payment->id,
+                'yardrunner_tenant_id' => (string) $refund->tenant_id,
+                'yardrunner_refund_id' => (string) $refund->id,
+                'yardrunner_payment_id' => (string) $payment->id,
                 ...$metadata,
             ]);
         } catch (CardRefundFailed $e) {

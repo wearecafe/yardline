@@ -8,7 +8,7 @@ use RuntimeException;
 
 /**
  * Publishes sending-domain records on the yardrunner.ca zone through
- * Cloudflare's DNS API (yardline.email.cloudflare).
+ * Cloudflare's DNS API (yardrunner.email.cloudflare).
  */
 final class CloudflareDnsZone implements DnsZone
 {
@@ -46,11 +46,11 @@ final class CloudflareDnsZone implements DnsZone
 
     private function http(): PendingRequest
     {
-        $token = (string) config('yardline.email.cloudflare.token');
-        $zone = (string) config('yardline.email.cloudflare.zone_id');
+        $token = (string) config('yardrunner.email.cloudflare.token');
+        $zone = (string) config('yardrunner.email.cloudflare.zone_id');
 
         if ($token === '' || $zone === '') {
-            throw new RuntimeException('Set YARDLINE_DNS_CLOUDFLARE_TOKEN and YARDLINE_DNS_CLOUDFLARE_ZONE to publish sending-domain records.');
+            throw new RuntimeException('Set YARDRUNNER_DNS_CLOUDFLARE_TOKEN and YARDRUNNER_DNS_CLOUDFLARE_ZONE to publish sending-domain records.');
         }
 
         return Http::baseUrl("https://api.cloudflare.com/client/v4/zones/{$zone}/")

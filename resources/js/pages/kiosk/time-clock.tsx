@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Camera, ChevronLeft, Delete, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import KioskController from '@/actions/App/Http/Controllers/Time/KioskController';
+import { moveStorageKey } from '@/lib/storage';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import type { ClockStateValue, PunchKind } from '@/types/time';
@@ -31,7 +32,8 @@ type Confirmation = {
     overtime: boolean;
 };
 
-const YARD_KEY = 'yardline.kiosk.yard';
+const YARD_KEY = 'yardrunner.kiosk.yard';
+const OLD_YARD_KEY = 'yardline.kiosk.yard';
 const IDLE_MS = 30_000;
 
 const stateText: Record<ClockStateValue, string> = {
@@ -130,6 +132,8 @@ function useCamera(on: boolean) {
 export default function TimeClockKiosk({ people, yards, business }: Props) {
     const now = useNow();
     const [yardId, setYardId] = useState<number | null>(() => {
+        moveStorageKey(OLD_YARD_KEY, YARD_KEY);
+
         try {
             const saved = Number(window.localStorage.getItem(YARD_KEY));
 

@@ -70,7 +70,7 @@ class TimeAndAttendanceTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake(config('yardline.files_disk'));
+        Storage::fake(config('yardrunner.files_disk'));
 
         $this->owner = $this->signInToNewTenant();
         $this->tenant = CurrentTenant::get() ?? Tenant::factory()->create();
@@ -414,7 +414,7 @@ class TimeAndAttendanceTest extends TestCase
 
         $path = TimePunch::query()->sole()->photo_path;
         $this->assertNotNull($path);
-        Storage::disk(config('yardline.files_disk'))->assertExists($path);
+        Storage::disk(config('yardrunner.files_disk'))->assertExists($path);
     }
 
     public function test_phone_punches_are_checked_against_the_yard(): void
